@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Users, Search, Filter, Plus } from 'lucide-react';
-import Table from '../../common/Table';
+import Table from '../../Common/Table';
 import Button from '../../Common/Button';
 import { useTheme } from '../../../contexts/ThemeContext';
 

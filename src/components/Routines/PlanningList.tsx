@@ -14,7 +14,7 @@ import {
   Target,
 } from 'lucide-react';
 import Button from '../Common/Button';
-import Table from '../common/Table';
+import Table from '../Common/Table';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Book, Send, PenTool, FileText, Search, ChevronDown, TrendingUp, TrendingDown } from 'lucide-react';
-import Table from '../components/common/Table';
+import Table from '../components/Common/Table';
 import IncomeChart from '../components/Economics/IncomeChart';
 import CashFlowChart from '../components/Economics/CashFlowChart';
 import MetricCard from '../components/Dashboard/MetricCard';
 import { useTheme } from '../contexts/ThemeContext';
-import Tooltip from '../components/common/Tooltip';
-import Dropdown from '../components/common/Dropdown';
+import Tooltip from '../components/Common/Tooltip';
+import Dropdown from '../components/Common/Dropdown';
 import GenerateStoryModal from '../components/modals/GenerateStoryModal';
 import GeneratePostModal from '../components/modals/GeneratePostModal';
 import CreateGroupClassModal from '../components/modals/CreateGroupClassModal';

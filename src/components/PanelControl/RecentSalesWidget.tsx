@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Table from '../common/Table';
+import Table from '../Common/Table';
 import Button from '../Common/Button';
 import { Search, Filter } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';

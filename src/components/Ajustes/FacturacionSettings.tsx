@@ -1,6 +1,6 @@
 import React from 'react';
 import { CreditCard } from 'lucide-react';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 
 const FacturacionSettings: React.FC = () => {
   return (

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Plus, Trash2, Edit, ChevronDown, ChevronUp, Calendar, Dumbbell, Clock } from 'lucide-react';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ... (interfaces remain the same)

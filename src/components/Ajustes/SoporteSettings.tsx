@@ -1,6 +1,6 @@
 import React from 'react';
 import { HelpCircle } from 'lucide-react';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 
 const SoporteSettings: React.FC = () => {
   return (

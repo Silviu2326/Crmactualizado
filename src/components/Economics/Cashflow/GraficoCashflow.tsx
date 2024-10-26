@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useTheme } from '../../../contexts/ThemeContext';
-import Button from '../../common/Button';
+import Button from '../../Common/Button';
 
 const GraficoCashflow: React.FC = () => {
   const { theme } = useTheme();

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ClipboardList, Plus, FileText, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../contexts/ThemeContext';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 import CrearCuestionario from './CrearCuestionario';
 import VistaCuestionario from './VistaCuestionario';
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 
 interface GenerateStoryModalProps {
   isOpen: boolean;

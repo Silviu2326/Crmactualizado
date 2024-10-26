@@ -10,7 +10,7 @@ import {
   StickyNote, LayoutDashboard, Users, BarChart,
   Apple, Coffee, Utensils, Salad
 } from 'lucide-react';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 import StatCard from './StatCard';
 import InfoCard from './InfoCard';
 import Notes from './Notes';

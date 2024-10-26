@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Table from '../common/Table';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 import { Search, Filter } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 

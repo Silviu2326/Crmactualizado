@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Plus, X, Save, List, Edit3, Trash2 } from 'lucide-react';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 
 interface PreguntaPredefinida {
   id: string;

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Table from '../../common/Table';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { Search, Filter } from 'lucide-react';
-import Button from '../../common/Button';
+import Button from '../../Common/Button';
 
 const IngresosTabla: React.FC = () => {
   const { theme } = useTheme();

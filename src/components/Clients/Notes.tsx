@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { StickyNote, Plus, Trash2, Edit2, Save, X } from 'lucide-react';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Note {

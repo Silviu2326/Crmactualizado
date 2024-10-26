@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDown, Plus, Trash2, Edit, Sun, Moon, ChevronUp } from 'lucide-react';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 import { useTheme } from '../../contexts/ThemeContext';
 import ExerciseBar from './ExerciseBar';
 import { motion, AnimatePresence } from 'framer-motion';

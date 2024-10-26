@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, X, Plus, Filter, Download, Dumbbell, Target, Clock, Users, BarChart2 } from 'lucide-react';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 import Table from '../common/Table';
 import { useTheme } from '../../contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';

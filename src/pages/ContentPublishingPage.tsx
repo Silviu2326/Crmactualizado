@@ -7,7 +7,7 @@ import {
   BarChart2, Target, Users, Globe, Instagram, Facebook,
   Video, Wand2, Star, Zap, Brain, Rocket
 } from 'lucide-react';
-import Button from '../components/common/Button';
+import Button from '../components/Common/Button';
 import AIChat from '../components/ContentPublishing/AIChat';
 
 const ContentPublishingPage: React.FC = () => {

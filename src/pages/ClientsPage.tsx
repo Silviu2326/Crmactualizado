@@ -6,7 +6,7 @@ import CuestionariosLista from '../components/Clients/CuestionariosLista';
 import { Users, Calendar, Box, ClipboardList, LayoutDashboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../contexts/ThemeContext';
-import Button from '../components/common/Button';
+import Button from '../components/Common/Button';
 
 const ClientsPage: React.FC = () => {
   const { theme } = useTheme();

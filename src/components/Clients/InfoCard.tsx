@@ -2,7 +2,7 @@ import React from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { LucideIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 
 interface InfoItemProps {
   icon: LucideIcon;

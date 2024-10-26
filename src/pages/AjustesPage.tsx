@@ -7,7 +7,7 @@ import ComunicacionSettings from '../components/Ajustes/ComunicacionSettings';
 import SeguridadSettings from '../components/Ajustes/SeguridadSettings';
 import SoporteSettings from '../components/Ajustes/SoporteSettings';
 import NovedadesSettings from '../components/Ajustes/NovedadesSettings';
-import Button from '../components/common/Button';
+import Button from '../components/Common/Button';
 import { useTheme } from '../contexts/ThemeContext';
 
 const AjustesPage: React.FC = () => {

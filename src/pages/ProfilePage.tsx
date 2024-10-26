@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Camera } from 'lucide-react';
-import Button from '../components/common/Button';
+import Button from '../components/Common/Button';
 import { useTheme } from '../contexts/ThemeContext';
 
 const ProfilePage: React.FC = () => {

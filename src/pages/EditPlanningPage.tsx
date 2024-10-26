@@ -8,7 +8,7 @@ import VistaCalendario from '../components/Planning/VistaCalendario';
 import VistaResumen from '../components/Planning/VistaResumen';
 import VistaEjerciciosDetallados from '../components/Planning/VistaEjerciciosDetallados';
 import VistaProgreso from '../components/Planning/VistaProgreso';
-import Button from '../components/common/Button';
+import Button from '../components/Common/Button';
 import { Grid, List, Save, ArrowLeft, Calendar, PieChart, Dumbbell, TrendingUp, Loader } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 

@@ -13,7 +13,7 @@ import {
   Clock,
   Target,
 } from 'lucide-react';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 import Table from '../common/Table';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Link } from 'react-router-dom';

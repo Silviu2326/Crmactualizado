@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, X } from 'lucide-react';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface Exercise {

@@ -6,7 +6,7 @@ import {
   AlertTriangle, ArrowLeft, Edit2, Trash2,
   Download, Share2, Eye
 } from 'lucide-react';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 
 interface Pregunta {
   id: string;

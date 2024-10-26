@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FileText, Search, Filter, Plus } from 'lucide-react';
 import Table from '../common/Table';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface Factura {

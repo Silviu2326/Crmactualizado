@@ -6,7 +6,7 @@ import VistaSimplificada from './VistaSimplificada';
 import VistaCompleja from './VistaCompleja';
 import VistaCalendario from './VistaCalendario';
 import VistaResumen from './VistaResumen';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 import { Grid, List, Save, ArrowLeft, Calendar, PieChart, Loader } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 

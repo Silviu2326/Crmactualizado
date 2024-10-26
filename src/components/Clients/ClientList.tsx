@@ -5,7 +5,7 @@ import {
   UserPlus, Download, Trash2, Edit2, Bell, Tag, CheckCircle,
   AlertTriangle, FileText, Upload, List, ArrowUpRight
 } from 'lucide-react';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 import Table from '../common/Table';
 import { useTheme } from '../../contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';

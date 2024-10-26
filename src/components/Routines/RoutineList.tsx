@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 import PlanningList from './PlanningList';
 import ExerciseList from './ExerciseList';
 import WorkoutList from './WorkoutList';

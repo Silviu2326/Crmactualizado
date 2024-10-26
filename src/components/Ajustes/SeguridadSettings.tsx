@@ -1,6 +1,6 @@
 import React from 'react';
 import { Shield } from 'lucide-react';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 
 const SeguridadSettings: React.FC = () => {
   return (

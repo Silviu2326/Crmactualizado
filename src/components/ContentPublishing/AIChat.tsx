@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Send, Bot, User, Loader, Sparkles, Image as ImageIcon, Wand2 } from 'lucide-react';
-import Button from '../common/Button';
+import Button from '../Common/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Message {

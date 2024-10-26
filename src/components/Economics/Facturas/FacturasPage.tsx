@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import FacturasWidget from '../FacturasWidget';
-import Button from '../../common/Button';
+import Button from '../../Common/Button';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { FileText, Plus, Search, Filter, Download } from 'lucide-react';
 

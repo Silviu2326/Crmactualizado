@@ -15,6 +15,7 @@ import ProfilePage from './pages/ProfilePage';
 import AjustesPage from './pages/AjustesPage';
 import EditPlanningPage from './pages/EditPlanningPage';
 import ClassesPage from './pages/ClassesPage';
+import PageEdicionDieta from './pages/PageEdicionDieta'; // <-- Importación añadida
 import { ThemeProvider } from './contexts/ThemeContext';
 import { useTheme } from './contexts/ThemeContext';
 
@@ -40,6 +41,7 @@ function AppContent() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<AjustesPage />} />
             <Route path="/edit-planning/:id" element={<EditPlanningPage />} />
+            <Route path="/edit-diet/:id" element={<PageEdicionDieta />} /> {/* <-- Ruta añadida */}
           </Routes>
         </main>
       </div>

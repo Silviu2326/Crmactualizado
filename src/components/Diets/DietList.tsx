@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'; 
 import { Search, X, Plus, Filter, Download, Salad, Target, Clock, Users, FileText } from 'lucide-react';
 import Button from '../Common/Button';
 import Table from '../Common/Table';
 import { useTheme } from '../../contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom'; // <-- Importación añadida
 
 const DietList: React.FC = () => {
   const { theme } = useTheme();
@@ -13,6 +14,7 @@ const DietList: React.FC = () => {
 
   const dietData = [
     { 
+      id: 1, // <-- Añadido
       nombre: 'Dieta Mediterránea', 
       cliente: 'Juan Pérez', 
       fechaInicio: '2023-05-01', 
@@ -23,6 +25,7 @@ const DietList: React.FC = () => {
       acciones: 'Editar' 
     },
     { 
+      id: 2, // <-- Añadido
       nombre: 'Dieta Cetogénica', 
       cliente: 'María García', 
       fechaInicio: '2023-06-15', 
@@ -33,6 +36,7 @@ const DietList: React.FC = () => {
       acciones: 'Editar' 
     },
     { 
+      id: 3, // <-- Añadido
       nombre: 'Dieta Vegetariana', 
       cliente: 'Carlos López', 
       fechaInicio: '2023-07-01', 
@@ -46,6 +50,7 @@ const DietList: React.FC = () => {
 
   const foodData = [
     { 
+      id: 1, // <-- Añadido si también quieres editar alimentos
       nombre: 'Pollo a la plancha', 
       descripcion: 'Pechuga de pollo cocinada a la plancha', 
       calorias: 165, 
@@ -56,6 +61,7 @@ const DietList: React.FC = () => {
       acciones: 'Editar' 
     },
     { 
+      id: 2, // <-- Añadido
       nombre: 'Ensalada César', 
       descripcion: 'Lechuga romana, crutones, queso parmesano y aderezo César', 
       calorias: 200, 
@@ -66,6 +72,7 @@ const DietList: React.FC = () => {
       acciones: 'Editar' 
     },
     { 
+      id: 3, // <-- Añadido
       nombre: 'Salmón al horno', 
       descripcion: 'Filete de salmón cocinado al horno con hierbas', 
       calorias: 280, 
@@ -104,7 +111,7 @@ const DietList: React.FC = () => {
     }
   ];
 
-  const renderCell = (key: string, value: any) => {
+  const renderCell = (key: string, value: any, item?: any) => {
     switch (key) {
       case 'objetivo':
         return (
@@ -166,6 +173,14 @@ const DietList: React.FC = () => {
           <span className="font-medium">
             {value}{key === 'calorias' ? ' kcal' : 'g'}
           </span>
+        );
+      case 'acciones':
+        return (
+          <Link to={`/edit-diet/${item.id}`}>
+            <button className="text-blue-500 hover:underline">
+              {value}
+            </button>
+          </Link>
         );
       default:
         return value;
@@ -263,7 +278,7 @@ const DietList: React.FC = () => {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden"
+        className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg overflow-hidden`}
       >
         <Table
           headers={showFoods 
@@ -273,7 +288,7 @@ const DietList: React.FC = () => {
           data={(showFoods ? foodData : dietData).map(item => ({
             ...item,
             ...Object.fromEntries(
-              Object.entries(item).map(([key, value]) => [key, renderCell(key, value)])
+              Object.entries(item).map(([key, value]) => [key, renderCell(key, value, item)])
             )
           }))}
           variant={theme === 'dark' ? 'dark' : 'white'}

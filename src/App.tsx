@@ -17,6 +17,7 @@ import EditPlanningPage from './pages/EditPlanningPage';
 import ClassesPage from './pages/ClassesPage';
 import PageEdicionDieta from './pages/PageEdicionDieta';
 import LoginPage from './pages/LoginPage';
+import ServiciosPage from './pages/ServiciosPage';
 import CommandAssister from './components/CommandAssister/CommandAssister';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -53,6 +54,7 @@ function AppContent() {
             <Route path="/content" element={<PrivateRoute><ContentPublishingPage /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
             <Route path="/settings" element={<PrivateRoute><AjustesPage /></PrivateRoute>} />
+            <Route path="/services" element={<PrivateRoute><ServiciosPage /></PrivateRoute>} /> {/* Nueva ruta */}
             <Route path="/edit-planning/:id" element={<PrivateRoute><EditPlanningPage /></PrivateRoute>} />
             <Route path="/edit-diet/:id" element={<PrivateRoute><PageEdicionDieta /></PrivateRoute>} />
           </Routes>

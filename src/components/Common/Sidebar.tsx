@@ -27,6 +27,7 @@ const Sidebar: React.FC = () => {
   const navItems = [
     { to: '/', icon: Home, label: 'Dashboard' },
     { to: '/clients', icon: Users, label: 'Clientes' },
+    { to: '/services', icon: Layout, label: 'Servicios' },  // Nueva pestaña en el Sidebar
     { to: '/routines', icon: Dumbbell, label: 'Rutinas' },
     { to: '/diets', icon: Salad, label: 'Dietas' },
     { to: '/classes', icon: BookOpen, label: 'Clases' },

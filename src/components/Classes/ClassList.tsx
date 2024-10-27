@@ -76,7 +76,7 @@ const ClassList: React.FC = () => {
       case 'maxParticipantes':
         return (
           <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-sm font-medium">
-            Máx. {value}
+             {value}
           </span>
         );
       case 'sesiones':

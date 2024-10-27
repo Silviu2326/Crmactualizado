@@ -2,19 +2,18 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../contexts/ThemeContext';
 import { 
-  Sparkles, Type, Pencil, Lightbulb, Image as ImageIcon, 
-  MessageSquare, X, Palette, Mic, Share2, TrendingUp,
-  BarChart2, Target, Users, Globe, Instagram, Facebook,
-  Video, Wand2, Star, Zap, Brain, Rocket
+  Sparkles, Image as ImageIcon, MessageSquare, X, Mic, Share2, 
+  TrendingUp, Target, Users, Globe, Instagram, Facebook,
+  Video, Wand2, Zap, Brain, Rocket
 } from 'lucide-react';
 import Button from '../components/Common/Button';
 import AIChat from '../components/ContentPublishing/AIChat';
+import ToolCard from '../components/ContentPublishing/ToolCard';
 
 const ContentPublishingPage: React.FC = () => {
   const { theme } = useTheme();
   const [showChat, setShowChat] = useState(false);
   const [chatTool, setChatTool] = useState('');
-  const [hoveredTool, setHoveredTool] = useState('');
 
   const mainTools = [
     { 
@@ -123,46 +122,6 @@ const ContentPublishingPage: React.FC = () => {
     setShowChat(true);
   };
 
-  const ToolCard = ({ tool, index }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-      className={`p-6 rounded-xl ${
-        theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-      } shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer relative overflow-hidden`}
-      onClick={() => !tool.comingSoon && handleToolClick(tool.id)}
-      onMouseEnter={() => setHoveredTool(tool.id)}
-      onMouseLeave={() => setHoveredTool('')}
-    >
-      {tool.comingSoon && (
-        <div className="absolute top-3 right-3">
-          <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
-            Próximamente
-          </span>
-        </div>
-      )}
-      
-      <div className={`p-4 rounded-full bg-gradient-to-r ${tool.gradient} w-16 h-16 flex items-center justify-center mb-4 transform transition-transform duration-300 ${hoveredTool === tool.id ? 'scale-110' : ''}`}>
-        <tool.icon className="w-8 h-8 text-white" />
-      </div>
-      
-      <h3 className="text-xl font-bold mb-2">{tool.name}</h3>
-      <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
-        {tool.description}
-      </p>
-      
-      <div className="space-y-2">
-        {tool.features.map((feature, idx) => (
-          <div key={idx} className="flex items-center space-x-2">
-            <Star className="w-4 h-4 text-yellow-500" />
-            <span className="text-sm">{feature}</span>
-          </div>
-        ))}
-      </div>
-    </motion.div>
-  );
-
   return (
     <div className={`min-h-screen p-8 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
       <div className="max-w-7xl mx-auto">
@@ -193,7 +152,12 @@ const ContentPublishingPage: React.FC = () => {
           </motion.h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {mainTools.map((tool, index) => (
-              <ToolCard key={tool.id} tool={tool} index={index} />
+              <ToolCard 
+                key={tool.id} 
+                tool={tool} 
+                index={index}
+                onToolClick={handleToolClick}
+              />
             ))}
           </div>
         </div>
@@ -212,7 +176,12 @@ const ContentPublishingPage: React.FC = () => {
           </motion.h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {marketingTools.map((tool, index) => (
-              <ToolCard key={tool.id} tool={tool} index={index} />
+              <ToolCard 
+                key={tool.id} 
+                tool={tool} 
+                index={index}
+                onToolClick={handleToolClick}
+              />
             ))}
           </div>
         </div>
@@ -231,7 +200,12 @@ const ContentPublishingPage: React.FC = () => {
           </motion.h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {socialTools.map((tool, index) => (
-              <ToolCard key={tool.id} tool={tool} index={index} />
+              <ToolCard 
+                key={tool.id} 
+                tool={tool} 
+                index={index}
+                onToolClick={handleToolClick}
+              />
             ))}
           </div>
         </div>
@@ -250,7 +224,12 @@ const ContentPublishingPage: React.FC = () => {
           </motion.h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {comingSoonTools.map((tool, index) => (
-              <ToolCard key={tool.id} tool={tool} index={index} />
+              <ToolCard 
+                key={tool.id} 
+                tool={tool} 
+                index={index}
+                onToolClick={handleToolClick}
+              />
             ))}
           </div>
         </div>

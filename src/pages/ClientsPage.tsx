@@ -1,21 +1,19 @@
 import React, { useState } from 'react';
 import ClientList from '../components/Clients/ClientList';
 import CalendarioLista from '../components/Clients/CalendarioLista';
-import ServiciosLista from '../components/Clients/ServiciosLista';
 import CuestionariosLista from '../components/Clients/CuestionariosLista';
-import { Users, Calendar, Box, ClipboardList, LayoutDashboard } from 'lucide-react';
+import { Users, Calendar, ClipboardList, LayoutDashboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../contexts/ThemeContext';
 import Button from '../components/Common/Button';
 
 const ClientsPage: React.FC = () => {
   const { theme } = useTheme();
-  const [activeTab, setActiveTab] = useState<'clientes' | 'cuestionarios' | 'servicios' | 'calendario'>('clientes');
+  const [activeTab, setActiveTab] = useState<'clientes' | 'cuestionarios' | 'calendario'>('clientes');
 
   const tabs = [
     { id: 'clientes', label: 'Clientes', icon: Users, color: 'from-blue-500 to-indigo-500' },
     { id: 'cuestionarios', label: 'Cuestionarios', icon: ClipboardList, color: 'from-purple-500 to-pink-500' },
-    { id: 'servicios', label: 'Servicios', icon: Box, color: 'from-green-500 to-emerald-500' },
     { id: 'calendario', label: 'Calendario', icon: Calendar, color: 'from-amber-500 to-orange-500' },
   ];
 
@@ -54,6 +52,21 @@ const ClientsPage: React.FC = () => {
     }
   };
 
+  const buttonVariants = {
+    hidden: { y: -10, opacity: 0 },
+    visible: (i: number) => ({
+      y: 0,
+      opacity: 1,
+      transition: {
+        delay: i * 0.05,
+        duration: 0.4,
+        type: "spring",
+        stiffness: 150,
+        damping: 15
+      }
+    })
+  };
+
   return (
     <motion.div
       initial="hidden"
@@ -89,35 +102,30 @@ const ClientsPage: React.FC = () => {
         </div>
 
         <div className="relative">
-          <div className="flex space-x-2 overflow-x-auto scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-200 pb-2">
-            {tabs.map((tab) => {
+          <div className="flex justify-center md:justify-end space-x-3 overflow-x-auto scrollbar-thin pb-2">
+            {tabs.map((tab, index) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               
               return (
-                <Button
+                <motion.button
                   key={tab.id}
-                  variant={isActive ? 'create' : 'normal'}
+                  custom={index}
+                  variants={buttonVariants}
+                  initial="hidden"
+                  animate="visible"
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center px-6 py-3 rounded-xl transition-all duration-300 ${
+                  className={`relative flex items-center px-5 py-3 rounded-full font-medium transition-all duration-300 ${
                     isActive 
-                      ? `bg-gradient-to-r ${tab.color} transform scale-105 shadow-lg` 
-                      : 'hover:scale-102'
+                      ? `bg-gradient-to-r ${tab.color} text-white shadow-lg transform hover:scale-105` 
+                      : `${theme === 'dark' ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-700'} hover:bg-opacity-90`
                   }`}
                 >
                   <Icon className={`w-5 h-5 mr-2 ${
-                    isActive ? 'animate-pulse' : ''
+                    isActive ? 'animate-bounce' : ''
                   }`} />
                   {tab.label}
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeTab"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-white rounded-full"
-                      initial={false}
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    />
-                  )}
-                </Button>
+                </motion.button>
               );
             })}
           </div>
@@ -137,7 +145,6 @@ const ClientsPage: React.FC = () => {
         >
           {activeTab === 'clientes' && <ClientList />}
           {activeTab === 'cuestionarios' && <CuestionariosLista />}
-          {activeTab === 'servicios' && <ServiciosLista />}
           {activeTab === 'calendario' && <CalendarioLista />}
         </motion.div>
       </AnimatePresence>

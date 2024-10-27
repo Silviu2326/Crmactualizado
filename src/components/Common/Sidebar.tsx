@@ -28,7 +28,7 @@ const Sidebar: React.FC = () => {
     { to: '/', icon: Home, label: 'Dashboard' },
     { to: '/clients', icon: Users, label: 'Clientes' },
     { to: '/services', icon: Layout, label: 'Servicios' },  // Nueva pestaña en el Sidebar
-    { to: '/routines', icon: Dumbbell, label: 'Rutinas' },
+    { to: '/routines', icon: Dumbbell, label: 'Entrenamiento' },
     { to: '/diets', icon: Salad, label: 'Dietas' },
     { to: '/classes', icon: BookOpen, label: 'Clases' },
     { to: '/economics', icon: DollarSign, label: 'Economía' },

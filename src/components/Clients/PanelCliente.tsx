@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { motion } from 'framer-motion';
-import { 
-  Phone, Mail, MapPin, Calendar as CalendarIcon, Activity, 
-  DollarSign, Clock, Target, Award, ChevronDown,
+import {
+  Phone, Mail, MapPin, Calendar as CalendarIcon, Activity,
+  DollarSign, Clock, Target, ChevronDown,
   Dumbbell, Heart, Scale, User, CreditCard,
   Clipboard, CalendarCheck, Ruler, Brain,
   Wallet, Receipt, TrendingUp, FileText,
-  StickyNote, LayoutDashboard, Users, BarChart,
+  LayoutDashboard, Users, BarChart,
   Apple, Coffee, Utensils, Salad
 } from 'lucide-react';
 import Button from '../Common/Button';
-import StatCard from './StatCard';
 import InfoCard from './InfoCard';
 import Notes from './Notes';
 import ClientCalendar from './Calendar';
@@ -47,19 +46,19 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ cliente, onClose }) => {
   const [activeSection, setActiveSection] = useState<Section>('dashboard');
 
   const handleViewPlan = () => {
-    console.log('View training plan');
+    console.log('Ver plan de entrenamiento');
   };
 
   const handleNewCheckin = () => {
-    console.log('New check-in');
+    console.log('Nuevo check-in');
   };
 
   const handlePayment = () => {
-    console.log('Process payment');
+    console.log('Procesar pago');
   };
 
   const handleDietPlan = () => {
-    console.log('View diet plan');
+    console.log('Ver plan nutricional');
   };
 
   const navigationButtons = [
@@ -72,53 +71,52 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ cliente, onClose }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 50 }}
       className={`
-        w-full overflow-hidden rounded-2xl
-        ${theme === 'dark' ? 'bg-gray-900/95' : 'bg-gray-50/95'}
-        backdrop-blur-lg shadow-2xl
+        w-full overflow-hidden rounded-3xl
+        ${theme === 'dark' ? 'bg-gray-900' : 'bg-white'}
+        shadow-2xl
         border ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}
       `}
     >
       <div className="h-[85vh] overflow-y-auto custom-scrollbar">
         <div className="p-8">
-          {/* Header Section */}
-          <div className="sticky top-0 z-10 backdrop-blur-md bg-opacity-90 mb-8 pb-4 border-b border-gray-200 dark:border-gray-800">
+          {/* Encabezado */}
+          <div className={`sticky top-0 z-10 backdrop-blur-md bg-opacity-90 mb-8 pb-4 border-b ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
             <div className="flex justify-between items-start">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="flex items-center space-x-4"
               >
                 <div className={`
-                  p-4 rounded-2xl shadow-lg transform transition-transform duration-300 hover:scale-110
-                  ${theme === 'dark' ? 'bg-gray-800 shadow-gray-900/50' : 'bg-white shadow-gray-200/50'}
-                  bg-gradient-shine
+                  p-4 rounded-full shadow-lg transform transition-transform duration-300 hover:scale-105
+                  ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100'}
                 `}>
                   <User className="w-8 h-8 text-blue-500" />
                 </div>
                 <div>
-                  <motion.h3 
+                  <motion.h3
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.2 }}
-                    className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent"
+                    className="text-3xl font-bold text-gray-800 dark:text-white"
                   >
                     {cliente.nombre}
                   </motion.h3>
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3 }}
                     className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 mt-2"
                   >
-                    <span className="flex items-center text-sm">
+                    <span className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                       <Mail className="w-4 h-4 mr-2 text-blue-500" />
                       {cliente.email}
                     </span>
-                    <span className="flex items-center text-sm">
+                    <span className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                       <Phone className="w-4 h-4 mr-2 text-green-500" />
                       {cliente.telefono}
                     </span>
@@ -129,8 +127,8 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ cliente, onClose }) => {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
               >
-                <Button 
-                  variant="normal" 
+                <Button
+                  variant="normal"
                   onClick={onClose}
                   className="hover:rotate-180 transition-transform duration-300"
                 >
@@ -139,7 +137,7 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ cliente, onClose }) => {
               </motion.div>
             </div>
 
-            {/* Navigation Buttons */}
+            {/* Navegación */}
             <div className="flex flex-wrap gap-2 mt-6">
               {navigationButtons.map((button) => {
                 const Icon = button.icon;
@@ -149,15 +147,14 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ cliente, onClose }) => {
                     variant="normal"
                     onClick={() => setActiveSection(button.id as Section)}
                     className={`
-                      flex items-center space-x-2 px-4 py-2 rounded-lg
+                      flex items-center space-x-2 px-4 py-2 rounded-full
                       ${activeSection === button.id
-                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-500/25'
+                        ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
                         : theme === 'dark'
-                        ? 'bg-gray-800 hover:bg-gray-700'
-                        : 'bg-white hover:bg-gray-100'
+                        ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }
-                      transition-all duration-300 hover:scale-105
-                      shadow-lg hover:shadow-xl
+                      transition-all duration-300
                     `}
                   >
                     <Icon className="w-4 h-4" />
@@ -168,48 +165,8 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ cliente, onClose }) => {
             </div>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <StatCard
-              icon={Ruler}
-              title="Altura"
-              value={cliente.altura}
-              color="bg-gradient-to-br from-blue-500 to-blue-600"
-              delay={0.2}
-            />
-            <StatCard
-              icon={Scale}
-              title="Peso Actual"
-              value={cliente.peso}
-              color="bg-gradient-to-br from-green-500 to-green-600"
-              delay={0.3}
-            />
-            <StatCard
-              icon={Target}
-              title="Progreso General"
-              value={`${cliente.progreso}%`}
-              color="bg-gradient-to-br from-purple-500 to-purple-600"
-              delay={0.4}
-            />
-            <StatCard
-              icon={CalendarCheck}
-              title="Check-ins"
-              value="8/12"
-              color="bg-gradient-to-br from-orange-500 to-orange-600"
-              delay={0.5}
-            />
-          </div>
-
-          {/* Calendar and Notes Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <ClientCalendar />
-            <div className="lg:col-span-2">
-              <Notes />
-            </div>
-          </div>
-
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Contenido Principal */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Planificación Deportiva */}
             <InfoCard
               title="Planificación Deportiva"
@@ -279,8 +236,8 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ cliente, onClose }) => {
               delay={1.0}
               items={[
                 { icon: Ruler, text: `Altura: ${cliente.altura}` },
-                { icon: Scale, text: `Peso inicial: 68kg` },
-                { icon: Target, text: "Peso objetivo: 62kg" },
+                { icon: Scale, text: `Peso actual: ${cliente.peso}` },
+                { icon: Target, text: `IMC: ${cliente.imc}` },
                 { icon: Activity, text: "Nivel de actividad: Alto" }
               ]}
             />
@@ -301,6 +258,14 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ cliente, onClose }) => {
                 onClick: handlePayment
               }}
             />
+          </div>
+
+          {/* Sección de Calendario y Notas */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+            <div className="lg:col-span-2">
+              <ClientCalendar />
+            </div>
+            <Notes />
           </div>
         </div>
       </div>

@@ -52,6 +52,7 @@ function AppContent() {
             <Route path="/economics" element={<PrivateRoute><EconomicsPage /></PrivateRoute>} />
             <Route path="/marketing/campaigns" element={<PrivateRoute><MarketingCampaignsPage /></PrivateRoute>} />
             <Route path="/marketing/analytics" element={<PrivateRoute><MarketingAnalyticsPage /></PrivateRoute>} />
+            <Route path="/content" element={<PrivateRoute><ContentPublishingPage /></PrivateRoute>} />
             <Route path="/content" element={<PrivateRoute><Publications /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
             <Route path="/settings" element={<PrivateRoute><AjustesPage /></PrivateRoute>} />

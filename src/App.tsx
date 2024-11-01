@@ -13,6 +13,7 @@ import ContentPublishingPage from './pages/ContentPublishingPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import AjustesPage from './pages/AjustesPage';
+import Publications from './pages/Publications';
 import EditPlanningPage from './pages/EditPlanningPage';
 import ClassesPage from './pages/ClassesPage';
 import PageEdicionDieta from './pages/PageEdicionDieta';
@@ -51,7 +52,7 @@ function AppContent() {
             <Route path="/economics" element={<PrivateRoute><EconomicsPage /></PrivateRoute>} />
             <Route path="/marketing/campaigns" element={<PrivateRoute><MarketingCampaignsPage /></PrivateRoute>} />
             <Route path="/marketing/analytics" element={<PrivateRoute><MarketingAnalyticsPage /></PrivateRoute>} />
-            <Route path="/content" element={<PrivateRoute><ContentPublishingPage /></PrivateRoute>} />
+            <Route path="/content" element={<PrivateRoute><Publications /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
             <Route path="/settings" element={<PrivateRoute><AjustesPage /></PrivateRoute>} />
             <Route path="/services" element={<PrivateRoute><ServiciosPage /></PrivateRoute>} /> {/* Nueva ruta */}

@@ -8,12 +8,17 @@ import FacturasPage from '../components/Economics/Facturas/FacturasPage';
 import ReportesPage from '../components/Economics/Reportes/ReportesPage';
 import { useTheme } from '../contexts/ThemeContext';
 
+
 const EconomicsPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState('panel');
   const { theme, toggleTheme } = useTheme();
+  const [layout, setLayout] = useState('default');
+  const [editMode, setEditMode] = useState(false);
+  const [isFacturaPopupOpen, setIsFacturaPopupOpen] = useState(false);
+  const [isEscanearFacturaPopupOpen, setIsEscanearFacturaPopupOpen] = useState(false);
 
   const sections = [
-    { id: 'panel', label: 'Panel de Control', icon: TrendingUp, component: PanelDeControl },
+    { id: 'panel', label: 'Panel de Control', icon: TrendingUp },
     { id: 'cashflow', label: 'Cashflow', icon: DollarSign, component: CashflowPage },
     { id: 'planes', label: 'Planes', icon: PieChart, component: PlanesPage },
     { id: 'documentos', label: 'Documentos', icon: FileText, component: DocumentosPage },
@@ -21,10 +26,63 @@ const EconomicsPage: React.FC = () => {
     { id: 'reportes', label: 'Reportes', icon: TrendingUp, component: ReportesPage },
   ];
 
-  const ActiveComponent = sections.find(section => section.id === activeSection)?.component || (() => null);
+  const handleFacturaSubmit = (formData: any) => {
+    // Lógica para manejar el envío de la factura
+    console.log('Nueva factura:', formData);
+    setIsFacturaPopupOpen(false);
+  };
+
+  const handleEscanearFacturaSubmit = (formData: any) => {
+    // Lógica para manejar el escaneo de la factura
+    console.log('Archivos para escanear:', formData);
+    setIsEscanearFacturaPopupOpen(false);
+  };
+
+  const renderActiveComponent = () => {
+    switch (activeSection) {
+      case 'panel':
+        return (
+          <PanelDeControl
+            theme={theme}
+            editMode={editMode}
+            isFacturaPopupOpen={isFacturaPopupOpen}
+            setIsFacturaPopupOpen={setIsFacturaPopupOpen}
+            handleFacturaSubmit={handleFacturaSubmit}
+            isEscanearFacturaPopupOpen={isEscanearFacturaPopupOpen}
+            setIsEscanearFacturaPopupOpen={setIsEscanearFacturaPopupOpen}
+            handleEscanearFacturaSubmit={handleEscanearFacturaSubmit}
+          />
+        );
+      case 'cashflow':
+        return <CashflowPage />;
+      case 'planes':
+        return <PlanesPage />;
+      case 'documentos':
+        return <DocumentosPage />;
+      case 'facturas':
+        return (
+          <FacturasPage
+            isFacturaPopupOpen={isFacturaPopupOpen}
+            setIsFacturaPopupOpen={setIsFacturaPopupOpen}
+            handleFacturaSubmit={handleFacturaSubmit}
+            isEscanearFacturaPopupOpen={isEscanearFacturaPopupOpen}
+            setIsEscanearFacturaPopupOpen={setIsEscanearFacturaPopupOpen}
+            handleEscanearFacturaSubmit={handleEscanearFacturaSubmit}
+          />
+        );
+      case 'reportes':
+        return <ReportesPage />;
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className={`flex flex-col h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
+    <div
+      className={`flex flex-col h-screen ${
+        theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'
+      }`}
+    >
       <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-md p-4`}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold">Gestión Económica</h2>
@@ -61,8 +119,12 @@ const EconomicsPage: React.FC = () => {
           ))}
         </nav>
       </div>
-      <div className={`flex-1 overflow-auto p-8 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'}`}>
-        <ActiveComponent />
+      <div
+        className={`flex-1 overflow-auto p-8 ${
+          theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'
+        }`}
+      >
+        {renderActiveComponent()}
       </div>
     </div>
   );

@@ -11,18 +11,54 @@ import ServiciosWidget from './ServiciosWidget';
 import BonosWidget from './BonosWidget';
 import IncomeChartWidget from './IncomeChartWidget';
 import RecentSalesWidget from '../PanelControl/RecentSalesWidget';
-import { useEconomicData } from '../../hooks/useEconomicData';
-import { useTheme } from '../../contexts/ThemeContext';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
+import GastoPopup from '../modals/GastoPopup';
+import FacturaPopup from '../modals/FacturaPopup';
+import EscanearFacturaPopup from '../modals/EscanearFacturaPopup';
+import DocumentoPopup from '../modals/DocumentoPopup';
+import BonoPopup from '../modals/BonoPopup';
+import ReportePopup from '../modals/ReportePopup';
+import ReporteActualPopup from '../modals/ReporteActualPopup';
+import ClientePopup from '../modals/ClientePopup';
+import ServicioPopup from '../modals/ServicioPopup';
+import EconomicPage from '../../pages/EconomicsPage';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-const PanelDeControl: React.FC = () => {
-  const [isEditMode, setIsEditMode] = useState(false);
-  const { economicData, updateEconomicData, removeWidget, addWidget } = useEconomicData();
+// Definimos el tipo para el tema
+type Theme = 'light' | 'dark';
+
+interface PanelDeControlProps {
+  theme: Theme;
+  editMode: boolean;
+  isFacturaPopupOpen: boolean;
+  setIsFacturaPopupOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  handleFacturaSubmit: (formData: any) => void;
+  isEscanearFacturaPopupOpen: boolean;
+  setIsEscanearFacturaPopupOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  handleEscanearFacturaSubmit: (formData: any) => void;
+}
+
+const PanelDeControl: React.FC<PanelDeControlProps> = ({
+  theme,
+  editMode,
+  isFacturaPopupOpen,
+  setIsFacturaPopupOpen,
+  handleFacturaSubmit,
+  isEscanearFacturaPopupOpen,
+  setIsEscanearFacturaPopupOpen,
+  handleEscanearFacturaSubmit,
+ }) => {
+  const [isEditMode, setIsEditMode] = useState(editMode);
   const [layout, setLayout] = useState(generateInitialLayout());
-  const { theme } = useTheme();
+  const [isGastoPopupOpen, setIsGastoPopupOpen] = useState(false);
+  const [isDocumentoPopupOpen, setIsDocumentoPopupOpen] = useState(false);
+  const [isBonoPopupOpen, setIsBonoPopupOpen] = useState(false);
+  const [isReportePopupOpen, setIsReportePopupOpen] = useState(false);
+  const [isReporteActualPopupOpen, setIsReporteActualPopupOpen] = useState(false);
+  const [isClientePopupOpen, setIsClientePopupOpen] = useState(false);
+  const [isServicioPopupOpen, setIsServicioPopupOpen] = useState(false);
 
   const toggleEditMode = () => {
     setIsEditMode(!isEditMode);
@@ -35,6 +71,7 @@ const PanelDeControl: React.FC = () => {
 
   const handleLayoutChange = (newLayout: any) => {
     setLayout(newLayout);
+    console.log('Nuevo layout:', newLayout);
   };
 
   function generateInitialLayout() {
@@ -70,6 +107,34 @@ const PanelDeControl: React.FC = () => {
       <div className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mt-1`}>{subtitle}</div>
     </div>
   );
+
+  const handleGastoSubmit = (formData: any) => {
+    console.log('Nuevo gasto:', formData);
+  };
+
+  const handleDocumentoSubmit = (formData: any) => {
+    console.log('Nuevo documento:', formData);
+  };
+
+  const handleBonoSubmit = (formData: any) => {
+    console.log('Nuevo bono:', formData);
+  };
+
+  const handleReporteSubmit = (formData: any) => {
+    console.log('Nuevo reporte:', formData);
+  };
+
+  const handleReporteActualSubmit = (formData: any) => {
+    console.log('Nuevo reporte actual:', formData);
+  };
+
+  const handleClienteSubmit = (formData: any) => {
+    console.log('Nuevo cliente:', formData);
+  };
+
+  const handleServicioSubmit = (tipo: string, formData: any) => {
+    console.log('Nuevo servicio:', tipo, formData);
+  };
 
   return (
     <div className={`${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-800'} rounded-lg shadow-md p-6 mb-8`}>
@@ -140,10 +205,9 @@ const PanelDeControl: React.FC = () => {
         <div key="gastoWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
           <GastoWidget
             title="Gastos Totales"
-            value={8000}
             isEditMode={isEditMode}
-            onUpdate={() => {}}
             onRemove={() => {}}
+            onAddGasto={() => setIsGastoPopupOpen(true)} // Pasar función para abrir el popup
           />
         </div>
         <div key="alertasWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
@@ -181,6 +245,7 @@ const PanelDeControl: React.FC = () => {
             ]}
             isEditMode={isEditMode}
             onRemove={() => {}}
+            setIsDocumentoPopupOpen={setIsDocumentoPopupOpen}
           />
         </div>
         <div key="facturasWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
@@ -191,6 +256,7 @@ const PanelDeControl: React.FC = () => {
             ]}
             isEditMode={isEditMode}
             onRemove={() => {}}
+            setIsEscanearFacturaPopupOpen={setIsEscanearFacturaPopupOpen}
           />
         </div>
         <div key="serviciosWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
@@ -201,6 +267,7 @@ const PanelDeControl: React.FC = () => {
             ]}
             isEditMode={isEditMode}
             onRemove={() => {}}
+            setIsServicioPopupOpen={setIsServicioPopupOpen} 
           />
         </div>
         <div key="bonosWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
@@ -211,6 +278,7 @@ const PanelDeControl: React.FC = () => {
             ]}
             isEditMode={isEditMode}
             onRemove={() => {}}
+            setIsBonoPopupOpen={setIsBonoPopupOpen} // Pasamos la función aquí
           />
         </div>
         <div key="incomeChart" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
@@ -220,6 +288,16 @@ const PanelDeControl: React.FC = () => {
           <RecentSalesWidget />
         </div>
       </ResponsiveGridLayout>
+
+      <ClientePopup isOpen={isClientePopupOpen} onClose={() => setIsClientePopupOpen(false)} onSubmit={() => {}} />
+      <ServicioPopup isOpen={isServicioPopupOpen} onClose={() => setIsServicioPopupOpen(false)} onSubmit={() => {}} />
+      <GastoPopup isOpen={isGastoPopupOpen} onClose={() => setIsGastoPopupOpen(false)} onSubmit={() => {}} />
+      <FacturaPopup isOpen={isFacturaPopupOpen} onClose={() => setIsFacturaPopupOpen(false)} onSubmit={() => {}} />
+      <EscanearFacturaPopup isOpen={isEscanearFacturaPopupOpen} onClose={() => setIsEscanearFacturaPopupOpen(false)} onSubmit={() => {}} />
+      <DocumentoPopup isOpen={isDocumentoPopupOpen} onClose={() => setIsDocumentoPopupOpen(false)} onSubmit={() => {}} />
+      <BonoPopup isOpen={isBonoPopupOpen} onClose={() => setIsBonoPopupOpen(false)} onSubmit={() => {}} />
+      <ReportePopup isOpen={isReportePopupOpen} onClose={() => setIsReportePopupOpen(false)} onSubmit={() => {}} />
+      <ReporteActualPopup isOpen={isReporteActualPopupOpen} onClose={() => setIsReporteActualPopupOpen(false)} onSubmit={() => {}} />
     </div>
   );
 };

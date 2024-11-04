@@ -5,7 +5,7 @@ interface ChartConfigModalProps {
   onClose: () => void;
   onSave: (chartType: 'line' | 'bar') => void;
   currentChartType: 'line' | 'bar';
-  viewType: 'semanal' | 'mensual' | 'anual';
+  viewType: 'weekly' | 'monthly' | 'annual';
 }
 
 const ChartConfigModal: React.FC<ChartConfigModalProps> = ({
@@ -38,9 +38,9 @@ const ChartConfigModal: React.FC<ChartConfigModalProps> = ({
             <option value="bar">Barras</option>
           </select>
         </div>
-        {viewType === 'mensual' && selectedType === 'bar' && (
+        {viewType === 'monthly' && selectedType === 'bar' && (
           <p className="text-yellow-500 mb-4">
-            Nota: Para la vista mensual, se recomienda usar el gráfico de líneas para una mejor visualización.
+            Nota: Para la vista monthly, se recomienda usar el gráfico de líneas para una mejor visualización.
           </p>
         )}
         <div className="flex justify-end space-x-2">

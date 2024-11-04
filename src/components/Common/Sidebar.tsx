@@ -35,6 +35,7 @@ const Sidebar: React.FC = () => {
     { to: '/marketing/campaigns', icon: Megaphone, label: 'Campañas' },
     { to: '/marketing/analytics', icon: BarChart2, label: 'Análisis' },
     { to: '/content', icon: Share2, label: 'Contenido' },
+    { to: '/publications', icon: Share2, label: 'Publicaciones' },
     { to: '/settings', icon: Settings, label: 'Ajustes' },
   ];
 

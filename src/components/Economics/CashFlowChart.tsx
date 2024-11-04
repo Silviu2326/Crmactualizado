@@ -5,14 +5,14 @@ import { Settings } from 'lucide-react';
 import ChartConfigModal from './ChartConfigModal';
 
 interface CashFlowChartProps {
-  viewType: 'semanal' | 'mensual' | 'anual';
+  viewType: 'weekly' | 'monthly' | 'annual';
   currentDate: Date;
 }
 
 const CashFlowChart: React.FC<CashFlowChartProps> = ({ viewType, currentDate }) => {
   const { theme } = useTheme();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [chartType, setChartType] = useState<'line' | 'bar'>(viewType === 'mensual' ? 'line' : 'bar');
+  const [chartType, setChartType] = useState<'line' | 'bar'>(viewType === 'monthly' ? 'line' : 'bar');
   const [visibleSeries, setVisibleSeries] = useState({
     ingresos: true,
     gastos: true,
@@ -27,18 +27,18 @@ const CashFlowChart: React.FC<CashFlowChartProps> = ({ viewType, currentDate }) 
     let increment: number;
 
     switch (viewType) {
-      case 'semanal':
+      case 'weekly':
         startDate.setDate(startDate.getDate() - startDate.getDay());
         endDate = new Date(startDate);
         endDate.setDate(endDate.getDate() + 6);
         increment = 1;
         break;
-      case 'mensual':
+      case 'monthly':
         startDate.setDate(1);
         endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
         increment = 1;
         break;
-      case 'anual':
+      case 'annual':
         startDate = new Date(startDate.getFullYear(), 0, 1);
         endDate = new Date(startDate.getFullYear(), 11, 31);
         increment = 30;
@@ -87,7 +87,16 @@ const CashFlowChart: React.FC<CashFlowChartProps> = ({ viewType, currentDate }) 
             color: theme === 'dark' ? '#F3F4F6' : '#1F2937',
           }}
         />
-        <Legend onClick={(e) => toggleSeries(e.dataKey)} />
+        <Legend
+          onClick={(e) => {
+            const dataKey = e.dataKey as string | undefined;
+            // Verificamos si dataKey es uno de los valores permitidos antes de llamar a toggleSeries
+            if (dataKey === 'ingresos' || dataKey === 'gastos' || dataKey === 'beneficio') {
+              toggleSeries(dataKey as 'ingresos' | 'gastos' | 'beneficio');
+            }
+          }}
+        />
+
         {visibleSeries.ingresos && (chartType === 'line' ? 
           <Line type="monotone" dataKey="ingresos" stroke="#4ADE80" strokeWidth={2} /> :
           <Bar dataKey="ingresos" fill="#4ADE80" />

@@ -15,12 +15,14 @@ interface FacturasWidgetProps {
   facturas: Factura[];
   isEditMode: boolean;
   onRemove: () => void;
+  setIsEscanearFacturaPopupOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const FacturasWidget: React.FC<FacturasWidgetProps> = ({
   facturas,
   isEditMode,
   onRemove,
+  setIsEscanearFacturaPopupOpen, // La recibimos aquí
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const { theme } = useTheme();
@@ -37,11 +39,6 @@ const FacturasWidget: React.FC<FacturasWidgetProps> = ({
   const handleFilter = () => {
     // Implementar lógica de filtrado
     console.log('Filtrar facturas');
-  };
-
-  const handleCreate = () => {
-    // Implementar lógica para crear nueva factura
-    console.log('Crear nueva factura');
   };
 
   return (
@@ -106,7 +103,8 @@ const FacturasWidget: React.FC<FacturasWidgetProps> = ({
         <Button variant="filter" onClick={handleFilter}>
           <Filter className="w-4 h-4" />
         </Button>
-        <Button variant="create" onClick={handleCreate}>
+        <Button variant="create" onClick={() => setIsEscanearFacturaPopupOpen?.(true)}>
+        {/* Usamos setIsEscanearFacturaPopupOpen aquí */}
           <Plus className="w-4 h-4 mr-1" />
           Crear
         </Button>
@@ -143,23 +141,6 @@ const FacturasWidget: React.FC<FacturasWidgetProps> = ({
       >
         {facturas.length} facturas en total
       </div>
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: ${theme === 'dark' ? '#2D3748' : '#F7FAFC'};
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: ${theme === 'dark' ? '#4A5568' : '#CBD5E0'};
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: ${theme === 'dark' ? '#718096' : '#A0AEC0'};
-        }
-      `}</style>
     </div>
   );
 };

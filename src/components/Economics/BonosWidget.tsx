@@ -15,12 +15,14 @@ interface BonosWidgetProps {
   bonos: Bono[];
   isEditMode: boolean;
   onRemove: () => void;
+  setIsBonoPopupOpen: React.Dispatch<React.SetStateAction<boolean>>; // Agregamos esta prop
 }
 
 const BonosWidget: React.FC<BonosWidgetProps> = ({
   bonos,
   isEditMode,
   onRemove,
+  setIsBonoPopupOpen, // La recibimos aquí
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const { theme } = useTheme();
@@ -36,11 +38,6 @@ const BonosWidget: React.FC<BonosWidgetProps> = ({
   const handleFilter = () => {
     // Implementar lógica de filtrado
     console.log('Filtrar bonos');
-  };
-
-  const handleCreate = () => {
-    // Implementar lógica para crear nuevo bono
-    console.log('Crear nuevo bono');
   };
 
   return (
@@ -105,7 +102,8 @@ const BonosWidget: React.FC<BonosWidgetProps> = ({
         <Button variant="filter" onClick={handleFilter}>
           <Filter className="w-4 h-4" />
         </Button>
-        <Button variant="create" onClick={handleCreate}>
+        <Button variant="create" onClick={() => setIsBonoPopupOpen(true)}>
+          {/* Usamos setIsBonoPopupOpen aquí */}
           <Plus className="w-4 h-4 mr-1" />
           Crear
         </Button>
@@ -142,23 +140,6 @@ const BonosWidget: React.FC<BonosWidgetProps> = ({
       >
         {bonos.length} bonos en total
       </div>
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: ${theme === 'dark' ? '#2D3748' : '#F7FAFC'};
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: ${theme === 'dark' ? '#4A5568' : '#CBD5E0'};
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: ${theme === 'dark' ? '#718096' : '#A0AEC0'};
-        }
-      `}</style>
     </div>
   );
 };

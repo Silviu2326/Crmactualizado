@@ -1,3 +1,4 @@
+// GastoWidget.tsx
 import React, { useState } from 'react';
 import { DollarSign, TrendingDown, Search, Filter, Plus } from 'lucide-react';
 import Table from '../Common/Table';
@@ -8,16 +9,18 @@ interface GastoWidgetProps {
   title: string;
   isEditMode: boolean;
   onRemove: () => void;
+  onAddGasto: () => void; // Nueva prop para abrir el popup
 }
 
 const GastoWidget: React.FC<GastoWidgetProps> = ({
   title,
   isEditMode,
   onRemove,
+  onAddGasto, // Recibir la función desde el padre
 }) => {
+  const { theme = 'light' } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const { theme } = useTheme();
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -27,9 +30,9 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({
     setIsFilterOpen(!isFilterOpen);
   };
 
-  const handleAddGasto = () => {
-    // Implementar lógica para añadir un nuevo gasto
-    console.log('Añadir nuevo gasto');
+  const handleGastoSubmit = (formData: any) => {
+    console.log('Nuevo gasto:', formData);
+    // Aquí puedes añadir lógica adicional si es necesario
   };
 
   // Datos de ejemplo para la tabla
@@ -45,7 +48,7 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({
   ];
 
   return (
-    <div className={`p-4 h-full flex flex-col justify-between ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-red-50 text-gray-800'} rounded-lg`}>
+    <div className={`p-4 h-full flex flex-col justify-between ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-red-50 text-gray-800'} rounded-lg relative`}>
       {isEditMode && (
         <button
           onClick={onRemove}
@@ -78,14 +81,13 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({
         <Button variant="filter" onClick={toggleFilter}>
           <Filter className="w-4 h-4" />
         </Button>
-        <Button variant="create" onClick={handleAddGasto}>
+        <Button variant="create" onClick={onAddGasto}> {/* Llamar a la función pasada desde el padre */}
           <Plus className="w-4 h-4 mr-1" />
           Añadir
         </Button>
       </div>
       {isFilterOpen && (
         <div className={`mb-4 p-4 ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-md shadow-sm`}>
-          {/* Aquí puedes añadir opciones de filtro */}
           <p>Opciones de filtro (por implementar)</p>
         </div>
       )}
@@ -102,23 +104,6 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({
           variant={theme === 'dark' ? 'dark' : 'white'}
         />
       </div>
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: ${theme === 'dark' ? '#2D3748' : '#F7FAFC'};
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: ${theme === 'dark' ? '#4A5568' : '#CBD5E0'};
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: ${theme === 'dark' ? '#718096' : '#A0AEC0'};
-        }
-      `}</style>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Book, Send, PenTool, FileText, Search, ChevronDown, TrendingUp, TrendingDown } from 'lucide-react';
 import Table from '../components/Common/Table';
 import IncomeChart from '../components/Economics/IncomeChart';
@@ -11,16 +11,33 @@ import GenerateStoryModal from '../components/modals/GenerateStoryModal';
 import GeneratePostModal from '../components/modals/GeneratePostModal';
 import CreateGroupClassModal from '../components/modals/CreateGroupClassModal';
 
+const API_URL = 'http://localhost:5005';
+
 const DashboardPage: React.FC = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [classSearchTerm, setClassSearchTerm] = useState('');
-  const [viewType, setViewType] = useState<'semanal' | 'mensual' | 'anual'>('mensual');
+  const [viewType, setViewType] = useState<'weekly' | 'monthly' | 'annual'>('monthly');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isGenerateStoryModalOpen, setIsGenerateStoryModalOpen] = useState(false);
   const [isGeneratePostModalOpen, setIsGeneratePostModalOpen] = useState(false);
   const [isCreateGroupClassModalOpen, setIsCreateGroupClassModalOpen] = useState(false);
 
+  useEffect(() => {
+    // Fetch data from APIs using API_URL
+    fetch(`${API_URL}/api/ingresos`).then(response => response.json()).then(data => {
+      console.log("Ingresos:", data);
+    });
+    fetch(`${API_URL}/api/gastos`).then(response => response.json()).then(data => {
+      console.log("Gastos:", data);
+    });
+    fetch(`${API_URL}/api/clientes`).then(response => response.json()).then(data => {
+      console.log("Clientes:", data);
+    });
+    fetch(`${API_URL}/api/clasesGrupales`).then(response => response.json()).then(data => {
+      console.log("Clases Grupales:", data);
+    });
+  }, []);
   const clientData = [
     { Nombre: 'Juan Pérez', Email: 'juan@example.com', 'Última Clase': '2023-05-15', Estado: 'Activo' },
     { Nombre: 'María García', Email: 'maria@example.com', 'Última Clase': '2023-05-16', Estado: 'Inactivo' },
@@ -36,13 +53,13 @@ const DashboardPage: React.FC = () => {
   const handlePrevious = () => {
     const newDate = new Date(currentDate);
     switch (viewType) {
-      case 'semanal':
+      case 'weekly':
         newDate.setDate(newDate.getDate() - 7);
         break;
-      case 'mensual':
+      case 'monthly':
         newDate.setMonth(newDate.getMonth() - 1);
         break;
-      case 'anual':
+      case 'annual':
         newDate.setFullYear(newDate.getFullYear() - 1);
         break;
     }
@@ -52,13 +69,13 @@ const DashboardPage: React.FC = () => {
   const handleNext = () => {
     const newDate = new Date(currentDate);
     switch (viewType) {
-      case 'semanal':
+      case 'weekly':
         newDate.setDate(newDate.getDate() + 7);
         break;
-      case 'mensual':
+      case 'monthly':
         newDate.setMonth(newDate.getMonth() + 1);
         break;
-      case 'anual':
+      case 'annual':
         newDate.setFullYear(newDate.getFullYear() + 1);
         break;
     }
@@ -68,13 +85,13 @@ const DashboardPage: React.FC = () => {
   const formatDateRange = () => {
     const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
     switch (viewType) {
-      case 'semanal':
+      case 'weekly':
         const endOfWeek = new Date(currentDate);
         endOfWeek.setDate(endOfWeek.getDate() + 6);
         return `${currentDate.toLocaleDateString('es-ES', options)} - ${endOfWeek.toLocaleDateString('es-ES', options)}`;
-      case 'mensual':
+      case 'monthly':
         return currentDate.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
-      case 'anual':
+      case 'annual':
         return currentDate.getFullYear().toString();
     }
   };
@@ -144,7 +161,7 @@ const DashboardPage: React.FC = () => {
                   { value: 'anual', label: 'Anual' },
                 ]}
                 value={viewType}
-                onChange={(value) => setViewType(value as 'semanal' | 'mensual' | 'anual')}
+                onChange={(value) => setViewType(value as 'weekly' | 'monthly' | 'annual')}
               />
               <button onClick={handlePrevious} className={`px-2 py-1 rounded ${theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}`}>
                 Anterior
@@ -171,7 +188,7 @@ const DashboardPage: React.FC = () => {
                   { value: 'anual', label: 'Anual' },
                 ]}
                 value={viewType}
-                onChange={(value) => setViewType(value as 'semanal' | 'mensual' | 'anual')}
+                onChange={(value) => setViewType(value as 'weekly' | 'monthly' | 'annual')}
               />
               <button onClick={handlePrevious} className={`px-2 py-1 rounded ${theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}`}>
                 Anterior

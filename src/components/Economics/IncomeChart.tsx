@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface IncomeData {
@@ -6,9 +6,12 @@ interface IncomeData {
   income: number;
 }
 
-const IncomeChart: React.FC = () => {
-  const [viewType, setViewType] = useState<'monthly' | 'annual' | 'weekly'>('monthly');
+interface IncomeChartProps {
+  viewType: 'monthly' | 'annual' | 'weekly';
+  currentDate: Date;
+}
 
+const IncomeChart: React.FC<IncomeChartProps> = ({ viewType, currentDate }) => {
   const monthlyData: IncomeData[] = [
     { label: 'Ene', income: 4000 },
     { label: 'Feb', income: 3000 },
@@ -56,22 +59,14 @@ const IncomeChart: React.FC = () => {
   const getYAxisDomain = () => {
     const data = getData();
     const maxIncome = Math.max(...data.map(item => item.income));
-    return [0, Math.ceil(maxIncome * 1.1)]; // 10% más que el máximo para dar espacio
+    return [0, Math.ceil(maxIncome * 1.1)]; // 10% more than max to give space
   };
 
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Gráfico de Ingresos</h3>
-        <select
-          value={viewType}
-          onChange={(e) => setViewType(e.target.value as 'monthly' | 'annual' | 'weekly')}
-          className="p-2 border rounded-md bg-white text-gray-800"
-        >
-          <option value="monthly">Mensual</option>
-          <option value="annual">Anual</option>
-          <option value="weekly">Semanal</option>
-        </select>
+        <span>{currentDate ? currentDate.toLocaleDateString('es-ES') : 'Fecha no disponible'}</span>
       </div>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart

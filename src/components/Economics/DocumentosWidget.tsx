@@ -14,12 +14,14 @@ interface DocumentosWidgetProps {
   documentos: Documento[];
   isEditMode: boolean;
   onRemove: () => void;
+  setIsDocumentoPopupOpen: React.Dispatch<React.SetStateAction<boolean>>; // Agregamos esta prop
 }
 
 const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
   documentos,
   isEditMode,
   onRemove,
+  setIsDocumentoPopupOpen, // La recibimos aquí
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -31,11 +33,6 @@ const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
 
   const toggleFilter = () => {
     setIsFilterOpen(!isFilterOpen);
-  };
-
-  const handleAddDocumento = () => {
-    // Implementar lógica para añadir un nuevo documento
-    console.log('Añadir nuevo documento');
   };
 
   return (
@@ -100,7 +97,8 @@ const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
         <Button variant="filter" onClick={toggleFilter}>
           <Filter className="w-4 h-4" />
         </Button>
-        <Button variant="create" onClick={handleAddDocumento}>
+        <Button variant="create" onClick={() => setIsDocumentoPopupOpen(true)}>
+          {/* Usamos setIsDocumentoPopupOpen directamente */}
           <Plus className="w-4 h-4 mr-1" />
           Añadir
         </Button>
@@ -134,23 +132,6 @@ const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
       >
         {documentos.length} documentos
       </div>
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: ${theme === 'dark' ? '#2D3748' : '#F7FAFC'};
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: ${theme === 'dark' ? '#4A5568' : '#CBD5E0'};
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: ${theme === 'dark' ? '#718096' : '#A0AEC0'};
-        }
-      `}</style>
     </div>
   );
 };

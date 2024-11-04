@@ -1,22 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'; 
 import FacturasWidget from '../FacturasWidget';
 import Button from '../../Common/Button';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { FileText, Plus, Search, Filter, Download } from 'lucide-react';
+import FacturaPopup from '../../modals/FacturaPopup';
+import EscanearFacturaPopup from '../../modals/EscanearFacturaPopup';
 
-const FacturasPage: React.FC = () => {
+interface FacturasPageProps {
+  isFacturaPopupOpen: boolean;
+  setIsFacturaPopupOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  handleFacturaSubmit: (formData: any) => void;
+  isEscanearFacturaPopupOpen: boolean;
+  setIsEscanearFacturaPopupOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  handleEscanearFacturaSubmit: (formData: any) => void;
+}
+
+const FacturasPage: React.FC<FacturasPageProps> = ({
+  isFacturaPopupOpen,
+  setIsFacturaPopupOpen,
+  handleFacturaSubmit,
+  isEscanearFacturaPopupOpen,
+  setIsEscanearFacturaPopupOpen,
+  handleEscanearFacturaSubmit,
+}) => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
-
-  const handleEscanearFactura = () => {
-    console.log('Escanear factura');
-    // Implementar lógica para escanear factura
-  };
-
-  const handleCrearFactura = () => {
-    console.log('Crear factura');
-    // Implementar lógica para crear factura
-  };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -47,11 +55,11 @@ const FacturasPage: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold">Facturas</h2>
         <div className="flex space-x-2">
-          <Button variant="create" onClick={handleEscanearFactura}>
+          <Button variant="create" onClick={() => setIsEscanearFacturaPopupOpen(true)}>
             <FileText className="w-4 h-4 mr-2" />
             Escanear Factura
           </Button>
-          <Button variant="create" onClick={handleCrearFactura}>
+          <Button variant="create" onClick={() => setIsFacturaPopupOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Crear Factura
           </Button>
@@ -107,14 +115,28 @@ const FacturasPage: React.FC = () => {
       {/* Widget de Facturas */}
       <FacturasWidget 
         facturas={[
-          { id: 1, numero: "F-001", monto: 1500, estado: "Pagada" },
-          { id: 2, numero: "F-002", monto: 2000, estado: "Pendiente" },
-          { id: 3, numero: "F-003", monto: 1800, estado: "Pagada" },
-          { id: 4, numero: "F-004", monto: 2200, estado: "Pendiente" },
-          { id: 5, numero: "F-005", monto: 1600, estado: "Pagada" },
+            { id: 1, numero: "F-001", monto: 1500, estado: "Pagada" },
+            { id: 2, numero: "F-002", monto: 2000, estado: "Pendiente" },
+            { id: 3, numero: "F-003", monto: 1800, estado: "Pagada" },
+            { id: 4, numero: "F-004", monto: 2200, estado: "Pendiente" },
+            { id: 5, numero: "F-005", monto: 1600, estado: "Pagada" },
         ]}
         isEditMode={false}
         onRemove={() => {}}
+        setIsEscanearFacturaPopupOpen={setIsEscanearFacturaPopupOpen} // Agregamos la prop faltante
+      />
+
+      {/* Popups */}
+      <FacturaPopup
+        isOpen={isFacturaPopupOpen}
+        onClose={() => setIsFacturaPopupOpen(false)}
+        onSubmit={handleFacturaSubmit}
+      />
+
+      <EscanearFacturaPopup
+        isOpen={isEscanearFacturaPopupOpen}
+        onClose={() => setIsEscanearFacturaPopupOpen(false)}
+        onSubmit={handleEscanearFacturaSubmit}
       />
     </div>
   );

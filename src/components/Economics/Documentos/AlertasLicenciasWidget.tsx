@@ -10,7 +10,11 @@ interface Alerta {
   fechaExpiracion: string;
 }
 
-const AlertasLicenciasWidget: React.FC = () => {
+interface AlertasLicenciasWidgetProps {
+  onAddDocumento: () => void;
+}
+
+const AlertasLicenciasWidget: React.FC<AlertasLicenciasWidgetProps> = ({ onAddDocumento }) => {
   const { theme } = useTheme();
 
   const alertas: Alerta[] = [

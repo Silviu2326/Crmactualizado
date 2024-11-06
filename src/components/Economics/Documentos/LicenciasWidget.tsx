@@ -12,7 +12,11 @@ interface Licencia {
   estado: 'Activa' | 'Expirada' | 'Por renovar';
 }
 
-const LicenciasWidget: React.FC = () => {
+interface LicenciasWidgetProps {
+  onAddDocumento: () => void;
+}
+
+const LicenciasWidget: React.FC<LicenciasWidgetProps> = ({ onAddDocumento }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const { theme } = useTheme();
 

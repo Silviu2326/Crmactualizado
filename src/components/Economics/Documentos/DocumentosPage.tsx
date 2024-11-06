@@ -1,60 +1,117 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import LicenciasWidget from './LicenciasWidget';
 import ContratosWidget from './ContratosWidget';
 import OtrosDocumentosWidget from './OtrosDocumentosWidget';
 import AlertasLicenciasWidget from './AlertasLicenciasWidget';
+import DocumentoPopup from '../../modals/DocumentoPopup';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { FileText, FileSignature, File, AlertTriangle, BarChart2 } from 'lucide-react';
+import { FileText, FileSignature, File } from 'lucide-react';
 
 const DocumentosPage: React.FC = () => {
   const { theme } = useTheme();
 
-  // Datos de ejemplo para las estadísticas
-  const stats = {
-    licencias: 15,
-    contratos: 23,
-    otrosDocumentos: 42
+  // Estado para controlar el popup
+  const [isDocumentoPopupOpen, setIsDocumentoPopupOpen] = useState(false);
+  const [selectedDocumentoType, setSelectedDocumentoType] = useState<
+    'licencia' | 'contrato' | 'otro' | null
+  >(null);
+
+  // Funciones para manejar el popup
+  const openDocumentoPopup = (tipo: 'licencia' | 'contrato' | 'otro') => {
+    setSelectedDocumentoType(tipo);
+    setIsDocumentoPopupOpen(true);
   };
 
-  const pageVariants = {
-    initial: { opacity: 0, y: 20 },
-    in: { opacity: 1, y: 0 },
-    out: { opacity: 0, y: -20 }
+  const closeDocumentoPopup = () => {
+    setIsDocumentoPopupOpen(false);
+    setSelectedDocumentoType(null);
   };
 
-  const pageTransition = {
-    type: 'tween',
-    ease: 'anticipate',
-    duration: 0.5
+  const handleDocumentoSubmit = (formData: any) => {
+    // Manejar los datos del formulario según el tipo de documento
+    switch (selectedDocumentoType) {
+      case 'licencia':
+        // Procesar datos para licencia
+        console.log('Procesando licencia:', formData);
+        break;
+      case 'contrato':
+        // Procesar datos para contrato
+        console.log('Procesando contrato:', formData);
+        break;
+      case 'otro':
+        // Procesar datos para otro tipo de documento
+        console.log('Procesando otro documento:', formData);
+        break;
+      default:
+        break;
+    }
+
+    // Cerrar el popup después de procesar
+    closeDocumentoPopup();
   };
 
+  // Definición de variantes para animaciones
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
         delayChildren: 0.3,
-        staggerChildren: 0.2
-      }
-    }
+        staggerChildren: 0.2,
+      },
+    },
   };
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
     visible: {
       y: 0,
-      opacity: 1
-    }
+      opacity: 1,
+    },
   };
 
-  const StatCard = ({ title, value, icon: Icon }) => (
-    <div className={`p-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md flex items-center space-x-4`}>
-      <div className={`p-3 rounded-full ${theme === 'dark' ? 'bg-blue-900' : 'bg-blue-100'}`}>
-        <Icon className={`w-6 h-6 ${theme === 'dark' ? 'text-blue-300' : 'text-blue-600'}`} />
+  // Datos de ejemplo para las estadísticas
+  const stats = {
+    licencias: 15,
+    contratos: 23,
+    otrosDocumentos: 42,
+  };
+
+  // Componente interno para las tarjetas de estadísticas
+  const StatCard = ({
+    title,
+    value,
+    icon: Icon,
+  }: {
+    title: string;
+    value: string;
+    icon: React.ElementType;
+  }) => (
+    <div
+      className={`p-4 ${
+        theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+      } rounded-lg shadow-md flex items-center space-x-4`}
+    >
+      <div
+        className={`p-3 rounded-full ${
+          theme === 'dark' ? 'bg-blue-900' : 'bg-blue-100'
+        }`}
+      >
+        <Icon
+          className={`w-6 h-6 ${
+            theme === 'dark' ? 'text-blue-300' : 'text-blue-600'
+          }`}
+        />
       </div>
       <div>
-        <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{title}</p>
+        <p
+          className={`text-sm ${
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+          }`}
+        >
+          {title}
+        </p>
         <p className="text-2xl font-bold">{value}</p>
       </div>
     </div>
@@ -62,12 +119,20 @@ const DocumentosPage: React.FC = () => {
 
   return (
     <motion.div
-      initial="initial"
-      animate="in"
-      exit="out"
-      variants={pageVariants}
-      transition={pageTransition}
-      className={`p-6 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}
+      initial="hidden"
+      animate="visible"
+      variants={{
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0 },
+      }}
+      transition={{
+        type: 'tween',
+        ease: 'anticipate',
+        duration: 0.5,
+      }}
+      className={`p-6 ${
+        theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'
+      }`}
     >
       <h2 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-blue-500 to-purple-600 text-transparent bg-clip-text">
         Gestión de Documentos
@@ -81,16 +146,29 @@ const DocumentosPage: React.FC = () => {
         className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"
       >
         <motion.div variants={itemVariants}>
-          <StatCard title="Total Licencias" value={stats.licencias} icon={FileText} />
+          <StatCard
+            title="Total Licencias"
+            value={stats.licencias.toString()}
+            icon={FileText}
+          />
         </motion.div>
         <motion.div variants={itemVariants}>
-          <StatCard title="Total Contratos" value={stats.contratos} icon={FileSignature} />
+          <StatCard
+            title="Total Contratos"
+            value={stats.contratos.toString()}
+            icon={FileSignature}
+          />
         </motion.div>
         <motion.div variants={itemVariants}>
-          <StatCard title="Otros Documentos" value={stats.otrosDocumentos} icon={File} />
+          <StatCard
+            title="Otros Documentos"
+            value={stats.otrosDocumentos.toString()}
+            icon={File}
+          />
         </motion.div>
       </motion.div>
 
+      {/* Widgets */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -99,53 +177,52 @@ const DocumentosPage: React.FC = () => {
       >
         <motion.div
           variants={itemVariants}
-          className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1`}
+          className={`p-6 ${
+            theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+          } rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1`}
         >
-          <div className="flex items-center mb-4">
-            <div className={`p-3 rounded-full ${theme === 'dark' ? 'bg-blue-900' : 'bg-blue-100'} mr-4`}>
-              <FileText className={`w-6 h-6 ${theme === 'dark' ? 'text-blue-300' : 'text-blue-600'}`} />
-            </div>
-            <h3 className="text-2xl font-semibold bg-gradient-to-r from-blue-400 to-blue-600 text-transparent bg-clip-text">Licencias</h3>
-          </div>
-          <LicenciasWidget />
+          {/* Licencias Widget */}
+          <LicenciasWidget onAddDocumento={() => openDocumentoPopup('licencia')} />
         </motion.div>
         <motion.div
           variants={itemVariants}
-          className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1`}
+          className={`p-6 ${
+            theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+          } rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1`}
         >
-          <div className="flex items-center mb-4">
-            <div className={`p-3 rounded-full ${theme === 'dark' ? 'bg-green-900' : 'bg-green-100'} mr-4`}>
-              <FileSignature className={`w-6 h-6 ${theme === 'dark' ? 'text-green-300' : 'text-green-600'}`} />
-            </div>
-            <h3 className="text-2xl font-semibold bg-gradient-to-r from-green-400 to-green-600 text-transparent bg-clip-text">Contratos</h3>
-          </div>
-          <ContratosWidget />
+          {/* Contratos Widget */}
+          <ContratosWidget onAddDocumento={() => openDocumentoPopup('contrato')} />
         </motion.div>
         <motion.div
           variants={itemVariants}
-          className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1`}
+          className={`p-6 ${
+            theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+          } rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1`}
         >
-          <div className="flex items-center mb-4">
-            <div className={`p-3 rounded-full ${theme === 'dark' ? 'bg-purple-900' : 'bg-purple-100'} mr-4`}>
-              <File className={`w-6 h-6 ${theme === 'dark' ? 'text-purple-300' : 'text-purple-600'}`} />
-            </div>
-            <h3 className="text-2xl font-semibold bg-gradient-to-r from-purple-400 to-purple-600 text-transparent bg-clip-text">Otros Documentos</h3>
-          </div>
-          <OtrosDocumentosWidget />
+          {/* Otros Documentos Widget */}
+          <OtrosDocumentosWidget onAddDocumento={() => openDocumentoPopup('otro')} />
         </motion.div>
         <motion.div
           variants={itemVariants}
-          className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1`}
+          className={`p-6 ${
+            theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+          } rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1`}
         >
-          <div className="flex items-center mb-4">
-            <div className={`p-3 rounded-full ${theme === 'dark' ? 'bg-yellow-900' : 'bg-yellow-100'} mr-4`}>
-              <AlertTriangle className={`w-6 h-6 ${theme === 'dark' ? 'text-yellow-300' : 'text-yellow-600'}`} />
-            </div>
-            <h3 className="text-2xl font-semibold bg-gradient-to-r from-yellow-400 to-yellow-600 text-transparent bg-clip-text">Alertas de Licencias</h3>
-          </div>
-          <AlertasLicenciasWidget />
+          {/* Alertas Licencias Widget */}
+          <AlertasLicenciasWidget onAddDocumento={() => openDocumentoPopup('otro')} />
         </motion.div>
+        {/* Agrega aquí otros widgets según tus necesidades */}
       </motion.div>
+
+      {/* Renderizar DocumentoPopup */}
+      {isDocumentoPopupOpen && selectedDocumentoType && (
+        <DocumentoPopup
+          isOpen={isDocumentoPopupOpen}
+          onClose={closeDocumentoPopup}
+          onSubmit={handleDocumentoSubmit}
+          tipoDocumento={selectedDocumentoType}
+        />
+      )}
     </motion.div>
   );
 };

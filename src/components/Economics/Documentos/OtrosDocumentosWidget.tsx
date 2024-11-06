@@ -12,7 +12,11 @@ interface Documento {
   fechaCreacion: string;
 }
 
-const OtrosDocumentosWidget: React.FC = () => {
+interface OtrosDocumentosWidgetProps {
+  onAddDocumento: () => void;
+}
+
+const OtrosDocumentosWidget: React.FC<OtrosDocumentosWidgetProps> = ({ onAddDocumento }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const { theme } = useTheme();
 

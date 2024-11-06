@@ -13,7 +13,11 @@ interface Contrato {
   estado: 'Activo' | 'Finalizado' | 'En revisión';
 }
 
-const ContratosWidget: React.FC = () => {
+interface ContratosWidgetProps {
+  onAddDocumento: () => void;
+}
+
+const ContratosWidget: React.FC<ContratosWidgetProps> = ({ onAddDocumento }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const { theme } = useTheme();
 

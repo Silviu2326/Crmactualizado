@@ -4,10 +4,16 @@ import Button from '../../Common/Button';
 import { Download, FileText, Calendar, Search, Filter } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { motion } from 'framer-motion';
+import ReportePopup from '../../modals/ReportePopup';
+import ReporteActualPopup from '../../modals/ReporteActualPopup';
 
 const ReportesPage: React.FC = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Estados locales para los popups
+  const [isReportePopupOpen, setIsReportePopupOpen] = useState(false);
+  const [isReporteActualPopupOpen, setIsReporteActualPopupOpen] = useState(false);
 
   const reportesData = [
     { id: 1, titulo: 'Reporte Mensual Agosto', fecha: '2024-08-01', tipo: 'Mensual' },
@@ -17,12 +23,24 @@ const ReportesPage: React.FC = () => {
     { id: 5, titulo: 'Reporte Anual 2023', fecha: '2024-01-01', tipo: 'Anual' },
   ];
 
+  // Funciones para abrir los popups
   const handleGenerateRecurringReport = () => {
-    console.log('Generando reporte recurrente');
+    setIsReportePopupOpen(true);
   };
 
   const handleGenerateCurrentReport = () => {
-    console.log('Generando reporte actual');
+    setIsReporteActualPopupOpen(true);
+  };
+  
+  // Funciones para manejar el envío y cierre de los popups
+  const handleReporteSubmit = (formData: any) => {
+    console.log('Nuevo reporte recurrente:', formData);
+    setIsReportePopupOpen(false);
+  };
+
+  const handleReporteActualSubmit = (formData: any) => {
+    console.log('Nuevo reporte actual:', formData);
+    setIsReporteActualPopupOpen(false);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,7 +49,7 @@ const ReportesPage: React.FC = () => {
 
   const handleFilter = () => {
     console.log('Filtrar reportes');
-  };
+  }; 
 
   return (
     <motion.div
@@ -112,13 +130,26 @@ const ReportesPage: React.FC = () => {
 
       <div className="mt-6 flex justify-between items-center">
         <div className="text-sm">
-          Mostrando 5 de 5 reportes
+          Mostrando {reportesData.length} de {reportesData.length} reportes
         </div>
         <div className="space-x-2">
           <Button variant="normal" disabled>Anterior</Button>
           <Button variant="normal" disabled>Siguiente</Button>
         </div>
       </div>
+
+      {/* Popups para generar reportes */}
+      <ReportePopup
+        isOpen={isReportePopupOpen}
+        onClose={() => setIsReportePopupOpen(false)}
+        onSubmit={handleReporteSubmit}
+      />
+
+      <ReporteActualPopup
+        isOpen={isReporteActualPopupOpen}
+        onClose={() => setIsReporteActualPopupOpen(false)}
+        onSubmit={handleReporteActualSubmit}
+      />
     </motion.div>
   );
 };

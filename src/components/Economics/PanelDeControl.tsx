@@ -59,6 +59,7 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
   const [isReporteActualPopupOpen, setIsReporteActualPopupOpen] = useState(false);
   const [isClientePopupOpen, setIsClientePopupOpen] = useState(false);
   const [isServicioPopupOpen, setIsServicioPopupOpen] = useState(false);
+  const [selectedDocumentoType, setSelectedDocumentoType] = useState<'licencia' | 'contrato' | 'otro' | null>(null);
 
   const toggleEditMode = () => {
     setIsEditMode(!isEditMode);
@@ -72,6 +73,39 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
   const handleLayoutChange = (newLayout: any) => {
     setLayout(newLayout);
     console.log('Nuevo layout:', newLayout);
+  };
+
+  const openDocumentoPopup = (tipo: 'licencia' | 'contrato' | 'otro') => {
+    setSelectedDocumentoType(tipo);
+    setIsDocumentoPopupOpen(true);
+  };
+
+  const closeDocumentoPopup = () => {
+    setIsDocumentoPopupOpen(false);
+    setSelectedDocumentoType(null);
+  };
+
+  const handleDocumentoSubmit = (formData: any) => {
+    // Manejar los datos del formulario según el tipo de documento
+    switch (selectedDocumentoType) {
+      case 'licencia':
+        // Procesar datos para licencia
+        console.log('Procesando licencia desde PanelDeControl:', formData);
+        break;
+      case 'contrato':
+        // Procesar datos para contrato
+        console.log('Procesando contrato desde PanelDeControl:', formData);
+        break;
+      case 'otro':
+        // Procesar datos para otro tipo de documento
+        console.log('Procesando otro documento desde PanelDeControl:', formData);
+        break;
+      default:
+        break;
+    }
+
+    // Cerrar el popup después de procesar
+    closeDocumentoPopup();
   };
 
   function generateInitialLayout() {
@@ -110,10 +144,6 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
 
   const handleGastoSubmit = (formData: any) => {
     console.log('Nuevo gasto:', formData);
-  };
-
-  const handleDocumentoSubmit = (formData: any) => {
-    console.log('Nuevo documento:', formData);
   };
 
   const handleBonoSubmit = (formData: any) => {
@@ -245,7 +275,8 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
             ]}
             isEditMode={isEditMode}
             onRemove={() => {}}
-            setIsDocumentoPopupOpen={setIsDocumentoPopupOpen}
+            onAddDocumento={(tipo: 'licencia' | 'contrato' | 'otro') =>
+             openDocumentoPopup(tipo)}
           />
         </div>
         <div key="facturasWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
@@ -294,10 +325,17 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
       <GastoPopup isOpen={isGastoPopupOpen} onClose={() => setIsGastoPopupOpen(false)} onSubmit={() => {}} />
       <FacturaPopup isOpen={isFacturaPopupOpen} onClose={() => setIsFacturaPopupOpen(false)} onSubmit={() => {}} />
       <EscanearFacturaPopup isOpen={isEscanearFacturaPopupOpen} onClose={() => setIsEscanearFacturaPopupOpen(false)} onSubmit={() => {}} />
-      <DocumentoPopup isOpen={isDocumentoPopupOpen} onClose={() => setIsDocumentoPopupOpen(false)} onSubmit={() => {}} />
       <BonoPopup isOpen={isBonoPopupOpen} onClose={() => setIsBonoPopupOpen(false)} onSubmit={() => {}} />
       <ReportePopup isOpen={isReportePopupOpen} onClose={() => setIsReportePopupOpen(false)} onSubmit={() => {}} />
       <ReporteActualPopup isOpen={isReporteActualPopupOpen} onClose={() => setIsReporteActualPopupOpen(false)} onSubmit={() => {}} />
+      {isDocumentoPopupOpen && selectedDocumentoType && (
+        <DocumentoPopup
+          isOpen={isDocumentoPopupOpen}
+          onClose={closeDocumentoPopup}
+          onSubmit={handleDocumentoSubmit}
+          tipoDocumento={selectedDocumentoType}
+        />
+      )}
     </div>
   );
 };

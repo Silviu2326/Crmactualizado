@@ -14,14 +14,14 @@ interface DocumentosWidgetProps {
   documentos: Documento[];
   isEditMode: boolean;
   onRemove: () => void;
-  setIsDocumentoPopupOpen: React.Dispatch<React.SetStateAction<boolean>>; // Agregamos esta prop
+  onAddDocumento: (tipo: 'licencia' | 'contrato' | 'otro') => void;
 }
 
 const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
   documentos,
   isEditMode,
   onRemove,
-  setIsDocumentoPopupOpen, // La recibimos aquí
+  onAddDocumento,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -97,8 +97,7 @@ const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
         <Button variant="filter" onClick={toggleFilter}>
           <Filter className="w-4 h-4" />
         </Button>
-        <Button variant="create" onClick={() => setIsDocumentoPopupOpen(true)}>
-          {/* Usamos setIsDocumentoPopupOpen directamente */}
+        <Button variant="create" onClick={() => onAddDocumento('otro')}>
           <Plus className="w-4 h-4 mr-1" />
           Añadir
         </Button>

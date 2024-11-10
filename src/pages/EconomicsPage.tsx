@@ -16,7 +16,7 @@ const EconomicsPage: React.FC = () => {
   const [editMode, setEditMode] = useState(false);
   const [isFacturaPopupOpen, setIsFacturaPopupOpen] = useState(false);
   const [isEscanearFacturaPopupOpen, setIsEscanearFacturaPopupOpen] = useState(false);
-
+ 
   const sections = [
     { id: 'panel', label: 'Panel de Control', icon: TrendingUp },
     { id: 'cashflow', label: 'Cashflow', icon: DollarSign, component: CashflowPage },
@@ -37,6 +37,8 @@ const EconomicsPage: React.FC = () => {
     console.log('Archivos para escanear:', formData);
     setIsEscanearFacturaPopupOpen(false);
   };
+
+    // Funciones para manejar los popups
 
   const renderActiveComponent = () => {
     switch (activeSection) {
@@ -71,7 +73,7 @@ const EconomicsPage: React.FC = () => {
           />
         );
       case 'reportes':
-        return <ReportesPage />;
+        return <ReportesPage />
       default:
         return null;
     }

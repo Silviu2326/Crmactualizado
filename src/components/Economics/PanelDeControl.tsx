@@ -59,6 +59,23 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
   const [isReporteActualPopupOpen, setIsReporteActualPopupOpen] = useState(false);
   const [isClientePopupOpen, setIsClientePopupOpen] = useState(false);
   const [isServicioPopupOpen, setIsServicioPopupOpen] = useState(false);
+  const [balances, setBalances] = useState({
+    bank: 1250.75,
+    stripe: 850.50,
+    cash: 325.25
+  });
+  const handleRemove = () => {
+    // In a real app, you might want to show a confirmation dialog
+    console.log('Widget removed');
+  };
+
+  const handleUpdate = (accountType: string, newValue: number) => {
+    setBalances(prev => ({
+      ...prev,
+      [accountType]: newValue
+    }));
+  };
+
 
   const toggleEditMode = () => {
     setIsEditMode(!isEditMode);
@@ -74,6 +91,7 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
     console.log('Nuevo layout:', newLayout);
   };
 
+  
   function generateInitialLayout() {
     return [
       { i: 'proyeccionMes', x: 0, y: 0, w: 1, h: 1, minW: 1, minH: 1 },
@@ -141,42 +159,21 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
       <div className="flex justify-between items-center mb-6">
         <h2 className={`text-3xl font-bold ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>Panel de Control</h2>
         <div className="flex space-x-2">
-          <button
-            onClick={isEditMode ? handleSave : toggleEditMode}
-            className={`flex items-center px-4 py-2 rounded-full transition-colors text-sm shadow-md ${
-              isEditMode
-                ? 'bg-blue-500 text-white hover:bg-blue-600'
-                : theme === 'dark'
-                ? 'bg-gray-700 text-gray-200 hover:bg-gray-600'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            {isEditMode ? (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                Guardar
-              </>
-            ) : (
-              <>
-                <Edit className="w-4 h-4 mr-2" />
-                Editar
-              </>
-            )}
-          </button>
         </div>
       </div>
 
       <ResponsiveGridLayout
-        className="layout"
-        layouts={{ lg: layout }}
-        breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-        cols={{ lg: 4, md: 3, sm: 2, xs: 1, xxs: 1 }}
-        rowHeight={150}
-        isDraggable={isEditMode}
-        isResizable={isEditMode}
-        onLayoutChange={handleLayoutChange}
-        containerPadding={[0, 0]}
-      >
+  className="layout"
+  layouts={{ lg: layout }}
+  breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+  cols={{ lg: 4, md: 3, sm: 2, xs: 1, xxs: 1 }}
+  rowHeight={150} // Mantén un tamaño constante
+  isDraggable={isEditMode}
+  isResizable={isEditMode}
+  onLayoutChange={handleLayoutChange}
+  containerPadding={[0, 0]}
+  useCSSTransforms={false} // Desactiva las transformaciones visuales
+>
         <div key="proyeccionMes">
           <SmallWidget title="Proyección del Mes" value="$0.00" icon={TrendingUp} subtitle="Proyección del mes" />
         </div>
@@ -204,7 +201,7 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
 
         <div key="gastoWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
           <GastoWidget
-            title="Gastos Totales"
+            title="Gastos"
             isEditMode={isEditMode}
             onRemove={() => {}}
             onAddGasto={() => setIsGastoPopupOpen(true)} // Pasar función para abrir el popup
@@ -221,11 +218,11 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
           />
         </div>
         <div key="cuentaBancariaWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
-          <CuentaBancariaWidget
-            saldo={50000}
+        <CuentaBancariaWidget
+            balances={balances}
             isEditMode={isEditMode}
-            onUpdate={() => {}}
-            onRemove={() => {}}
+            onUpdate={handleUpdate}
+            onRemove={handleRemove}
           />
         </div>
         <div key="cashflowWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>

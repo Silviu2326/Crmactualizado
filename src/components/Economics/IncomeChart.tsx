@@ -65,7 +65,7 @@ const IncomeChart: React.FC<IncomeChartProps> = ({ viewType, currentDate }) => {
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Gráfico de Ingresos</h3>
+        <h3 className="text-lg font-semibold">Gráfico de Ingreso</h3>
         <span>{currentDate ? currentDate.toLocaleDateString('es-ES') : 'Fecha no disponible'}</span>
       </div>
       <ResponsiveContainer width="100%" height={300}>

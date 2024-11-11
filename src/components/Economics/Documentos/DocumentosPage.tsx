@@ -5,12 +5,11 @@ import ContratosWidget from './ContratosWidget';
 import OtrosDocumentosWidget from './OtrosDocumentosWidget';
 import AlertasLicenciasWidget from './AlertasLicenciasWidget';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { FileText, FileSignature, File, AlertTriangle, BarChart2 } from 'lucide-react';
+import { FileText, FileSignature, File, AlertTriangle } from 'lucide-react';
 
 const DocumentosPage: React.FC = () => {
   const { theme } = useTheme();
 
-  // Datos de ejemplo para las estadísticas
   const stats = {
     licencias: 15,
     contratos: 23,
@@ -42,10 +41,7 @@ const DocumentosPage: React.FC = () => {
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1
-    }
+    visible: { y: 0, opacity: 1 }
   };
 
   const StatCard = ({ title, value, icon: Icon }) => (
@@ -91,59 +87,39 @@ const DocumentosPage: React.FC = () => {
         </motion.div>
       </motion.div>
 
+      {/* AlertasLicenciasWidget con diseño mejorado */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg mb-8`}
+      >
+        <div className="flex items-center mb-4">
+          <div className={`p-3 rounded-full ${theme === 'dark' ? 'bg-yellow-800' : 'bg-yellow-200'} mr-4`}>
+            <AlertTriangle className={`w-6 h-6 ${theme === 'dark' ? 'text-yellow-300' : 'text-yellow-600'}`} />
+          </div>
+          <h3 className="text-2xl font-semibold bg-gradient-to-r from-yellow-400 to-yellow-600 text-transparent bg-clip-text">
+            Alertas de Licencias
+          </h3>
+        </div>
+        <AlertasLicenciasWidget />
+      </motion.div>
+
+      {/* Otros widgets */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
         className="grid grid-cols-1 md:grid-cols-2 gap-8"
       >
-        <motion.div
-          variants={itemVariants}
-          className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1`}
-        >
-          <div className="flex items-center mb-4">
-            <div className={`p-3 rounded-full ${theme === 'dark' ? 'bg-blue-900' : 'bg-blue-100'} mr-4`}>
-              <FileText className={`w-6 h-6 ${theme === 'dark' ? 'text-blue-300' : 'text-blue-600'}`} />
-            </div>
-            <h3 className="text-2xl font-semibold bg-gradient-to-r from-blue-400 to-blue-600 text-transparent bg-clip-text">Licencias</h3>
-          </div>
+        <motion.div variants={itemVariants} className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg`}>
           <LicenciasWidget />
         </motion.div>
-        <motion.div
-          variants={itemVariants}
-          className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1`}
-        >
-          <div className="flex items-center mb-4">
-            <div className={`p-3 rounded-full ${theme === 'dark' ? 'bg-green-900' : 'bg-green-100'} mr-4`}>
-              <FileSignature className={`w-6 h-6 ${theme === 'dark' ? 'text-green-300' : 'text-green-600'}`} />
-            </div>
-            <h3 className="text-2xl font-semibold bg-gradient-to-r from-green-400 to-green-600 text-transparent bg-clip-text">Contratos</h3>
-          </div>
+        <motion.div variants={itemVariants} className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg`}>
           <ContratosWidget />
         </motion.div>
-        <motion.div
-          variants={itemVariants}
-          className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1`}
-        >
-          <div className="flex items-center mb-4">
-            <div className={`p-3 rounded-full ${theme === 'dark' ? 'bg-purple-900' : 'bg-purple-100'} mr-4`}>
-              <File className={`w-6 h-6 ${theme === 'dark' ? 'text-purple-300' : 'text-purple-600'}`} />
-            </div>
-            <h3 className="text-2xl font-semibold bg-gradient-to-r from-purple-400 to-purple-600 text-transparent bg-clip-text">Otros Documentos</h3>
-          </div>
+        <motion.div variants={itemVariants} className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg`}>
           <OtrosDocumentosWidget />
-        </motion.div>
-        <motion.div
-          variants={itemVariants}
-          className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1`}
-        >
-          <div className="flex items-center mb-4">
-            <div className={`p-3 rounded-full ${theme === 'dark' ? 'bg-yellow-900' : 'bg-yellow-100'} mr-4`}>
-              <AlertTriangle className={`w-6 h-6 ${theme === 'dark' ? 'text-yellow-300' : 'text-yellow-600'}`} />
-            </div>
-            <h3 className="text-2xl font-semibold bg-gradient-to-r from-yellow-400 to-yellow-600 text-transparent bg-clip-text">Alertas de Licencias</h3>
-          </div>
-          <AlertasLicenciasWidget />
         </motion.div>
       </motion.div>
     </motion.div>

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { FileText, Search, Filter, Plus } from 'lucide-react';
-import Table from '../Common/Table';
 import Button from '../Common/Button';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -9,23 +8,31 @@ interface Factura {
   numero: string;
   monto: number;
   estado: 'Pagada' | 'Pendiente';
+  tipo: 'Escaneada' | 'Emitida';
 }
 
 interface FacturasWidgetProps {
   facturas: Factura[];
   isEditMode: boolean;
   onRemove: () => void;
-  setIsEscanearFacturaPopupOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsFacturaPopupOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  isExportMode?: boolean;
+  selectedInvoices?: number[];
+  setSelectedInvoices?: React.Dispatch<React.SetStateAction<number[]>>;
 }
 
 const FacturasWidget: React.FC<FacturasWidgetProps> = ({
   facturas,
   isEditMode,
   onRemove,
-  setIsEscanearFacturaPopupOpen, // La recibimos aquí
+  setIsFacturaPopupOpen,
+  isExportMode = false,
+  selectedInvoices = [],
+  setSelectedInvoices,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const { theme } = useTheme();
+
   const totalPendiente = facturas.reduce(
     (sum, factura) =>
       factura.estado === 'Pendiente' ? sum + factura.monto : sum,
@@ -37,9 +44,22 @@ const FacturasWidget: React.FC<FacturasWidgetProps> = ({
   };
 
   const handleFilter = () => {
-    // Implementar lógica de filtrado
     console.log('Filtrar facturas');
   };
+
+  const handleCheckboxChange = (id: number, checked: boolean) => {
+    if (checked) {
+      setSelectedInvoices?.([...selectedInvoices, id]);
+    } else {
+      setSelectedInvoices?.(
+        selectedInvoices.filter(invoiceId => invoiceId !== id)
+      );
+    }
+  };
+
+  const filteredFacturas = facturas.filter(factura =>
+    factura.numero.includes(searchTerm)
+  );
 
   return (
     <div
@@ -103,25 +123,60 @@ const FacturasWidget: React.FC<FacturasWidgetProps> = ({
         <Button variant="filter" onClick={handleFilter}>
           <Filter className="w-4 h-4" />
         </Button>
-        <Button variant="create" onClick={() => setIsEscanearFacturaPopupOpen?.(true)}>
-        {/* Usamos setIsEscanearFacturaPopupOpen aquí */}
+        <Button
+          variant="create"
+          onClick={() => setIsFacturaPopupOpen?.(true)}
+          >
           <Plus className="w-4 h-4 mr-1" />
           Crear
         </Button>
       </div>
       <div className="flex-grow overflow-auto custom-scrollbar">
-        <Table
-          headers={['Número', 'Monto', 'Estado']}
-          data={facturas.map((factura) => ({
-            Número: factura.numero,
-            Monto: factura.monto.toLocaleString('es-ES', {
-              style: 'currency',
-              currency: 'EUR',
-            }),
-            Estado: factura.estado,
-          }))}
-          variant={theme === 'dark' ? 'dark' : 'white'}
-        />
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead>
+            <tr>
+              {isExportMode && (
+                <th className="px-4 py-2">
+                  <input type="checkbox" disabled />
+                </th>
+              )}
+              <th className="px-4 py-2">Número</th>
+              <th className="px-4 py-2">Monto</th>
+              <th className="px-4 py-2">Estado</th>
+              <th className="px-4 py-2">Tipo</th>
+            </tr>
+          </thead>
+          <tbody
+            className={`${
+              theme === 'dark' ? 'bg-gray-700' : 'bg-white'
+            } divide-y divide-gray-200`}
+          >
+            {filteredFacturas.map(factura => (
+              <tr key={factura.id}>
+                {isExportMode && (
+                  <td className="px-4 py-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedInvoices.includes(factura.id)}
+                      onChange={e =>
+                        handleCheckboxChange(factura.id, e.target.checked)
+                      }
+                    />
+                  </td>
+                )}
+                <td className="px-4 py-2">{factura.numero}</td>
+                <td className="px-4 py-2">
+                  {factura.monto.toLocaleString('es-ES', {
+                    style: 'currency',
+                    currency: 'EUR',
+                  })}
+                </td>
+                <td className="px-4 py-2">{factura.estado}</td>
+                <td className="px-4 py-2">{factura.tipo}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
       <div
         className={`text-sm font-semibold mt-2 ${

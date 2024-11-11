@@ -36,32 +36,29 @@ const PopupReutilizable: React.FC<PopupReutilizableProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop with blur effect */}
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity duration-300 animate-fadeIn"
         onClick={onClose}
       />
       
-      {/* Modal Container */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div 
-          className="relative w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300 ease-out"
+          className="relative w-full max-w-2xl transform rounded-2xl bg-white shadow-2xl transition-all duration-500 animate-slideUp"
           onClick={e => e.stopPropagation()}
         >
-          {/* Header with gradient background */}
-          <div className="relative bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-5">
-            <h2 className="text-2xl font-semibold text-white">{title}</h2>
+          <div className="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 py-4 rounded-t-2xl">
+            <div className="absolute inset-0 bg-white/10 rounded-t-2xl"></div>
+            <h2 className="relative text-2xl font-bold text-white">{title}</h2>
             <button
               onClick={onClose}
-              className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-2 text-white/80 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+              className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-2 text-white/80 hover:bg-white/20 hover:text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white/50"
               aria-label="Cerrar"
             >
-              <X size={20} />
+              <X size={20} className="transform hover:rotate-90 transition-transform duration-300" />
             </button>
           </div>
 
-          {/* Content with subtle background and improved spacing */}
-          <div className="bg-gray-50/50 px-6 py-6">
+          <div className="bg-gradient-to-b from-gray-50 to-white px-6 py-6 rounded-b-2xl">
             <div className="relative">
               {children}
             </div>

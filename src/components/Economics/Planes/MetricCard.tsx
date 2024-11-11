@@ -1,6 +1,5 @@
 import React from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { motion } from 'framer-motion';
 
 interface MetricCardProps {
   title: string;
@@ -13,10 +12,8 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, value, icon, change }) =
   const { theme } = useTheme();
 
   return (
-    <motion.div
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className={`p-6 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-lg shadow-lg transition-all duration-300`}
+    <div
+      className={`p-6 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-lg shadow-lg`}
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>{title}</h3>
@@ -32,7 +29,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, value, icon, change }) =
           {change}
         </div>
       )}
-    </motion.div>
+    </div>
   );
 };
 

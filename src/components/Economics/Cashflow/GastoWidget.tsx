@@ -152,7 +152,6 @@ const GastoWidget: React.FC = () => {
     <div className={`p-6 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl`}>
       <div className="flex items-center justify-between mb-6">
         <h3 className={`text-2xl font-bold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
-          Gestión de Gastos
         </h3>
         <div className={`p-2 rounded-full ${theme === 'dark' ? 'bg-blue-900' : 'bg-blue-100'}`}>
           <DollarSign className={`w-6 h-6 ${theme === 'dark' ? 'text-blue-300' : 'text-blue-600'}`} />
@@ -189,10 +188,11 @@ const GastoWidget: React.FC = () => {
             Concepto: gasto.concepto,
             Descripción: gasto.descripcion,
             Importe: (
-              <span className={gasto.importe > 1000 ? 'text-red-500 font-semibold' : ''}>
+              <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
                 {gasto.importe.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
               </span>
             ),
+            
             Estado: (
               <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                 gasto.estado === 'Pagado' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'

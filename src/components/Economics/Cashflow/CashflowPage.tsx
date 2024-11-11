@@ -53,7 +53,7 @@ const CashflowPage: React.FC = () => {
           transition={{ duration: 0.3 }}
         >
           <div className="p-4">
-            <h3 className="text-2xl font-semibold mb-4 bg-gradient-to-r from-blue-400 to-indigo-500 text-transparent bg-clip-text">Gráfico de Ingresos</h3>
+            <h3 className="text-2xl font-semibold mb-4 bg-gradient-to-r from-blue-400 to-indigo-500 text-transparent bg-clip-text">Gráfico de Ingreso</h3>
             <IngresoGrafico />
           </div>
         </motion.div>
@@ -64,7 +64,7 @@ const CashflowPage: React.FC = () => {
           transition={{ duration: 0.3, delay: 0.1 }}
         >
           <div className="p-4">
-            <h3 className="text-2xl font-semibold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">Tabla de Ingresos</h3>
+            <h3 className="text-2xl font-semibold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 text-transparent bg-clip-text">Tabla de Ingreso</h3>
             <IngresosTabla />
           </div>
         </motion.div>

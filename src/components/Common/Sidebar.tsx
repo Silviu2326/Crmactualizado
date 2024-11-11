@@ -32,7 +32,7 @@ const Sidebar: React.FC = () => {
     { to: '/routines', icon: Dumbbell, label: 'Entrenamiento' },
     { to: '/diets', icon: Salad, label: 'Dietas' },
     { to: '/classes', icon: BookOpen, label: 'Clases' },
-    { to: '/economics', icon: DollarSign, label: 'Economía' },
+    { to: '/economics', icon: DollarSign, label: 'Finanzas' },
     { to: '/marketing/campaigns', icon: MailPlus , label: 'Campañas de Correo' },
     { to: '/marketing/analytics', icon: BarChart2, label: 'Análisis' },
     { to: '/content', icon: Share2, label: 'Contenido' },

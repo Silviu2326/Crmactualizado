@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React, { useState, useMemo, useEffect } from 'react';
+=======
+import React, { useState, useMemo } from 'react';
+>>>>>>> ea50e6cc3bfa4afdba7f06d7ae8a47da1ad3df70
 import { Calendar as BigCalendar, dateFnsLocalizer, SlotInfo, View } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay, addDays, setHours, setMinutes, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -25,7 +29,10 @@ interface Evento {
   descripcion: string;
   color?: string;
   categoria?: string;
+<<<<<<< HEAD
   subcategoria?: string;
+=======
+>>>>>>> ea50e6cc3bfa4afdba7f06d7ae8a47da1ad3df70
   cliente?: string;
   ubicacion?: string;
   recordatorios?: string[];
@@ -70,7 +77,10 @@ const EVENTOS_EJEMPLO: Evento[] = [
     descripcion: 'Sesión de entrenamiento de fuerza y resistencia',
     color: '#4F46E5',
     categoria: 'entrenamiento',
+<<<<<<< HEAD
     subcategoria: 'personal',
+=======
+>>>>>>> ea50e6cc3bfa4afdba7f06d7ae8a47da1ad3df70
     cliente: 'Juan García',
     ubicacion: 'Sala de Pesas',
     recordatorios: ['30 minutos antes'],
@@ -83,7 +93,10 @@ const EVENTOS_EJEMPLO: Evento[] = [
     end: setMinutes(setHours(addDays(today, 1), 18), 0),
     descripcion: 'Clase de yoga para principiantes',
     color: '#4F46E5',
+<<<<<<< HEAD
     subcategoria: 'grupo',
+=======
+>>>>>>> ea50e6cc3bfa4afdba7f06d7ae8a47da1ad3df70
     categoria: 'entrenamiento',
     cliente: 'Grupo',
     ubicacion: 'Sala de Yoga',
@@ -98,7 +111,10 @@ const EVENTOS_EJEMPLO: Evento[] = [
     descripcion: 'Primera consulta nutricional y evaluación',
     color: '#059669',
     categoria: 'nutricion',
+<<<<<<< HEAD
     subcategoria: 'consulta',
+=======
+>>>>>>> ea50e6cc3bfa4afdba7f06d7ae8a47da1ad3df70
     cliente: 'María López',
     ubicacion: 'Consultorio 2',
     recordatorios: ['1 día antes', '1 hora antes'],
@@ -112,7 +128,10 @@ const EVENTOS_EJEMPLO: Evento[] = [
     descripcion: 'Revisión de progreso y ajuste de plan alimenticio',
     color: '#059669',
     categoria: 'nutricion',
+<<<<<<< HEAD
     subcategoria: 'seguimiento',
+=======
+>>>>>>> ea50e6cc3bfa4afdba7f06d7ae8a47da1ad3df70
     cliente: 'Carlos Ruiz',
     ubicacion: 'Consultorio 1',
     recordatorios: ['2 horas antes'],
@@ -126,7 +145,10 @@ const EVENTOS_EJEMPLO: Evento[] = [
     descripcion: 'Entrenamiento de alta intensidad',
     color: '#4F46E5',
     categoria: 'entrenamiento',
+<<<<<<< HEAD
     subcategoria: 'personal',
+=======
+>>>>>>> ea50e6cc3bfa4afdba7f06d7ae8a47da1ad3df70
     cliente: 'Ana Martínez',
     ubicacion: 'Área Funcional',
     recordatorios: ['1 hora antes'],
@@ -146,6 +168,7 @@ export default function CalendarioLista() {
     subcategorias: CATEGORIAS.flatMap(cat => cat.subcategorias?.map(sub => sub.id) || [])
   });
 
+<<<<<<< HEAD
   useEffect(() => {
     const headers = document.querySelectorAll('.rbc-header');
     const daysInSpanish = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -155,6 +178,8 @@ export default function CalendarioLista() {
     });
   }, [view]);
 
+=======
+>>>>>>> ea50e6cc3bfa4afdba7f06d7ae8a47da1ad3df70
   const handleNavigate = (action: 'PREV' | 'NEXT' | 'TODAY') => {
     const newDate = new Date(date);
     switch (action) {
@@ -222,12 +247,19 @@ export default function CalendarioLista() {
 
   const eventosFiltrados = useMemo(() => {
     return EVENTOS_EJEMPLO.filter(evento => 
+<<<<<<< HEAD
       filtrosActivos.categorias.includes(evento.categoria || '') &&
       filtrosActivos.subcategorias.includes(evento.subcategoria || '')
     );
   }, [filtrosActivos]);
 
 
+=======
+      filtrosActivos.categorias.includes(evento.categoria || '')
+    );
+  }, [filtrosActivos]);
+
+>>>>>>> ea50e6cc3bfa4afdba7f06d7ae8a47da1ad3df70
   return (
     <div className="h-screen flex flex-col calendar-background">
       <CalendarioHeader
@@ -261,9 +293,12 @@ export default function CalendarioLista() {
               onSelectEvent={(event) => setSelectedEvent(event as Evento)}
               onSelectSlot={handleSelectSlot}
               selectable
+<<<<<<< HEAD
               components={{
                 toolbar: () => null, // Esto elimina la toolbar
               }}
+=======
+>>>>>>> ea50e6cc3bfa4afdba7f06d7ae8a47da1ad3df70
               messages={{
                 next: "Siguiente",
                 previous: "Anterior",

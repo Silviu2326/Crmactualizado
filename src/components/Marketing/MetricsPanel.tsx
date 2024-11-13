@@ -1,11 +1,6 @@
 import React from 'react';
-<<<<<<< HEAD
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { TrendingUp, ArrowUp, ArrowDown } from 'lucide-react';
-=======
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp } from 'lucide-react';
->>>>>>> 4b66a59ad3142712190e76bb601de772d01654e5
 
 const data = [
   { name: 'Lun', openRate: 65, clickRate: 28, target: 45 },
@@ -17,7 +12,6 @@ const data = [
   { name: 'Dom', openRate: 66, clickRate: 30, target: 45 },
 ];
 
-<<<<<<< HEAD
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
@@ -122,78 +116,11 @@ export function MetricsPanel() {
             isPositive={true}
           />
         </div>
-=======
-export function MetricsPanel() {
-  return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-gray-900">Rendimiento</h3>
-        <TrendingUp className="h-6 w-6 text-indigo-600" />
-      </div>
-
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-            <XAxis dataKey="name" stroke="#6B7280" />
-            <YAxis stroke="#6B7280" />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-              }}
-            />
-            <Line 
-              type="monotone" 
-              dataKey="openRate" 
-              stroke="#4F46E5" 
-              strokeWidth={3}
-              dot={{ fill: '#4F46E5', strokeWidth: 2 }}
-              name="Tasa de Apertura"
-            />
-            <Line 
-              type="monotone" 
-              dataKey="clickRate" 
-              stroke="#10B981" 
-              strokeWidth={3}
-              dot={{ fill: '#10B981', strokeWidth: 2 }}
-              name="Tasa de Clics"
-            />
-            <Line 
-              type="monotone" 
-              dataKey="target" 
-              stroke="#6B7280" 
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              dot={false}
-              name="Objetivo"
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      <div className="mt-6 grid grid-cols-2 gap-4">
-        <MetricCard
-          label="Tasa de Apertura"
-          value="68.9%"
-          trend="+5.2%"
-          isPositive={true}
-        />
-        <MetricCard
-          label="Tasa de Clics"
-          value="32.1%"
-          trend="+2.4%"
-          isPositive={true}
-        />
->>>>>>> 4b66a59ad3142712190e76bb601de772d01654e5
       </div>
     </div>
   );
 }
 
-<<<<<<< HEAD
 function MetricCard({
   label,
   value,
@@ -203,19 +130,12 @@ function MetricCard({
   label: string;
   value: string;
   trend: string;
-=======
-function MetricCard({ label, value, trend, isPositive }: { 
-  label: string; 
-  value: string; 
-  trend: string; 
->>>>>>> 4b66a59ad3142712190e76bb601de772d01654e5
   isPositive: boolean;
 }) {
   return (
     <div className="bg-gray-50 rounded-xl p-4 transition-all duration-300 hover:bg-gray-100">
       <p className="text-sm font-medium text-gray-600">{label}</p>
       <p className="mt-1 text-2xl font-bold text-gray-900">{value}</p>
-<<<<<<< HEAD
       <div className="mt-1 flex items-center gap-1">
         {isPositive ? (
           <ArrowUp className="h-4 w-4 text-emerald-600" />
@@ -230,11 +150,6 @@ function MetricCard({ label, value, trend, isPositive }: {
           {trend}
         </p>
       </div>
-=======
-      <p className={`mt-1 text-sm font-medium ${isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
-        {trend}
-      </p>
->>>>>>> 4b66a59ad3142712190e76bb601de772d01654e5
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, X, Plus, Filter, Download, Users, Calendar, Clock, Target } from 'lucide-react';
+import React, { useState } from 'react';  
+import { Search, X, Plus, Filter, Download, Users, Calendar, Clock, Target, Edit, Trash } from 'lucide-react';
 import Button from '../Common/Button';
 import Table from '../Common/Table';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -12,6 +12,7 @@ const ClassList: React.FC = () => {
 
   const classData = [
     {
+      id: 1,
       nombre: 'Yoga Matutino',
       descripcion: 'Clase de yoga para comenzar el día con energía',
       clientes: 12,
@@ -20,6 +21,7 @@ const ClassList: React.FC = () => {
       acciones: 'Editar'
     },
     {
+      id: 2,
       nombre: 'CrossFit Intensivo',
       descripcion: 'Entrenamiento funcional de alta intensidad',
       clientes: 8,
@@ -28,6 +30,7 @@ const ClassList: React.FC = () => {
       acciones: 'Editar'
     },
     {
+      id: 3,
       nombre: 'Pilates Terapéutico',
       descripcion: 'Pilates enfocado en rehabilitación y postura',
       clientes: 6,
@@ -64,7 +67,12 @@ const ClassList: React.FC = () => {
     }
   ];
 
-  const renderCell = (key: string, value: any) => {
+  const filteredClassData = classData.filter(item =>
+    item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const renderCell = (key: string, value: any, row: any) => {
     switch (key) {
       case 'clientes':
         return (
@@ -73,17 +81,53 @@ const ClassList: React.FC = () => {
             <span className="font-medium">{value}</span>
           </div>
         );
-      case 'maxParticipantes':
+      case 'capacidad':
+        const porcentaje = (row.clientes / row.maxParticipantes) * 100;
         return (
-          <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-sm font-medium">
-             {value}
-          </span>
+          <div className="flex flex-col space-y-3">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              {row.clientes}/{row.maxParticipantes} participantes
+            </div>
+            <div className="w-48">
+              <div className="h-2.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-blue-500"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${porcentaje}%` }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                />
+              </div>
+            </div>
+          </div>
         );
       case 'sesiones':
         return (
           <div className="flex items-center space-x-2">
             <Calendar className="w-4 h-4 text-green-500" />
             <span className="font-medium">{value}</span>
+          </div>
+        );
+      case 'acciones':
+        return (
+          <div className="flex space-x-2">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              className={`${
+                theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'
+              } transition-colors duration-150`}
+            >
+              <Edit className="w-5 h-5" />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              className={`${
+                theme === 'dark' ? 'text-red-400 hover:text-red-300' : 'text-red-600 hover:text-red-800'
+              } transition-colors duration-150`}
+            >
+              <Trash className="w-5 h-5" />
+            </motion.button>
           </div>
         );
       default:
@@ -175,15 +219,19 @@ const ClassList: React.FC = () => {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden"
+        className={`rounded-lg shadow-lg overflow-hidden ${
+          theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+        }`}
       >
         <Table
-          headers={['Nombre', 'Descripción', 'Clientes', 'Máx. Participantes', 'Sesiones', 'Acciones']}
-          data={classData.map(item => ({
-            ...item,
-            ...Object.fromEntries(
-              Object.entries(item).map(([key, value]) => [key, renderCell(key, value)])
-            )
+          headers={['Nombre', 'Descripción', 'Clientes', 'Capacidad', 'Sesiones', 'Acciones']}
+          data={filteredClassData.map(item => ({
+            nombre: item.nombre,
+            descripcion: item.descripcion,
+            clientes: renderCell('clientes', item.clientes, item),
+            capacidad: renderCell('capacidad', null, item),
+            sesiones: renderCell('sesiones', item.sesiones, item),
+            acciones: renderCell('acciones', null, item)
           }))}
           variant={theme === 'dark' ? 'dark' : 'white'}
         />
@@ -209,7 +257,6 @@ const ClassList: React.FC = () => {
                   <X className="w-5 h-5" />
                 </Button>
               </div>
-              {/* Aquí iría el formulario */}
             </motion.div>
           </motion.div>
         )}

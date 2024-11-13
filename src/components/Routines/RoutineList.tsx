@@ -13,11 +13,7 @@ const RoutineList: React.FC = () => {
     <div className={`p-6 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold">
-<<<<<<< HEAD
           {activeTab === 'ejercicios' ? 'Ejercicios' : activeTab === 'rutinas' ? 'Ruaatinas' : 'Planificaciones'}
-=======
-          {activeTab === 'ejercicios' ? 'Ejercicios' : activeTab === 'rutinas' ? 'Rutinas' : 'Planificaciones'}
->>>>>>> 4b66a59ad3142712190e76bb601de772d01654e5
         </h2>
         <div className="flex space-x-2">
           {['Planificaciones', 'Ejercicios', 'Rutinas'].map((tab) => (

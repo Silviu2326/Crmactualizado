@@ -41,7 +41,6 @@ const DashboardPage: React.FC = () => {
       console.log("Clases Grupales:", data);
     });
   }, []);
-
   const clientData = [
     { Nombre: 'Juan Pérez', Email: 'juan@example.com', 'Última Clase': '2023-05-15', Estado: 'Activo' },
     { Nombre: 'María García', Email: 'maria@example.com', 'Última Clase': '2023-05-16', Estado: 'Inactivo' },
@@ -157,7 +156,6 @@ const DashboardPage: React.FC = () => {
               <TrendingUp className="w-5 h-5 mr-2" />
               Ingresos
             </h2>
-
           </div>
           <IncomeChart viewType={viewType} currentDate={currentDate} />
         </div>

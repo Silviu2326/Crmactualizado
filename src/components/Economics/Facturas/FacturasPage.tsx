@@ -1,12 +1,12 @@
-// src/pages/FacturasPage.tsx
 import React, { useState } from 'react';
-import FacturasWidget from '../FacturasWidget';
+import { motion } from 'framer-motion';
+import { FileText, Download, Search, Filter, Plus } from 'lucide-react';
 import Button from '../../Common/Button';
-import Checkbox from '../../Common/Checkbox'; // Importa el Checkbox
+import Table from '../../Common/Table';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { FileText, Plus, Download } from 'lucide-react';
 import FacturaPopup from '../../modals/FacturaPopup';
 import EscanearFacturaPopup from '../../modals/EscanearFacturaPopup';
+import FacturasFilter, { FilterValues } from './FacturasFilter';
 
 interface FacturasPageProps {
   isFacturaPopupOpen: boolean;
@@ -23,6 +23,7 @@ interface Factura {
   monto: number;
   estado: 'Pagada' | 'Pendiente';
   tipo: 'Escaneada' | 'Emitida';
+  fecha: string;
 }
 
 const FacturasPage: React.FC<FacturasPageProps> = ({
@@ -37,98 +38,41 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [isExportMode, setIsExportMode] = useState(false);
   const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<FilterValues>({
+    estado: [],
+    tipo: [],
+    fechaDesde: '',
+    fechaHasta: '',
+    montoMin: '',
+    montoMax: '',
+  });
 
-  const [facturas, setFacturas] = useState<Factura[]>([
-    { id: 1, numero: 'F-001', monto: 1500, estado: 'Pagada', tipo: 'Escaneada' },
-    { id: 2, numero: 'F-002', monto: 2000, estado: 'Pendiente', tipo: 'Emitida' },
-    { id: 3, numero: 'F-003', monto: 1800, estado: 'Pagada', tipo: 'Emitida' },
-    { id: 4, numero: 'F-004', monto: 2200, estado: 'Pendiente', tipo: 'Escaneada' },
-    { id: 5, numero: 'F-005', monto: 1600, estado: 'Pagada', tipo: 'Emitida' },
-  ]);
+  const facturas: Factura[] = [
+    { id: 1, numero: 'F-001', monto: 1500, estado: 'Pagada', tipo: 'Escaneada', fecha: '2024-03-01' },
+    { id: 2, numero: 'F-002', monto: 2000, estado: 'Pendiente', tipo: 'Emitida', fecha: '2024-03-02' },
+    { id: 3, numero: 'F-003', monto: 1800, estado: 'Pagada', tipo: 'Emitida', fecha: '2024-03-03' },
+    { id: 4, numero: 'F-004', monto: 2200, estado: 'Pendiente', tipo: 'Escaneada', fecha: '2024-03-04' },
+    { id: 5, numero: 'F-005', monto: 1600, estado: 'Pagada', tipo: 'Emitida', fecha: '2024-03-05' },
+  ];
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-  };
-
-  const handleFilter = () => {
-    // Implementa la lógica de filtrado según el searchTerm
-    console.log('Filtrar facturas con término:', searchTerm);
   };
 
   const handleExport = () => {
     if (!isExportMode) {
-      // Activar el modo de exportación mostrando los checkboxes
       setIsExportMode(true);
     } else {
-      // Exportar las facturas seleccionadas
-      exportSelectedInvoicesToCSV();
+      const selectedFacturas = facturas.filter(factura => selectedInvoices.includes(factura.id));
+      if (selectedFacturas.length === 0) {
+        alert('No hay facturas seleccionadas para exportar.');
+        return;
+      }
+      console.log('Exportando facturas:', selectedFacturas);
       setIsExportMode(false);
       setSelectedInvoices([]);
     }
-  };
-
-  const exportSelectedInvoicesToCSV = () => {
-    const invoicesToExport = facturas.filter(factura =>
-      selectedInvoices.includes(factura.id)
-    );
-    if (invoicesToExport.length === 0) {
-      alert('No hay facturas seleccionadas para exportar.');
-      return;
-    }
-    const csvContent = generateCSVContent(invoicesToExport);
-    downloadCSV(csvContent, 'facturas.csv');
-  };
-
-  const generateCSVContent = (invoices: Factura[]) => {
-    const header = ['ID', 'Número', 'Monto', 'Estado', 'Tipo'];
-    const rows = invoices.map(factura => [
-      factura.id,
-      factura.numero,
-      factura.monto,
-      factura.estado,
-      factura.tipo,
-    ]);
-
-    const csvRows = [
-      header.join(','), // Encabezados
-      ...rows.map(row => row.join(',')), // Filas de datos
-    ];
-
-    return csvRows.join('\n');
-  };
-
-  const downloadCSV = (csvContent: string, filename: string) => {
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    if ((navigator as any).msSaveBlob) {
-      // Para IE 10+
-      (navigator as any).msSaveBlob(blob, filename);
-    } else {
-      const link = document.createElement('a');
-      if (link.download !== undefined) {
-        // Detección de soporte
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', filename);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-    }
-  };
-
-  // Datos de ejemplo para el resumen
-  const resumenFacturas = {
-    totalFacturas: facturas.length,
-    facturasPagadas: facturas.filter(f => f.estado === 'Pagada').length,
-    facturasPendientes: facturas.filter(f => f.estado === 'Pendiente').length,
-    montoTotal: facturas.reduce((acc, f) => acc + f.monto, 0),
-    montoPagado: facturas
-      .filter(f => f.estado === 'Pagada')
-      .reduce((acc, f) => acc + f.monto, 0),
-    montoPendiente: facturas
-      .filter(f => f.estado === 'Pendiente')
-      .reduce((acc, f) => acc + f.monto, 0),
   };
 
   const toggleSelectFactura = (id: number) => {
@@ -137,105 +81,141 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
     );
   };
 
-  const seleccionarTodas = () => {
-    if (selectedInvoices.length === facturas.length) {
-      setSelectedInvoices([]);
-    } else {
-      setSelectedInvoices(facturas.map(factura => factura.id));
-    }
+  const handleApplyFilters = (filters: FilterValues) => {
+    setActiveFilters(filters);
+    console.log('Filtros aplicados:', filters);
   };
 
-  // Filtrar facturas según el término de búsqueda
-  const facturasFiltradas = facturas.filter(factura =>
-    factura.numero.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredFacturas = facturas.filter(factura => {
+    const matchesSearch = factura.numero.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesEstado = activeFilters.estado.length === 0 || activeFilters.estado.includes(factura.estado);
+    const matchesTipo = activeFilters.tipo.length === 0 || activeFilters.tipo.includes(factura.tipo);
+    const matchesFechaDesde = !activeFilters.fechaDesde || factura.fecha >= activeFilters.fechaDesde;
+    const matchesFechaHasta = !activeFilters.fechaHasta || factura.fecha <= activeFilters.fechaHasta;
+    const matchesMontoMin = !activeFilters.montoMin || factura.monto >= Number(activeFilters.montoMin);
+    const matchesMontoMax = !activeFilters.montoMax || factura.monto <= Number(activeFilters.montoMax);
+
+    return matchesSearch && matchesEstado && matchesTipo && matchesFechaDesde && 
+           matchesFechaHasta && matchesMontoMin && matchesMontoMax;
+  });
 
   return (
-    <div
-      className={`p-6 ${
-        theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'
-      }`}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className={`p-6 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}
     >
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold">Facturas</h2>
-        <div className="flex space-x-2">
-          <Button
-            variant="create"
-            onClick={() => setIsEscanearFacturaPopupOpen(true)}
-          >
+      <h2 className="text-3xl font-bold mb-8 text-center">Gestión de Facturas</h2>
+      
+      <div className="flex flex-col md:flex-row justify-between items-center mb-8 space-y-4 md:space-y-0 md:space-x-4">
+        <div className="flex space-x-4">
+          <Button variant="create" onClick={() => setIsFacturaPopupOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nueva Factura
+          </Button>
+          <Button variant="create" onClick={() => setIsEscanearFacturaPopupOpen(true)}>
             <FileText className="w-4 h-4 mr-2" />
             Escanear Factura
           </Button>
-        </div>
-      </div>
-
-      {/* Resumen de Facturas */}
-      <div
-        className={`grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 p-6 rounded-lg shadow-xl ${
-          theme === 'dark' ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-800'
-        }`}
-      >
-        {/* Total Facturas */}
-        <div className="flex flex-col justify-between items-start p-6 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-gray-700 dark:to-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border-l-4 border-indigo-500">
-          <div className="flex items-center space-x-3">
-            <FileText className="w-7 h-7 text-indigo-500 dark:text-indigo-300" />
-            <h3 className="text-xl font-semibold tracking-wide">Total Facturas</h3>
-          </div>
-          <p className="text-5xl font-extrabold mt-4 text-indigo-600 dark:text-indigo-300">
-            {resumenFacturas.totalFacturas}
-          </p>
-          <div className="flex justify-between w-full text-sm mt-4">
-            <span className="text-green-500 font-medium">Pagadas: {resumenFacturas.facturasPagadas}</span>
-            <span className="text-red-500 font-medium">Pendientes: {resumenFacturas.facturasPendientes}</span>
-          </div>
-        </div>
-
-        {/* Monto Total */}
-        <div className="flex flex-col justify-between items-start p-6 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-gray-700 dark:to-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border-l-4 border-indigo-500">
-          <div className="flex items-center space-x-3">
-            <FileText className="w-7 h-7 text-indigo-500 dark:text-indigo-300" />
-            <h3 className="text-xl font-semibold tracking-wide">Monto Total</h3>
-          </div>
-          <p className="text-5xl font-extrabold mt-4 text-indigo-600 dark:text-indigo-300">
-            €{resumenFacturas.montoTotal.toLocaleString()}
-          </p>
-          <div className="flex justify-between w-full text-sm mt-4">
-            <span className="text-green-500 font-medium">Pagado: €{resumenFacturas.montoPagado.toLocaleString()}</span>
-            <span className="text-red-500 font-medium">Pendiente: €{resumenFacturas.montoPendiente.toLocaleString()}</span>
-          </div>
-        </div>
-
-        {/* Exportar Facturas */}
-        <div className="flex flex-col justify-between items-center p-6 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-gray-700 dark:to-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border-l-4 border-indigo-500">
-          <div className="flex items-center space-x-3">
-            <Download className="w-7 h-7 text-indigo-500 dark:text-indigo-300" />
-            <h3 className="text-xl font-semibold tracking-wide">Acciones</h3>
-          </div>
-          <Button
-            variant="normal"
-            onClick={handleExport}
-            className="mt-6 w-full text-indigo-700 hover:text-white bg-indigo-100 hover:bg-indigo-600 dark:bg-indigo-700 dark:hover:bg-indigo-500 dark:text-white rounded-lg transition-all duration-300"
-          >
-            <Download className="w-5 h-5 mr-2" />
+          <Button variant="create" onClick={handleExport}>
+            <Download className="w-4 h-4 mr-2" />
             {isExportMode ? 'Exportar Seleccionadas' : 'Exportar Facturas'}
           </Button>
         </div>
+        <div className="flex items-center space-x-2">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Buscar facturas..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className={`w-full px-4 py-2 rounded-full ${
+                theme === 'dark' 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-800'
+              } border focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300`}
+            />
+            <Search className={`absolute right-3 top-2.5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
+          </div>
+          <div className="relative">
+            <Button 
+              variant="filter" 
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className={isFilterOpen ? 'ring-2 ring-blue-500' : ''}
+            >
+              <Filter className="w-4 h-4" />
+            </Button>
+            <FacturasFilter
+              isOpen={isFilterOpen}
+              onClose={() => setIsFilterOpen(false)}
+              onApplyFilters={handleApplyFilters}
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Barra de Búsqueda y Filtro */}
-      {/* Widget de Facturas */}
-      <FacturasWidget
-        facturas={facturasFiltradas}
-        isEditMode={false}
-        onRemove={() => {}}
-        setIsFacturaPopupOpen={setIsFacturaPopupOpen} // Actualiza esta línea
-        isExportMode={isExportMode}
-        selectedInvoices={selectedInvoices}
-        setSelectedInvoices={setSelectedInvoices}
-        toggleSelectFactura={toggleSelectFactura}
-        seleccionarTodas={seleccionarTodas}
-      />
+      <div className={`bg-${theme === 'dark' ? 'gray-800' : 'white'} rounded-lg shadow-md overflow-hidden`}>
+        <Table
+          headers={['Número', 'Fecha', 'Monto', 'Estado', 'Tipo', 'Acciones']}
+          data={filteredFacturas.map(factura => ({
+            Número: (
+              <div className="flex items-center">
+                <FileText className={`w-5 h-5 mr-2 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+                {factura.numero}
+              </div>
+            ),
+            Fecha: factura.fecha,
+            Monto: `€${factura.monto.toLocaleString()}`,
+            Estado: (
+              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                factura.estado === 'Pagada' 
+                  ? 'bg-green-200 text-green-800' 
+                  : 'bg-red-200 text-red-800'
+              }`}>
+                {factura.estado}
+              </span>
+            ),
+            Tipo: (
+              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                factura.tipo === 'Emitida' 
+                  ? 'bg-blue-200 text-blue-800' 
+                  : 'bg-purple-200 text-purple-800'
+              }`}>
+                {factura.tipo}
+              </span>
+            ),
+            Acciones: (
+              <div className="flex space-x-2">
+                {isExportMode ? (
+                  <input
+                    type="checkbox"
+                    checked={selectedInvoices.includes(factura.id)}
+                    onChange={() => toggleSelectFactura(factura.id)}
+                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  />
+                ) : (
+                  <Button variant="normal" onClick={() => console.log(`Ver factura ${factura.id}`)}>
+                    <FileText className="w-4 h-4 mr-2" />
+                    Ver
+                  </Button>
+                )}
+              </div>
+            ),
+          }))}
+          variant={theme === 'dark' ? 'dark' : 'white'}
+        />
+      </div>
+
+      <div className="mt-6 flex justify-between items-center">
+        <div className="text-sm">
+          Mostrando {filteredFacturas.length} de {facturas.length} facturas
+        </div>
+        <div className="space-x-2">
+          <Button variant="normal" disabled>Anterior</Button>
+          <Button variant="normal" disabled>Siguiente</Button>
+        </div>
+      </div>
 
       {/* Popups */}
       <FacturaPopup
@@ -248,7 +228,7 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
         onClose={() => setIsEscanearFacturaPopupOpen(false)}
         onSubmit={handleEscanearFacturaSubmit}
       />
-    </div>
+    </motion.div>
   );
 };
 

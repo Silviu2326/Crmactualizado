@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Plus,
   Search,
@@ -10,9 +10,17 @@ import {
   MapPin,
   ArrowUpDown,
   X,
+  Upload,
+  AlertCircle,
+  CheckCircle2,
+  Download,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Papa from 'papaparse';
+import toast from 'react-hot-toast';
+import { CSVValidationModal } from './CSVValidationModal';
 
+// Interfaces y datos iniciales
 interface Lead {
   id: string;
   name: string;
@@ -57,16 +65,31 @@ const INITIAL_LEADS: Lead[] = [
   },
 ];
 
+interface CSVValidationError {
+  row: number;
+  errors: string[];
+}
+
+interface AddLeadModalProps {
+  onClose: () => void;
+  onAdd: (lead: Omit<Lead, 'id'>) => void;
+}
+
 export function LeadsTable() {
   const [leads, setLeads] = useState<Lead[]>(INITIAL_LEADS);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showValidationModal, setShowValidationModal] = useState(false);
+  const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
+  const [pendingCsvData, setPendingCsvData] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState<keyof Lead | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [statusFilter, setStatusFilter] = useState<Lead['status'] | 'all'>(
     'all'
   );
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Función para manejar la ordenación
   const handleSort = (field: keyof Lead) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -76,6 +99,7 @@ export function LeadsTable() {
     }
   };
 
+  // Filtrar y ordenar los leads
   const filteredLeads = leads
     .filter(
       (lead) =>
@@ -91,6 +115,7 @@ export function LeadsTable() {
       return 0;
     });
 
+  // Obtener color basado en el estado
   const getStatusColor = (status: Lead['status']) => {
     switch (status) {
       case 'new':
@@ -106,6 +131,7 @@ export function LeadsTable() {
     }
   };
 
+  // Obtener texto traducido del estado
   const getStatusText = (status: Lead['status']) => {
     switch (status) {
       case 'new':
@@ -121,18 +147,261 @@ export function LeadsTable() {
     }
   };
 
+  // Validaciones
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone: string): boolean => {
+    const phoneRegex =
+      /^\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}$/;
+    return phoneRegex.test(phone);
+  };
+
+  const validateCSVRow = (
+    row: any,
+    rowIndex: number
+  ): CSVValidationError | null => {
+    const errors: string[] = [];
+
+    if (!row.name?.trim()) {
+      errors.push('El nombre es obligatorio');
+    }
+
+    if (!row.email?.trim() || !validateEmail(row.email)) {
+      errors.push('Email inválido');
+    }
+
+    if (!row.phone?.trim() || !validatePhone(row.phone)) {
+      errors.push('Teléfono inválido');
+    }
+
+    if (!['new', 'contacted', 'qualified', 'lost'].includes(row.status)) {
+      errors.push('Estado inválido');
+    }
+
+    if (!row.location?.trim()) {
+      errors.push('La ubicación es obligatoria');
+    }
+
+    return errors.length > 0 ? { row: rowIndex + 2, errors } : null;
+  };
+
+  // Manejar la carga del archivo CSV
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const errors: CSVValidationError[] = [];
+        const newLeads: Lead[] = [];
+
+        results.data.forEach((row: any, index: number) => {
+          const validationError = validateCSVRow(row, index);
+          if (validationError) {
+            errors.push(validationError);
+          } else {
+            newLeads.push({
+              id: `imported-${Date.now()}-${index}`,
+              name: row.name.trim(),
+              email: row.email.trim(),
+              phone: row.phone.trim(),
+              status: row.status as Lead['status'],
+              source: row.source || 'CSV Import',
+              date: row.date || new Date().toISOString().split('T')[0],
+              location: row.location.trim(),
+            });
+          }
+        });
+
+        if (errors.length > 0) {
+          setCsvHeaders(Object.keys(results.data[0]));
+          setPendingCsvData(results.data);
+          setShowValidationModal(true);
+          toast.error(
+            `Se encontraron ${errors.length} errores en el archivo CSV`
+          );
+          console.error('Validation errors:', errors);
+          return;
+        }
+
+        setLeads((prevLeads) => [...prevLeads, ...newLeads]);
+        toast.success(`${newLeads.length} leads importados correctamente`);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      },
+      error: (error) => {
+        toast.error('Error al procesar el archivo CSV');
+        console.error('CSV Parse Error:', error);
+      },
+    });
+  };
+
+  // Confirmar el mapeo de columnas y añadir los leads
+  const handleColumnMappingConfirm = (mappings: Record<string, string>) => {
+    const newLeads: Lead[] = [];
+    const errors: CSVValidationError[] = [];
+
+    pendingCsvData.forEach((row: any, index: number) => {
+      const mappedRow: any = {};
+      Object.entries(mappings).forEach(([key, value]) => {
+        if (value) {
+          mappedRow[key] = row[value];
+        }
+      });
+
+      const validationError = validateCSVRow(mappedRow, index);
+      if (validationError) {
+        errors.push(validationError);
+      } else {
+        newLeads.push({
+          id: `imported-${Date.now()}-${index}`,
+          name: mappedRow.name.trim(),
+          email: mappedRow.email.trim(),
+          phone: mappedRow.phone.trim(),
+          status: mappedRow.status as Lead['status'],
+          source: mappedRow.source || 'CSV Import',
+          date: mappedRow.date || new Date().toISOString().split('T')[0],
+          location: mappedRow.location.trim(),
+        });
+      }
+    });
+
+    if (errors.length > 0) {
+      toast.error(`Se encontraron ${errors.length} errores en el archivo CSV`);
+      console.error('Validation errors:', errors);
+      return;
+    }
+
+    setLeads((prevLeads) => [...prevLeads, ...newLeads]);
+    toast.success(`${newLeads.length} leads importados correctamente`);
+    setShowValidationModal(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Descargar los leads en formato CSV
+  const downloadLeadsCSV = () => {
+    const csv = Papa.unparse(
+      leads.map((lead) => ({
+        nombre: lead.name,
+        email: lead.email,
+        telefono: lead.phone,
+        estado: lead.status,
+        origen: lead.source,
+        fecha: lead.date,
+        ubicacion: lead.location,
+      }))
+    );
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute(
+      'download',
+      `leads_${new Date().toISOString().split('T')[0]}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Descargar una plantilla CSV de muestra
+  const downloadSampleCSV = () => {
+    const headers = [
+      'name',
+      'email',
+      'phone',
+      'status',
+      'source',
+      'date',
+      'location',
+    ];
+    const sampleData = [
+      [
+        'Ana García',
+        'ana.garcia@email.com',
+        '+34 612 345 678',
+        'new',
+        'CSV Import',
+        '2024-03-15',
+        'Madrid',
+      ],
+      [
+        'Carlos Rodríguez',
+        'carlos.rodriguez@email.com',
+        '+34 623 456 789',
+        'contacted',
+        'CSV Import',
+        '2024-03-14',
+        'Barcelona',
+      ],
+    ];
+
+    const csv = Papa.unparse({
+      fields: headers,
+      data: sampleData,
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'sample_leads.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900">Leads</h2>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Añadir Lead
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 flex items-center gap-2 transition-colors"
+            >
+              <Upload className="h-4 w-4" />
+              Importar CSV
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept=".csv"
+              className="hidden"
+            />
+            <button
+              onClick={downloadSampleCSV}
+              className="px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 flex items-center gap-2 transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              Plantilla CSV
+            </button>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Añadir Lead
+            </button>
+            <button
+              onClick={downloadLeadsCSV}
+              className="px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 flex items-center gap-2 transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              Descargar CSV
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center justify-between gap-4">
@@ -287,22 +556,22 @@ export function LeadsTable() {
           <AddLeadModal
             onClose={() => setShowAddModal(false)}
             onAdd={(newLead) => {
-              setLeads([
-                ...leads,
-                { ...newLead, id: String(leads.length + 1) },
-              ]);
+              setLeads([...leads, { ...newLead, id: `custom-${Date.now()}` }]);
               setShowAddModal(false);
+              toast.success('Lead añadido correctamente');
             }}
+          />
+        )}
+        {showValidationModal && (
+          <CSVValidationModal
+            onClose={() => setShowValidationModal(false)}
+            onConfirm={handleColumnMappingConfirm}
+            csvHeaders={csvHeaders}
           />
         )}
       </AnimatePresence>
     </div>
   );
-}
-
-interface AddLeadModalProps {
-  onClose: () => void;
-  onAdd: (lead: Omit<Lead, 'id'>) => void;
 }
 
 function AddLeadModal({ onClose, onAdd }: AddLeadModalProps) {

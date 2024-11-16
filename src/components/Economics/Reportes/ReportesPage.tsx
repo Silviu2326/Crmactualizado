@@ -4,17 +4,33 @@ import Button from '../../Common/Button';
 import { Download, FileText, Calendar, Search, Filter } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { motion } from 'framer-motion';
+import ReportesFilter, { FilterValues } from './ReportesFilter';
+
+interface Reporte {
+  id: number;
+  titulo: string;
+  fecha: string;
+  tipo: 'Mensual' | 'Trimestral' | 'Anual';
+  estado: 'Generado' | 'Pendiente' | 'En Proceso';
+}
 
 const ReportesPage: React.FC = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<FilterValues>({
+    tipo: [],
+    fechaDesde: '',
+    fechaHasta: '',
+    estado: [],
+  });
 
-  const reportesData = [
-    { id: 1, titulo: 'Reporte Mensual Agosto', fecha: '2024-08-01', tipo: 'Mensual' },
-    { id: 2, titulo: 'Reporte Mensual Julio', fecha: '2024-07-01', tipo: 'Mensual' },
-    { id: 3, titulo: 'Reporte Trimestral Q2', fecha: '2024-06-30', tipo: 'Trimestral' },
-    { id: 4, titulo: 'Reporte Mensual Junio', fecha: '2024-06-01', tipo: 'Mensual' },
-    { id: 5, titulo: 'Reporte Anual 2023', fecha: '2024-01-01', tipo: 'Anual' },
+  const reportesData: Reporte[] = [
+    { id: 1, titulo: 'Reporte Mensual Agosto', fecha: '2024-08-01', tipo: 'Mensual', estado: 'Generado' },
+    { id: 2, titulo: 'Reporte Mensual Julio', fecha: '2024-07-01', tipo: 'Mensual', estado: 'Pendiente' },
+    { id: 3, titulo: 'Reporte Trimestral Q2', fecha: '2024-06-30', tipo: 'Trimestral', estado: 'En Proceso' },
+    { id: 4, titulo: 'Reporte Mensual Junio', fecha: '2024-06-01', tipo: 'Mensual', estado: 'Generado' },
+    { id: 5, titulo: 'Reporte Anual 2023', fecha: '2024-01-01', tipo: 'Anual', estado: 'Generado' },
   ];
 
   const handleGenerateRecurringReport = () => {
@@ -29,8 +45,45 @@ const ReportesPage: React.FC = () => {
     setSearchTerm(e.target.value);
   };
 
-  const handleFilter = () => {
-    console.log('Filtrar reportes');
+  const handleApplyFilters = (filters: FilterValues) => {
+    setActiveFilters(filters);
+    console.log('Filtros aplicados:', filters);
+  };
+
+  const filteredReportes = reportesData.filter(reporte => {
+    const matchesSearch = reporte.titulo.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTipo = activeFilters.tipo.length === 0 || activeFilters.tipo.includes(reporte.tipo);
+    const matchesEstado = activeFilters.estado.length === 0 || activeFilters.estado.includes(reporte.estado);
+    const matchesFechaDesde = !activeFilters.fechaDesde || reporte.fecha >= activeFilters.fechaDesde;
+    const matchesFechaHasta = !activeFilters.fechaHasta || reporte.fecha <= activeFilters.fechaHasta;
+
+    return matchesSearch && matchesTipo && matchesEstado && matchesFechaDesde && matchesFechaHasta;
+  });
+
+  const getEstadoStyle = (estado: string) => {
+    switch (estado) {
+      case 'Generado':
+        return 'bg-green-200 text-green-800';
+      case 'Pendiente':
+        return 'bg-yellow-200 text-yellow-800';
+      case 'En Proceso':
+        return 'bg-blue-200 text-blue-800';
+      default:
+        return 'bg-gray-200 text-gray-800';
+    }
+  };
+
+  const getTipoStyle = (tipo: string) => {
+    switch (tipo) {
+      case 'Mensual':
+        return 'bg-purple-200 text-purple-800';
+      case 'Trimestral':
+        return 'bg-blue-200 text-blue-800';
+      case 'Anual':
+        return 'bg-indigo-200 text-indigo-800';
+      default:
+        return 'bg-gray-200 text-gray-800';
+    }
   };
 
   return (
@@ -68,39 +121,51 @@ const ReportesPage: React.FC = () => {
             />
             <Search className={`absolute right-3 top-2.5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
           </div>
-          <Button variant="filter" onClick={handleFilter}>
-            <Filter className="w-4 h-4" />
-          </Button>
+          <div className="relative">
+            <Button 
+              variant="filter" 
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className={isFilterOpen ? 'ring-2 ring-blue-500' : ''}
+            >
+              <Filter className="w-4 h-4" />
+            </Button>
+            <ReportesFilter
+              isOpen={isFilterOpen}
+              onClose={() => setIsFilterOpen(false)}
+              onApplyFilters={handleApplyFilters}
+            />
+          </div>
         </div>
       </div>
 
       <div className={`bg-${theme === 'dark' ? 'gray-800' : 'white'} rounded-lg shadow-md overflow-hidden`}>
         <Table
-          headers={['Título', 'Fecha', 'Tipo', 'Acciones']}
-          data={reportesData.map(report => ({
+          headers={['Título', 'Fecha', 'Tipo', 'Estado', 'Acciones']}
+          data={filteredReportes.map(reporte => ({
             Título: (
               <div className="flex items-center">
                 <FileText className={`w-5 h-5 mr-2 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
-                {report.titulo}
+                {reporte.titulo}
               </div>
             ),
             Fecha: (
               <div className="flex items-center">
                 <Calendar className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
-                {report.fecha}
+                {reporte.fecha}
               </div>
             ),
             Tipo: (
-              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                report.tipo === 'Mensual' ? 'bg-green-200 text-green-800' :
-                report.tipo === 'Trimestral' ? 'bg-blue-200 text-blue-800' :
-                'bg-purple-200 text-purple-800'
-              }`}>
-                {report.tipo}
+              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getTipoStyle(reporte.tipo)}`}>
+                {reporte.tipo}
+              </span>
+            ),
+            Estado: (
+              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getEstadoStyle(reporte.estado)}`}>
+                {reporte.estado}
               </span>
             ),
             Acciones: (
-              <Button variant="normal" onClick={() => console.log(`Descargando reporte ${report.id}`)}>
+              <Button variant="normal" onClick={() => console.log(`Descargando reporte ${reporte.id}`)}>
                 <Download className="w-4 h-4 mr-2" />
                 Descargar
               </Button>
@@ -112,7 +177,7 @@ const ReportesPage: React.FC = () => {
 
       <div className="mt-6 flex justify-between items-center">
         <div className="text-sm">
-          Mostrando 5 de 5 reportes
+          Mostrando {filteredReportes.length} de {reportesData.length} reportes
         </div>
         <div className="space-x-2">
           <Button variant="normal" disabled>Anterior</Button>

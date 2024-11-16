@@ -17,7 +17,7 @@ const CashflowPage: React.FC = () => {
     { title: "Beneficio neto", value: "$2,500", icon: <TrendingUp className="w-6 h-6 text-blue-500" />, change: "↑ 5%" },
     { title: "Ingresos", value: "$15,000", icon: <DollarSign className="w-6 h-6 text-green-500" />, change: "↑ 20%" },
     { title: "Margen de ganancia", value: "16.67%", icon: <PieChart className="w-6 h-6 text-purple-500" />, change: "↑ 2%" },
-    { title: "Clientes Nuevos", value: "25", icon: <Users className="w-6 h-6 text-yellow-500" />, change: "↑ 5" },
+    { title: "Clientes Nuevos (este mes)", value: "25", icon: <Users className="w-6 h-6 text-yellow-500" />, change: "↑ 5" },
   ];
 
   return (

@@ -190,7 +190,7 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
           <SmallWidget title="Ingreso Mensual" value="$0.00" icon={DollarSign} subtitle="Ingreso mensual actual" />
         </div>
         <div key="ingresosTotales">
-          <SmallWidget title="Ingresos" value="$0.00" icon={DollarSign} subtitle="Ingresos totales" />
+          <SmallWidget title="Ingreso Total" value="$0.00" icon={DollarSign} subtitle="Ingresos historico en la plataforma" />
         </div>
         <div key="margenGanancia">
           <SmallWidget title="Margen de Ganancia" value="0.00%" icon={PieChart} subtitle="Margen de ganancia" />

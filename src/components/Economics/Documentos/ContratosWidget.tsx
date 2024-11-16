@@ -43,6 +43,9 @@ const ContratosWidget: React.FC = () => {
     >
       <div className="flex items-center space-x-2 mb-4">
         <div className="relative flex-grow">
+          <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
+            Contratos
+          </h3>
           <input
             type="text"
             placeholder="Buscar contratos..."
@@ -52,7 +55,7 @@ const ContratosWidget: React.FC = () => {
               theme === 'dark' 
                 ? 'bg-gray-700 border-gray-600 text-white' 
                 : 'bg-white border-gray-300 text-gray-800'
-            } border focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300`}
+            } border focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300`}
           />
           <Search className={`absolute right-3 top-2.5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
         </div>

@@ -6,6 +6,7 @@ import MetricCard from './MetricCard';
 import BonosWidget from './BonosWidget';
 import ClientesWidget from './ClientesWidget';
 import ServiciosWidget from './ServiciosWidget';
+import ClientesServicioWidget from './ClientesServicioWidget'; // Importación del nuevo widget
 
 const PlanesPage: React.FC = () => {
   const { theme } = useTheme();
@@ -20,17 +21,17 @@ const PlanesPage: React.FC = () => {
       <h2 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-blue-500 to-purple-600 text-transparent bg-clip-text">
         Gestión de Servicios
       </h2>
-      
+
       {/* MetricCards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <MetricCard title="Clientes Actuales" value="200" icon={<Users className="w-6 h-6 text-blue-500" />} />
-        <MetricCard title="Nuevos Clientes " value="40" icon={<Clock className="w-6 h-6 text-yellow-500" />} />
+        <MetricCard title="Nuevos Clientes (este mes) " value="40" icon={<Clock className="w-6 h-6 text-yellow-500" />} />
         <MetricCard title="Planes Vendidos" value="150" icon={<FileText className="w-6 h-6 text-green-500" />} />
-        <MetricCard title="Nuevos Planes" value="25" icon={<UserPlus className="w-6 h-6 text-purple-500" />} />
+        <MetricCard title="Nuevos Planes (este mes)" value="25" icon={<UserPlus className="w-6 h-6 text-purple-500" />} />
       </div>
 
       {/* Widgets */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <motion.div
           className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg overflow-hidden`}
           initial={{ opacity: 0, y: 20 }}
@@ -65,6 +66,16 @@ const PlanesPage: React.FC = () => {
           </div>
         </motion.div>
       </div>
+
+      {/* ClientesServicioWidget - Ocupa todo el ancho de la pantalla */}
+      <motion.div
+        className="w-full mt-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <ClientesServicioWidget />
+      </motion.div>
     </motion.div>
   );
 };

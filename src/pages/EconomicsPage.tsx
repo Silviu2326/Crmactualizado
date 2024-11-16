@@ -20,7 +20,7 @@ const EconomicsPage: React.FC = () => {
   const sections = [
     { id: 'panel', label: 'Panel de Control', icon: TrendingUp },
     { id: 'cashflow', label: 'Cashflow', icon: DollarSign, component: CashflowPage },
-    { id: 'planes', label: 'Planes', icon: PieChart, component: PlanesPage },
+    { id: 'planes', label: 'Servicios', icon: PieChart, component: PlanesPage },
     { id: 'documentos', label: 'Documentos', icon: FileText, component: DocumentosPage },
     { id: 'facturas', label: 'Facturas', icon: FileText, component: FacturasPage },
     { id: 'reportes', label: 'Reportes', icon: TrendingUp, component: ReportesPage },

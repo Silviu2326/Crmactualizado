@@ -141,7 +141,7 @@ const FacturasWidget: React.FC<FacturasWidgetProps> = ({
                 </th>
               )}
               <th className="px-4 py-2">Número</th>
-              <th className="px-4 py-2">Monto</th>
+              <th className="px-4 py-2">Importe</th>
               <th className="px-4 py-2">Estado</th>
               <th className="px-4 py-2">Tipo</th>
             </tr>

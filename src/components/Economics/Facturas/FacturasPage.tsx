@@ -157,7 +157,7 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
 
       <div className={`bg-${theme === 'dark' ? 'gray-800' : 'white'} rounded-lg shadow-md overflow-hidden`}>
         <Table
-          headers={['Número', 'Fecha', 'Monto', 'Estado', 'Tipo', 'Acciones']}
+          headers={['Número', 'Fecha', 'Importe ', 'Estado', 'Tipo', 'Acciones']}
           data={filteredFacturas.map(factura => ({
             Número: (
               <div className="flex items-center">

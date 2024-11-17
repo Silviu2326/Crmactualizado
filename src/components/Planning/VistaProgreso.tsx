@@ -1,77 +1,85 @@
 import React from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
-import { TrendingUp, Award, Target } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { TrendingUp, Award, Target, Calendar } from 'lucide-react';
 
 interface VistaProgresoProps {
   semanaActual: number;
-  // Aquí puedes añadir más props según sea necesario para mostrar el progreso
 }
 
-const VistaProgreso: React.FC<VistaProgresoProps> = ({ semanaActual }) => {
+const VistaProgreso: React.FC<VistaProgresoProps> = ({
+  semanaActual,
+}) => {
   const { theme } = useTheme();
 
-  // Estos son datos de ejemplo. En una implementación real, estos datos vendrían de props o de una API
-  const progresoSemanal = {
-    pesoLevantado: 5000, // en kg
-    caloriasBurnidas: 3500,
-    objetivosCumplidos: 8,
-  };
+  const progressData = [
+    { label: 'Semana 1', completed: 100 },
+    { label: 'Semana 2', completed: 85 },
+    { label: 'Semana 3', completed: 70 },
+    { label: 'Semana 4', completed: 60 },
+    { label: 'Semana 5', completed: 30 },
+    { label: 'Semana 6', completed: 0 },
+  ];
 
-  const StatCard = ({ title, value, icon: Icon, unit }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className={`${
-        theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-      } p-6 rounded-lg shadow-md flex items-center justify-between`}
-    >
-      <div>
-        <h3 className="text-lg font-semibold mb-2">{title}</h3>
-        <p className="text-3xl font-bold">
-          {value} <span className="text-sm font-normal">{unit}</span>
-        </p>
-      </div>
-      <Icon className={`w-12 h-12 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-500'}`} />
-    </motion.div>
-  );
+  const achievements = [
+    { icon: Award, title: 'Primera Semana Completada', description: '¡Completaste tu primera semana de entrenamiento!' },
+    { icon: Target, title: 'Consistencia', description: '3 días consecutivos de entrenamiento' },
+    { icon: Calendar, title: 'Compromiso', description: 'No has perdido ningún día programado' },
+  ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.5 }}
-      className={`${
-        theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'
-      } rounded-xl p-6 shadow-lg`}
-    >
-      <h2 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-        Progreso - Semana {semanaActual}
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard
-          title="Peso Total Levantado"
-          value={progresoSemanal.pesoLevantado}
-          icon={TrendingUp}
-          unit="kg"
-        />
-        <StatCard
-          title="Calorías Quemadas"
-          value={progresoSemanal.caloriasBurnidas}
-          icon={Target}
-          unit="kcal"
-        />
-        <StatCard
-          title="Objetivos Cumplidos"
-          value={progresoSemanal.objetivosCumplidos}
-          icon={Award}
-          unit="de 10"
-        />
+    <div className="space-y-8">
+      <div className={`p-6 rounded-xl shadow-lg
+        ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+        <div className="flex items-center space-x-3 mb-6">
+          <TrendingUp className="w-6 h-6 text-blue-500" />
+          <h2 className="text-xl font-bold">Progreso General</h2>
+        </div>
+
+        <div className="space-y-6">
+          {progressData.map((week, index) => (
+            <div key={index} className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">{week.label}</span>
+                <span className="text-sm text-gray-500">{week.completed}%</span>
+              </div>
+              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-500 transition-all duration-300"
+                  style={{ width: `${week.completed}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      {/* Aquí puedes añadir más elementos para mostrar el progreso, como gráficos o listas de logros */}
-    </motion.div>
+
+      <div className={`p-6 rounded-xl shadow-lg
+        ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+        <h2 className="text-xl font-bold mb-6">Logros</h2>
+        <div className="grid gap-6">
+          {achievements.map((achievement, index) => {
+            const Icon = achievement.icon;
+            return (
+              <div
+                key={index}
+                className={`p-4 rounded-lg flex items-start space-x-4
+                  ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'}`}
+              >
+                <div className={`p-2 rounded-full ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'}`}>
+                  <Icon className="w-6 h-6 text-blue-500" />
+                </div>
+                <div>
+                  <h3 className="font-medium mb-1">{achievement.title}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {achievement.description}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -1,5 +1,11 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Navigate,
+  useLocation,
+} from 'react-router-dom';
 import Header from './components/Common/Header';
 import Sidebar from './components/Common/Sidebar';
 import Footer from './components/Common/Footer';
@@ -24,7 +30,9 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useTheme } from './contexts/ThemeContext';
 
-const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const { user } = useAuth();
   return user ? <>{children}</> : <Navigate to="/login" />;
 };
@@ -32,38 +40,192 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 function AppContent() {
   const { theme } = useTheme();
   const { user } = useAuth();
+  const [isCommandAssisterOpen, setIsCommandAssisterOpen] = useState(false);
+  const location = useLocation();
 
   if (!user) {
     return <LoginPage />;
   }
 
+  // Determinar si estamos en la ruta "/edit-planning/:id"
+  const isOnEditPlanningPage = location.pathname.startsWith('/edit-planning/');
+
+  // Determinar si debemos ocultar el layout
+  const shouldHideLayout = isCommandAssisterOpen && isOnEditPlanningPage;
+
   return (
-    <div className={`flex flex-col min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
-      <Header />
-      <div className="flex flex-1">
-        <Sidebar />
-        <main className="flex-1 p-6">
-          <Routes>
-            <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
-            <Route path="/clients" element={<PrivateRoute><ClientsPage /></PrivateRoute>} />
-            <Route path="/routines" element={<PrivateRoute><RoutinesPage /></PrivateRoute>} />
-            <Route path="/diets" element={<PrivateRoute><DietsPage /></PrivateRoute>} />
-            <Route path="/classes" element={<PrivateRoute><ClassesPage /></PrivateRoute>} />
-            <Route path="/economics" element={<PrivateRoute><EconomicsPage /></PrivateRoute>} />
-            <Route path="/marketing/campaigns" element={<PrivateRoute><MarketingCampaignsPage /></PrivateRoute>} />
-            <Route path="/marketing/analytics" element={<PrivateRoute><MarketingAnalyticsPage /></PrivateRoute>} />
-            <Route path="/content" element={<PrivateRoute><ContentPublishingPage /></PrivateRoute>} />
-            <Route path="/publications" element={<PrivateRoute><Publications /></PrivateRoute>} />
-            <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-            <Route path="/settings" element={<PrivateRoute><AjustesPage /></PrivateRoute>} />
-            <Route path="/services" element={<PrivateRoute><ServiciosPage /></PrivateRoute>} />
-            <Route path="/edit-planning/:id" element={<PrivateRoute><EditPlanningPage /></PrivateRoute>} />
-            <Route path="/edit-diet/:id" element={<PrivateRoute><PageEdicionDieta /></PrivateRoute>} />
-          </Routes>
-        </main>
+    <div
+      className={`flex ${shouldHideLayout ? '' : 'flex-col'} min-h-screen ${
+        theme === 'dark'
+          ? 'bg-gray-900 text-white'
+          : 'bg-gray-100 text-gray-900'
+      }`}
+    >
+      {/* Header se oculta si shouldHideLayout es true */}
+      {!shouldHideLayout && <Header />}
+      <div className={`flex flex-1 ${shouldHideLayout ? '' : ''}`}>
+        {/* Sidebar se oculta si shouldHideLayout es true */}
+        {!shouldHideLayout && <Sidebar />}
+        {/* Ajustar el contenido principal */}
+        {shouldHideLayout ? (
+          <>
+            {/* CommandAssister ocupando 1/3 del ancho */}
+            <div className="w-1/3 h-full">
+              <CommandAssister
+                isExpanded={isCommandAssisterOpen}
+                setIsExpanded={setIsCommandAssisterOpen}
+              />
+            </div>
+            {/* Contenido principal ocupando 2/3 del ancho */}
+            <main className="w-2/3 h-full p-6 overflow-y-auto">
+              <Routes>
+                <Route
+                  path="/edit-planning/:id"
+                  element={
+                    <PrivateRoute>
+                      <EditPlanningPage />
+                    </PrivateRoute>
+                  }
+                />
+              </Routes>
+            </main>
+          </>
+        ) : (
+          <main className="flex-1 p-6">
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <PrivateRoute>
+                    <DashboardPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/clients"
+                element={
+                  <PrivateRoute>
+                    <ClientsPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/routines"
+                element={
+                  <PrivateRoute>
+                    <RoutinesPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/diets"
+                element={
+                  <PrivateRoute>
+                    <DietsPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/classes"
+                element={
+                  <PrivateRoute>
+                    <ClassesPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/economics"
+                element={
+                  <PrivateRoute>
+                    <EconomicsPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/marketing/campaigns"
+                element={
+                  <PrivateRoute>
+                    <MarketingCampaignsPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/marketing/analytics"
+                element={
+                  <PrivateRoute>
+                    <MarketingAnalyticsPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/content"
+                element={
+                  <PrivateRoute>
+                    <ContentPublishingPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/publications"
+                element={
+                  <PrivateRoute>
+                    <Publications />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute>
+                    <ProfilePage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <PrivateRoute>
+                    <AjustesPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/services"
+                element={
+                  <PrivateRoute>
+                    <ServiciosPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/edit-planning/:id"
+                element={
+                  <PrivateRoute>
+                    <EditPlanningPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/edit-diet/:id"
+                element={
+                  <PrivateRoute>
+                    <PageEdicionDieta />
+                  </PrivateRoute>
+                }
+              />
+            </Routes>
+          </main>
+        )}
       </div>
-      <Footer />
-      <CommandAssister />
+      {/* Footer se oculta si shouldHideLayout es true */}
+      {!shouldHideLayout && <Footer />}
+      {/* CommandAssister */}
+      {!isCommandAssisterOpen && (
+        <CommandAssister
+          isExpanded={isCommandAssisterOpen}
+          setIsExpanded={setIsCommandAssisterOpen}
+        />
+      )}
     </div>
   );
 }

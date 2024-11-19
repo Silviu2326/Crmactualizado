@@ -1,3 +1,4 @@
+// src/pages/LoginPage.tsx
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, Dumbbell } from 'lucide-react';
 import Button from '../components/Common/Button';
@@ -32,8 +33,8 @@ const LoginPage: React.FC = () => {
     
     try {
       await login(formData.email, formData.password);
-    } catch (error) {
-      setError('Credenciales inválidas. Use admin@example.com / password');
+    } catch (error: any) {
+      setError(error.message || 'Credenciales inválidas. Usa admin@example.com / password');
     } finally {
       setIsLoading(false);
     }
@@ -91,7 +92,7 @@ const LoginPage: React.FC = () => {
                     ? 'bg-gray-700/50 border-gray-600 text-white focus:border-blue-500' 
                     : 'bg-white/50 border-gray-300 text-gray-900 focus:border-blue-500'
                 } focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300`}
-                placeholder="admin@example.com"
+                placeholder="juan.perez@example.com"
                 required
               />
             </div>
@@ -118,7 +119,7 @@ const LoginPage: React.FC = () => {
                     ? 'bg-gray-700/50 border-gray-600 text-white focus:border-blue-500' 
                     : 'bg-white/50 border-gray-300 text-gray-900 focus:border-blue-500'
                 } focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300`}
-                placeholder="password"
+                placeholder="contraseña123"
                 required
               />
               <button

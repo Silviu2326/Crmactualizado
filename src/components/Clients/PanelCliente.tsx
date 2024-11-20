@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { motion } from 'framer-motion';
 import {
@@ -14,6 +14,7 @@ import Button from '../Common/Button';
 import InfoCard from './InfoCard';
 import Notes from './Notes';
 import ClientCalendar from './Calendar';
+import axios from 'axios';
 
 type Section = 'dashboard' | 'plan' | 'checkins' | 'personal' | 'finances';
 
@@ -37,13 +38,34 @@ interface Cliente {
 }
 
 interface PanelClienteProps {
-  cliente: Cliente;
+  clienteId: string;
   onClose: () => void;
 }
 
-const PanelCliente: React.FC<PanelClienteProps> = ({ cliente, onClose }) => {
+const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api';
+
+const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
   const { theme } = useTheme();
   const [activeSection, setActiveSection] = useState<Section>('dashboard');
+  const [cliente, setCliente] = useState<Cliente | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCliente = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/clientes/${clienteId}`);
+        setCliente(response.data);
+      } catch (error) {
+        console.error('Error al obtener el cliente:', error);
+        setError('Error al obtener el cliente');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCliente();
+  }, [clienteId]);
 
   const handleViewPlan = () => {
     console.log('Ver plan de entrenamiento');
@@ -68,6 +90,18 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ cliente, onClose }) => {
     { id: 'personal', icon: Users, label: 'Personal' },
     { id: 'finances', icon: Wallet, label: 'Finanzas' },
   ];
+
+  if (loading) {
+    return <div>Cargando datos del cliente...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
+  if (!cliente) {
+    return <div>No se encontró el cliente.</div>;
+  }
 
   return (
     <motion.div
@@ -175,7 +209,7 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ cliente, onClose }) => {
                 { icon: Dumbbell, text: `Plan: ${cliente.planActual}` },
                 { icon: Target, text: `Objetivo: ${cliente.objetivo}` },
                 { icon: CalendarIcon, text: `Próxima sesión: ${cliente.proximaCita}` },
-                { icon: Activity, text: "Progreso semanal: 85%" }
+                { icon: Activity, text: `Progreso semanal: ${cliente.progreso}%` }
               ]}
               actionButton={{
                 icon: Dumbbell,
@@ -189,9 +223,9 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ cliente, onClose }) => {
               title="Check-ins Recientes"
               delay={0.7}
               items={[
-                { icon: CalendarCheck, text: "Último check-in: 05/03/2024" },
-                { icon: Scale, text: "Peso actual vs anterior: -0.5kg" },
-                { icon: TrendingUp, text: "Progreso mensual: +12%" },
+                { icon: CalendarCheck, text: `Último check-in: ${cliente.ultimaVisita}` },
+                { icon: Scale, text: `Peso actual: ${cliente.peso}` },
+                { icon: TrendingUp, text: `Progreso mensual: ${cliente.progreso}%` },
                 { icon: Brain, text: "Estado anímico: Excelente" }
               ]}
               actionButton={{

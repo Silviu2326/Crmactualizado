@@ -31,6 +31,7 @@ interface ClientListHeaderProps {
   selectedClientsCount: number;
   viewMode: 'table' | 'simple';
   setViewMode: (mode: 'table' | 'simple') => void;
+  onCreateClient: () => void; // Agregamos esta prop
 }
 
 const ClientListHeader: React.FC<ClientListHeaderProps> = ({
@@ -43,6 +44,7 @@ const ClientListHeader: React.FC<ClientListHeaderProps> = ({
   selectedClientsCount,
   viewMode,
   setViewMode,
+  onCreateClient, // Desestructuramos la nueva prop
 }) => {
   const { theme } = useTheme();
 
@@ -95,15 +97,16 @@ const ClientListHeader: React.FC<ClientListHeaderProps> = ({
           </div>
 
           <Button
-             variant="filter"            
-             onClick={() => setFilterOpen(!filterOpen)}
-             className="flex items-center"
+            variant="filter"
+            onClick={() => setFilterOpen(!filterOpen)}
+            className="flex items-center"
           >
             <Filter className="w-5 h-5 mr-2" />
             Filtros
           </Button>
 
-          <Button variant="create" className="flex items-center">
+          {/* Botón "Nuevo Cliente" con onClick */}
+          <Button variant="create" onClick={onCreateClient} className="flex items-center">
             <Plus className="w-5 h-5 mr-2" />
             Nuevo Cliente
           </Button>

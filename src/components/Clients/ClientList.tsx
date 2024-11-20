@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import PanelCliente from './PanelCliente';
 import ClientListHeader from './ClientListHeader';
 import ClientListViewSimple from './ClientListViewSimple';
+import axios from 'axios';
+import CreateClient from './CreateClient'; // Importamos CreateClient
 
 interface Filters {
   estado: string;
@@ -13,6 +15,35 @@ interface Filters {
   clase: string;
   servicio: string;
 }
+
+interface Cliente {
+  id: string;
+  nombre: string;
+  apellido: string;
+  estado: string;
+  telefono: string;
+  email: string;
+  tag: string;
+  tipoPlan: string;
+  ultimoCheckIn: string;
+  clase: string;
+  cumplimiento: string;
+  alertas: string;
+  servicio: string;
+  direccion: string;
+  fechaInicio: string;
+  objetivo: string;
+  peso: string;
+  altura: string;
+  imc: number;
+  ultimaVisita: string;
+  proximaCita: string;
+  planActual: string;
+  progreso: number;
+  pagosAlDia: boolean;
+}
+
+const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api';
 
 const ClientList: React.FC = () => {
   const { theme } = useTheme();
@@ -28,41 +59,38 @@ const ClientList: React.FC = () => {
     clase: '',
     servicio: '',
   });
+  const [clientesData, setClientesData] = useState<Cliente[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const clientesData = [
-    {
-      id: '1',
-      nombre: 'Juan',
-      apellido: 'Pérez',
-      estado: 'Activo',
-      telefono: '+34 123 456 789',
-      email: 'juan@example.com',
-      tag: 'Premium',
-      tipoPlan: 'Anual',
-      ultimoCheckIn: '2024-03-10',
-      clase: 'CrossFit',
-      cumplimiento: '85%',
-      alertas: '2',
-      servicio: 'Personal',
-      direccion: 'Calle Principal 123',
-      fechaInicio: '2023-01-15',
-      objetivo: 'Pérdida de peso',
-      peso: '80kg',
-      altura: '175cm',
-      imc: 26.1,
-      ultimaVisita: '2024-03-10',
-      proximaCita: '2024-03-17',
-      planActual: 'Premium Anual',
-      progreso: 75,
-      pagosAlDia: true,
-    },
-  ];
+  // Estado para controlar la visualización del formulario de creación
+  const [showCreateClient, setShowCreateClient] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetchClientes();
+  }, []);
+
+  const fetchClientes = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API_URL}/clientes`);
+      setClientesData(response.data);
+    } catch (error) {
+      console.error('Error al obtener los clientes:', error);
+      setError('Error al obtener los clientes');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleRowClick = (clientId: string) => {
     setSelectedClient(selectedClient === clientId ? null : clientId);
   };
 
-  const toggleClientSelection = (clientId: string, event: React.MouseEvent) => {
+  const toggleClientSelection = (
+    clientId: string,
+    event: React.MouseEvent
+  ) => {
     event.stopPropagation();
     setSelectedClients((prev) =>
       prev.includes(clientId)
@@ -86,7 +114,7 @@ const ClientList: React.FC = () => {
 
     const matchesFilters = Object.entries(filters).every(([key, value]) => {
       if (!value) return true;
-      return client[key as keyof typeof client] === value;
+      return client[key as keyof Cliente] === value;
     });
 
     return matchesSearch && matchesFilters;
@@ -280,9 +308,7 @@ const ClientList: React.FC = () => {
                         className="overflow-hidden"
                       >
                         <PanelCliente
-                          cliente={
-                            clientesData.find((c) => c.id === selectedClient)!
-                          }
+                          clienteId={selectedClient}
                           onClose={() => setSelectedClient(null)}
                         />
                       </motion.div>
@@ -315,23 +341,43 @@ const ClientList: React.FC = () => {
         selectedClientsCount={selectedClients.length}
         viewMode={viewMode}
         setViewMode={setViewMode}
+        onCreateClient={() => setShowCreateClient(true)} // Pasamos la función para abrir el formulario
       />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        {viewMode === 'table' ? (
-          renderTableView()
-        ) : (
-          <ClientListViewSimple
-            clients={filteredClients}
-            onClientSelect={handleRowClick}
-            selectedClients={selectedClients}
-            onClientCheckboxToggle={toggleClientSelection}
+      {/* Mostrar CreateClient si showCreateClient es true */}
+      {showCreateClient && (
+        <div className="mt-6">
+          <CreateClient
+            onClose={() => setShowCreateClient(false)}
+            onClientCreated={() => {
+              setShowCreateClient(false);
+              fetchClientes(); // Actualizamos la lista de clientes
+            }}
           />
-        )}
-      </motion.div>
+        </div>
+      )}
+
+      {loading ? (
+        <div>Cargando...</div>
+      ) : error ? (
+        <div className="text-red-500">{error}</div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          {viewMode === 'table' ? (
+            renderTableView()
+          ) : (
+            <ClientListViewSimple
+              clients={filteredClients}
+              onClientSelect={handleRowClick}
+              selectedClients={selectedClients}
+              onClientCheckboxToggle={toggleClientSelection}
+            />
+          )}
+        </motion.div>
+      )}
     </div>
   );
 };

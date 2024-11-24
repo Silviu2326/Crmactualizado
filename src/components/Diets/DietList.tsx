@@ -1,88 +1,31 @@
-import React, { useState } from 'react'; 
+// DietList.tsx
+import React, { useState, useEffect } from 'react'; 
 import { Search, X, Plus, Filter, Download, Salad, Target, Clock, Users, FileText } from 'lucide-react';
 import Button from '../Common/Button';
 import Table from '../Common/Table';
 import { useTheme } from '../../contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom'; // <-- Importación añadida
+import { Link } from 'react-router-dom';
+
+import CrearDietasPopup from './CrearDietasPopup';
+import CrearComidaPopup from './CrearComidaPopup';
 
 const DietList: React.FC = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFoods, setShowFoods] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const dietData = [
-    { 
-      id: 1, // <-- Añadido
-      nombre: 'Dieta Mediterránea', 
-      cliente: 'Juan Pérez', 
-      fechaInicio: '2023-05-01', 
-      objetivo: 'Pérdida de peso', 
-      restricciones: 'Sin gluten', 
-      estado: 'Activo',
-      progreso: '75%',
-      acciones: 'Editar' 
-    },
-    { 
-      id: 2, // <-- Añadido
-      nombre: 'Dieta Cetogénica', 
-      cliente: 'María García', 
-      fechaInicio: '2023-06-15', 
-      objetivo: 'Aumento muscular', 
-      restricciones: 'Sin lácteos', 
-      estado: 'Pendiente',
-      progreso: '30%',
-      acciones: 'Editar' 
-    },
-    { 
-      id: 3, // <-- Añadido
-      nombre: 'Dieta Vegetariana', 
-      cliente: 'Carlos López', 
-      fechaInicio: '2023-07-01', 
-      objetivo: 'Mantenimiento', 
-      restricciones: 'Sin carne', 
-      estado: 'Completado',
-      progreso: '100%',
-      acciones: 'Editar' 
-    },
-  ];
+  const [isDietModalOpen, setIsDietModalOpen] = useState(false);
+  const [isFoodModalOpen, setIsFoodModalOpen] = useState(false);
 
-  const foodData = [
-    { 
-      id: 1, // <-- Añadido si también quieres editar alimentos
-      nombre: 'Pollo a la plancha', 
-      descripcion: 'Pechuga de pollo cocinada a la plancha', 
-      calorias: 165, 
-      carbohidratos: 0, 
-      proteinas: 31, 
-      grasas: 3.6, 
-      categoria: 'Proteínas',
-      acciones: 'Editar' 
-    },
-    { 
-      id: 2, // <-- Añadido
-      nombre: 'Ensalada César', 
-      descripcion: 'Lechuga romana, crutones, queso parmesano y aderezo César', 
-      calorias: 200, 
-      carbohidratos: 10, 
-      proteinas: 8, 
-      grasas: 15, 
-      categoria: 'Vegetales',
-      acciones: 'Editar' 
-    },
-    { 
-      id: 3, // <-- Añadido
-      nombre: 'Salmón al horno', 
-      descripcion: 'Filete de salmón cocinado al horno con hierbas', 
-      calorias: 280, 
-      carbohidratos: 0, 
-      proteinas: 39, 
-      grasas: 13, 
-      categoria: 'Proteínas',
-      acciones: 'Editar' 
-    },
-  ];
+  // Estados para dietas, alimentos, carga y errores
+  const [dietData, setDietData] = useState([]);
+  const [foodData, setFoodData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Datos estáticos para alimentos (puedes reemplazarlos con datos reales)
+  // const foodData = [ ... ]; // Elimina esta línea si obtienes los datos del backend
 
   const statsCards = [
     { 
@@ -111,7 +54,7 @@ const DietList: React.FC = () => {
     }
   ];
 
-  const renderCell = (key: string, value: any, item?: any) => {
+  const renderCell = (key: string, value: any) => {
     switch (key) {
       case 'objetivo':
         return (
@@ -132,59 +75,129 @@ const DietList: React.FC = () => {
       case 'estado':
         return (
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-            value === 'Activo' ? 'bg-emerald-100 text-emerald-800' :
-            value === 'Pendiente' ? 'bg-amber-100 text-amber-800' :
+            value === 'activa' ? 'bg-emerald-100 text-emerald-800' :
+            value === 'pendiente' ? 'bg-amber-100 text-amber-800' :
             'bg-purple-100 text-purple-800'
           }`}>
             {value}
           </span>
         );
-      case 'progreso':
-        return (
-          <div className="flex items-center space-x-2">
-            <div className="flex-grow bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-              <div 
-                className={`h-2.5 rounded-full ${
-                  parseInt(value) === 100 ? 'bg-green-600' :
-                  parseInt(value) > 50 ? 'bg-blue-600' :
-                  'bg-amber-600'
-                }`}
-                style={{ width: value }}
-              ></div>
-            </div>
-            <span className="text-sm font-medium">{value}</span>
-          </div>
-        );
-      case 'categoria':
-        return (
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-            value === 'Proteínas' ? 'bg-purple-100 text-purple-800' :
-            value === 'Vegetales' ? 'bg-green-100 text-green-800' :
-            'bg-blue-100 text-blue-800'
-          }`}>
-            {value}
-          </span>
-        );
-      case 'calorias':
-      case 'carbohidratos':
-      case 'proteinas':
-      case 'grasas':
-        return (
-          <span className="font-medium">
-            {value}{key === 'calorias' ? ' kcal' : 'g'}
-          </span>
-        );
       case 'acciones':
-        return (
-          <Link to={`/edit-diet/${item.id}`}>
-            <button className="text-blue-500 hover:underline">
-              {value}
-            </button>
-          </Link>
-        );
+        return value; // 'acciones' ya contiene el componente Link
       default:
         return value;
     }
+  };
+
+  const fetchDietas = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/dietas', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.mensaje || 'Error al obtener las dietas');
+      }
+
+      const data = await response.json();
+
+      const filteredData = data.map((diet: any) => ({
+        nombre: diet.nombre,
+        cliente: diet.cliente.nombre,
+        fechaInicio: new Date(diet.fechaInicio).toLocaleDateString('es-ES'),
+        objetivo: diet.objetivo,
+        restricciones: diet.restricciones,
+        estado: diet.estado,
+        acciones: (
+          <Link to={`/edit-diet/${diet._id}`}>
+            <button className="text-blue-500 hover:underline">Editar</button>
+          </Link>
+        ),
+      }));
+
+      setDietData(filteredData);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchFoods = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/foods', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.mensaje || 'Error al obtener los alimentos');
+      }
+
+      const data = await response.json();
+
+      const filteredData = data.map((food: any) => ({
+        nombre: food.nombre,
+        descripcion: food.descripcion,
+        calorias: food.calorias,
+        carbohidratos: food.carbohidratos,
+        proteinas: food.proteinas,
+        grasas: food.grasas,
+        categoria: food.categoria,
+        acciones: (
+          <Link to={`/edit-food/${food._id}`}>
+            <button className="text-blue-500 hover:underline">Editar</button>
+          </Link>
+        ),
+      }));
+
+      setFoodData(filteredData);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showFoods) {
+      fetchFoods();
+    } else {
+      fetchDietas();
+    }
+  }, [showFoods]);
+
+  const handleDietCreated = () => {
+    fetchDietas();
+  };
+
+  const handleFoodCreated = () => {
+    fetchFoods();
   };
 
   return (
@@ -237,13 +250,13 @@ const DietList: React.FC = () => {
         className="flex justify-between items-center mb-6"
       >
         <div className="flex space-x-2">
-          <Button variant="create" onClick={() => setIsModalOpen(true)}>
+          <Button variant="create" onClick={() => showFoods ? setIsFoodModalOpen(true) : setIsDietModalOpen(true)}>
             <Plus className="w-5 h-5 mr-2" />
-            {showFoods ? 'Añadir Alimento' : 'Crear Plan'}
+            {showFoods ? 'Añadir Alimento' : 'Crear Dieta'}
           </Button>
           <Button variant="normal" onClick={() => setShowFoods(!showFoods)}>
             <FileText className="w-5 h-5 mr-2" />
-            {showFoods ? 'Ver Planes' : 'Ver Alimentos'}
+            {showFoods ? 'Ver Dietas' : 'Ver Alimentos'}
           </Button>
           <Button variant="normal">
             <Download className="w-5 h-5 mr-2" />
@@ -275,28 +288,40 @@ const DietList: React.FC = () => {
         </Button>
       </motion.div>
 
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg overflow-hidden`}
-      >
-        <Table
-          headers={showFoods 
-            ? ['Nombre', 'Descripción', 'Calorías', 'Carbohidratos', 'Proteínas', 'Grasas', 'Categoría', 'Acciones']
-            : ['Nombre', 'Cliente', 'Fecha de Inicio', 'Objetivo', 'Restricciones', 'Estado', 'Progreso', 'Acciones']
-          }
-          data={(showFoods ? foodData : dietData).map(item => ({
-            ...item,
-            ...Object.fromEntries(
-              Object.entries(item).map(([key, value]) => [key, renderCell(key, value, item)])
-            )
-          }))}
-          variant={theme === 'dark' ? 'dark' : 'white'}
-        />
-      </motion.div>
+      {/* Manejo de estados de carga y error */}
+      {loading ? (
+        <div className="flex justify-center items-center h-full">
+          <p>Cargando {showFoods ? 'alimentos' : 'dietas'}...</p>
+        </div>
+      ) : error ? (
+        <div className="flex justify-center items-center h-full">
+          <p className="text-red-500">Error: {error}</p>
+        </div>
+      ) : (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg overflow-hidden`}
+        >
+          <Table
+            headers={showFoods 
+              ? ['Nombre', 'Descripción', 'Calorías', 'Carbohidratos', 'Proteínas', 'Grasas', 'Categoría', 'Acciones']
+              : ['Nombre', 'Cliente', 'Fecha de Inicio', 'Objetivo', 'Restricciones', 'Estado', 'Acciones']
+            }
+            data={(showFoods ? foodData : dietData).map(item => ({
+              ...item,
+              ...Object.fromEntries(
+                Object.entries(item).map(([key, value]) => [key, renderCell(key, value)])
+              )
+            }))}
+            variant={theme === 'dark' ? 'dark' : 'white'}
+          />
+        </motion.div>
+      )}
 
+      {/* Modales */}
       <AnimatePresence>
-        {isModalOpen && (
+        {isDietModalOpen && !showFoods && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -310,14 +335,35 @@ const DietList: React.FC = () => {
               className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-2xl`}
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-2xl font-bold">
-                  {showFoods ? 'Añadir Nuevo Alimento' : 'Crear Nuevo Plan'}
-                </h3>
-                <Button variant="normal" onClick={() => setIsModalOpen(false)}>
+                <h3 className="text-2xl font-bold">Crear Nuevo Plan</h3>
+                <Button variant="normal" onClick={() => setIsDietModalOpen(false)}>
                   <X className="w-5 h-5" />
                 </Button>
               </div>
-              {/* Aquí iría el formulario */}
+              <CrearDietasPopup onClose={() => setIsDietModalOpen(false)} onDietCreated={handleDietCreated} />
+            </motion.div>
+          </motion.div>
+        )}
+        {isFoodModalOpen && showFoods && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-2xl`}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-2xl font-bold">Añadir Nuevo Alimento</h3>
+                <Button variant="normal" onClick={() => setIsFoodModalOpen(false)}>
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+              <CrearComidaPopup onClose={() => setIsFoodModalOpen(false)} onFoodCreated={handleFoodCreated} />
             </motion.div>
           </motion.div>
         )}

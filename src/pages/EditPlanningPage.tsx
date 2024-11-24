@@ -1,8 +1,9 @@
-// EditPlanningPage.tsx
+// src/pages/EditPlanningPage.tsx
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
-import { Planning, WeekPlan } from '../types/planning';
+import { Planning, WeekPlan, DayPlan, Session } from '../types/planning';
 import { defaultPlanning } from '../data/defaultWorkout';
 import EditPlanningPageCalendario from '../components/Planning/EditPlanningPageCalendario';
 import VistaSimplificada from '../components/Planning/VistaSimplificada';
@@ -35,24 +36,17 @@ import {
   Table,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { v4 as uuidv4 } from 'uuid'; // Importar para generar IDs únicos
 
-type EditPlanningPageProps = {
-  isCommandAssisterOpen: boolean;
-};
-
-const EditPlanningPage: React.FC<EditPlanningPageProps> = ({
-  isCommandAssisterOpen,
-}) => {
+const EditPlanningPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { theme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [planning, setPlanning] = useState<Planning>(defaultPlanning);
+  const [planning, setPlanning] = useState<Planning | null>(null);
   const [semanaActual, setSemanaActual] = useState(1);
-  const [planSemanal, setPlanSemanal] = useState<WeekPlan>(
-    defaultPlanning.plan[0]
-  );
+  const [planSemanal, setPlanSemanal] = useState<{ [key: string]: DayPlan } | null>(null);
   const [vistaActual, setVistaActual] = useState<
     | 'simplificada'
     | 'compleja'
@@ -66,30 +60,164 @@ const EditPlanningPage: React.FC<EditPlanningPageProps> = ({
     | 'configuracion'
   >('simplificada');
   const [showConfig, setShowConfig] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const isHomeRoute = location.pathname === '/';
 
   useEffect(() => {
-    setPlanSemanal(planning.plan[semanaActual - 1]);
-  }, [semanaActual, planning.plan]);
+    if (!id) return;
+
+    const fetchPlanning = async () => {
+      try {
+        // Obtener el token JWT
+        const token = localStorage.getItem('token'); // O usa tu método para obtener el token
+
+        if (!token) {
+          throw new Error('No se encontró el token de autenticación');
+        }
+
+        const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${id}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`, // Incluir el token en los headers
+          },
+        });
+
+        if (!response.ok) {
+          // Manejar errores HTTP
+          const errorData = await response.json();
+          throw new Error(errorData.mensaje || 'Error al obtener la planificación');
+        }
+
+        const data: Planning = await response.json();
+        console.log('Datos recibidos del backend:', data); // <-- Log de datos recibidos
+
+        setPlanning(data);
+        setPlanSemanal(data.plan[semanaActual - 1].days); // Pasar solo 'days'
+      } catch (err: any) {
+        console.error('Error al obtener la planificación:', err); // <-- Log de errores
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlanning();
+  }, [id, semanaActual]);
+
+  useEffect(() => {
+    if (planning) {
+      setPlanSemanal(planning.plan[semanaActual - 1].days);
+    }
+  }, [semanaActual, planning]);
 
   const handleAddWeek = () => {
+    if (!planning) return;
+
+    const newWeekNumber = planning.semanas + 1;
+    const lastWeek = planning.plan[planning.plan.length - 1];
+    const lastStartDate = new Date(lastWeek.startDate);
+    const newStartDate = new Date(lastStartDate.getTime() + 7 * 24 * 60 * 60 * 1000); // Añadir 7 días
+
+    const newWeek: WeekPlan = {
+      _id: uuidv4(),
+      weekNumber: newWeekNumber,
+      startDate: newStartDate.toISOString(),
+      days: {
+        Lunes: {
+          _id: uuidv4(),
+          day: 'Lunes',
+          fecha: newStartDate.toISOString(),
+          sessions: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          __v: 0,
+        },
+        Martes: {
+          _id: uuidv4(),
+          day: 'Martes',
+          fecha: new Date(newStartDate.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString(),
+          sessions: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          __v: 0,
+        },
+        Miércoles: {
+          _id: uuidv4(),
+          day: 'Miércoles',
+          fecha: new Date(newStartDate.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+          sessions: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          __v: 0,
+        },
+        Jueves: {
+          _id: uuidv4(),
+          day: 'Jueves',
+          fecha: new Date(newStartDate.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+          sessions: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          __v: 0,
+        },
+        Viernes: {
+          _id: uuidv4(),
+          day: 'Viernes',
+          fecha: new Date(newStartDate.getTime() + 4 * 24 * 60 * 60 * 1000).toISOString(),
+          sessions: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          __v: 0,
+        },
+        Sábado: {
+          _id: uuidv4(),
+          day: 'Sábado',
+          fecha: new Date(newStartDate.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+          sessions: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          __v: 0,
+        },
+        Domingo: {
+          _id: uuidv4(),
+          day: 'Domingo',
+          fecha: new Date(newStartDate.getTime() + 6 * 24 * 60 * 60 * 1000).toISOString(),
+          sessions: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          __v: 0,
+        },
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      __v: 0,
+    };
+
     setPlanning((prev) => {
-      const newPlan = [...prev.plan, { ...prev.plan[0] }];
+      if (!prev) return prev;
+
       return {
         ...prev,
-        semanas: prev.semanas + 1,
-        plan: newPlan,
+        semanas: newWeekNumber,
+        plan: [...prev.plan, newWeek],
         updatedAt: new Date().toISOString(),
       };
     });
+
+    setSemanaActual(newWeekNumber); // Cambiar a la nueva semana
   };
 
-  const updatePlan = (newWeekPlan: WeekPlan) => {
-    setPlanSemanal(newWeekPlan);
+  const updatePlan = (updatedDays: { [key: string]: DayPlan }) => {
+    if (!planning) return;
+
+    setPlanSemanal(updatedDays);
     setPlanning((prev) => {
+      if (!prev) return prev;
+
       const newPlan = [...prev.plan];
-      newPlan[semanaActual - 1] = newWeekPlan;
+      newPlan[semanaActual - 1].days = updatedDays;
       return {
         ...prev,
         plan: newPlan,
@@ -98,11 +226,45 @@ const EditPlanningPage: React.FC<EditPlanningPageProps> = ({
     });
   };
 
-  const handleSaveChanges = () => {
-    console.log('Saving planning:', planning);
+  const handleSaveChanges = async () => {
+    if (!planning) return;
+  
+    try {
+      // Obtener el token JWT
+      const token = localStorage.getItem('token'); // Asegúrate de que el token esté almacenado correctamente
+  
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+  
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${planning._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // Incluir el token en los headers
+        },
+        body: JSON.stringify(planning),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error Data:', errorData);
+        throw new Error(errorData.mensaje || 'Error al actualizar la planificación');
+      }
+  
+      const updatedPlanning: Planning = await response.json();
+      console.log('Planificación actualizada:', updatedPlanning);
+      setPlanning(updatedPlanning);
+      alert('Planificación actualizada exitosamente.');
+    } catch (err: any) {
+      console.error('Error al actualizar la planificación:', err);
+      alert(`Error: ${err.message}`);
+    }
   };
-
+  
   const renderVistaActual = () => {
+    if (!planSemanal) return null;
+
     const props = {
       semanaActual,
       planSemanal,
@@ -167,6 +329,26 @@ const EditPlanningPage: React.FC<EditPlanningPageProps> = ({
     },
   ];
 
+  if (loading) {
+    return (
+      <div className={`p-6 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
+        <div className="flex justify-center items-center h-full">
+          <p>Cargando planificación...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`p-6 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
+        <div className="flex justify-center items-center h-full">
+          <p className="text-red-500">Error: {error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`h-full overflow-y-auto ${
@@ -177,7 +359,7 @@ const EditPlanningPage: React.FC<EditPlanningPageProps> = ({
     >
       <div className="container mx-auto px-4 py-8 relative">
         <AnimatePresence>
-          {showConfig && (
+          {showConfig && planning && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -255,76 +437,84 @@ const EditPlanningPage: React.FC<EditPlanningPageProps> = ({
             animate={{ y: 0, opacity: 1 }}
             className="text-center mb-10"
           >
-            <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-              {planning.nombre}
-            </h1>
-            <p className="text-xl text-gray-500 dark:text-gray-400">
-              {planning.descripcion}
-            </p>
+            {planning && (
+              <>
+                <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+                  {planning.nombre}
+                </h1>
+                <p className="text-xl text-gray-500 dark:text-gray-400">
+                  {planning.descripcion}
+                </p>
+              </>
+            )}
           </motion.div>
 
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="mb-12"
-          >
-            <EditPlanningPageCalendario
-              semanas={planning.semanas}
-              semanaActual={semanaActual}
-              setSemanaActual={setSemanaActual}
-              onAddWeek={handleAddWeek}
-            />
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-            {buttonSections.map((section, idx) => (
+          {planning && planSemanal && (
+            <>
               <motion.div
-                key={section.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                className={`p-6 rounded-xl ${
-                  theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
-                } shadow-lg`}
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="mb-12"
               >
-                <div className="flex items-center space-x-3 mb-4">
-                  <section.icon className="w-5 h-5 text-blue-500" />
-                  <h3 className="text-lg font-semibold">{section.title}</h3>
-                </div>
-                <div className="space-y-3">
-                  {section.buttons.map(({ icon: Icon, label, value }) => (
-                    <Button
-                      key={value}
-                      variant={vistaActual === value ? 'create' : 'normal'}
-                      onClick={() =>
-                        setVistaActual(value as typeof vistaActual)
-                      }
-                      className={`w-full justify-start transform hover:scale-102 transition-transform duration-300 ${
-                        vistaActual === value
-                          ? 'bg-gradient-to-r from-blue-500 to-indigo-500'
-                          : ''
-                      }`}
-                    >
-                      <Icon className="w-5 h-5 mr-3" />
-                      {label}
-                    </Button>
-                  ))}
-                </div>
+                <EditPlanningPageCalendario
+                  weeks={planning.plan}
+                  semanaActual={semanaActual}
+                  setSemanaActual={setSemanaActual}
+                  onAddWeek={handleAddWeek}
+                />
               </motion.div>
-            ))}
-          </div>
 
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={vistaActual}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {renderVistaActual()}
-            </motion.div>
-          </AnimatePresence>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                {buttonSections.map((section, idx) => (
+                  <motion.div
+                    key={section.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className={`p-6 rounded-xl ${
+                      theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
+                    } shadow-lg`}
+                  >
+                    <div className="flex items-center space-x-3 mb-4">
+                      <section.icon className="w-5 h-5 text-blue-500" />
+                      <h3 className="text-lg font-semibold">{section.title}</h3>
+                    </div>
+                    <div className="space-y-3">
+                      {section.buttons.map(({ icon: Icon, label, value }) => (
+                        <Button
+                          key={value}
+                          variant={vistaActual === value ? 'create' : 'normal'}
+                          onClick={() =>
+                            setVistaActual(value as typeof vistaActual)
+                          }
+                          className={`w-full justify-start transform hover:scale-102 transition-transform duration-300 ${
+                            vistaActual === value
+                              ? 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                              : ''
+                          }`}
+                        >
+                          <Icon className="w-5 h-5 mr-3" />
+                          {label}
+                        </Button>
+                      ))}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={vistaActual}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderVistaActual()}
+                </motion.div>
+              </AnimatePresence>
+            </>
+          )}
         </motion.div>
       </div>
     </div>

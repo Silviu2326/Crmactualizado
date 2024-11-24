@@ -67,23 +67,28 @@ const ClientList: React.FC = () => {
   const [showCreateClient, setShowCreateClient] = useState<boolean>(false);
 
   useEffect(() => {
+    console.log('🔄 Iniciando la carga de clientes...');
     fetchClientes();
   }, []);
 
   const fetchClientes = async () => {
     setLoading(true);
+    console.log('🚀 Realizando petición GET a la API para obtener clientes...');
     try {
       const response = await axios.get(`${API_URL}/clientes`);
       setClientesData(response.data);
+      console.log('🎉 Clientes obtenidos exitosamente:', response.data);
     } catch (error) {
-      console.error('Error al obtener los clientes:', error);
+      console.error('❗️ Error al obtener los clientes:', error);
       setError('Error al obtener los clientes');
     } finally {
       setLoading(false);
+      console.log('⏳ Finalizó la carga de clientes.');
     }
   };
 
   const handleRowClick = (clientId: string) => {
+    console.log(`👆 Fila de cliente con ID ${clientId} clickeada.`);
     setSelectedClient(selectedClient === clientId ? null : clientId);
   };
 
@@ -97,14 +102,22 @@ const ClientList: React.FC = () => {
         ? prev.filter((id) => id !== clientId)
         : [...prev, clientId]
     );
+    console.log(
+      selectedClients.includes(clientId)
+        ? `❌ Cliente con ID ${clientId} deseleccionado.`
+        : `✅ Cliente con ID ${clientId} seleccionado.`
+    );
   };
 
   const toggleSelectAll = () => {
-    setSelectedClients((prev) =>
-      prev.length === filteredClients.length
-        ? []
-        : filteredClients.map((c) => c.id)
-    );
+    if (selectedClients.length === filteredClients.length) {
+      setSelectedClients([]);
+      console.log('❌ Todos los clientes han sido deseleccionados.');
+    } else {
+      const allClientIds = filteredClients.map((c) => c.id);
+      setSelectedClients(allClientIds);
+      console.log('✅ Todos los clientes han sido seleccionados.');
+    }
   };
 
   const filteredClients = clientesData.filter((client) => {
@@ -119,6 +132,13 @@ const ClientList: React.FC = () => {
 
     return matchesSearch && matchesFilters;
   });
+
+  useEffect(() => {
+    console.log(
+      `🔍 Filtrando clientes con término de búsqueda: "${searchTerm}" y filtros:`,
+      filters
+    );
+  }, [searchTerm, filters, clientesData]);
 
   const renderCell = (key: string, value: any) => {
     switch (key) {
@@ -161,7 +181,7 @@ const ClientList: React.FC = () => {
                 style={{ width: value }}
               ></div>
             </div>
-            <span className="text-sm font-medium">{value}</span>
+            <span className="text-sm font-medium">{value}%</span>
           </div>
         );
       case 'alertas':
@@ -309,7 +329,12 @@ const ClientList: React.FC = () => {
                       >
                         <PanelCliente
                           clienteId={selectedClient}
-                          onClose={() => setSelectedClient(null)}
+                          onClose={() => {
+                            console.log(
+                              `🔒 Cerrar detalles del cliente con ID ${selectedClient}.`
+                            );
+                            setSelectedClient(null);
+                          }}
                         />
                       </motion.div>
                     </AnimatePresence>
@@ -341,15 +366,22 @@ const ClientList: React.FC = () => {
         selectedClientsCount={selectedClients.length}
         viewMode={viewMode}
         setViewMode={setViewMode}
-        onCreateClient={() => setShowCreateClient(true)} // Pasamos la función para abrir el formulario
+        onCreateClient={() => {
+          console.log('🆕 Abriendo formulario para crear un nuevo cliente.');
+          setShowCreateClient(true);
+        }} // Pasamos la función para abrir el formulario
       />
 
       {/* Mostrar CreateClient si showCreateClient es true */}
       {showCreateClient && (
         <div className="mt-6">
           <CreateClient
-            onClose={() => setShowCreateClient(false)}
+            onClose={() => {
+              console.log('❌ Cerrar formulario de creación de cliente.');
+              setShowCreateClient(false);
+            }}
             onClientCreated={() => {
+              console.log('🎉 Cliente creado exitosamente.');
               setShowCreateClient(false);
               fetchClientes(); // Actualizamos la lista de clientes
             }}
@@ -358,9 +390,9 @@ const ClientList: React.FC = () => {
       )}
 
       {loading ? (
-        <div>Cargando...</div>
+        <div>⏳ Cargando...</div>
       ) : error ? (
-        <div className="text-red-500">{error}</div>
+        <div className="text-red-500">❗️ {error}</div>
       ) : (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -371,7 +403,10 @@ const ClientList: React.FC = () => {
           ) : (
             <ClientListViewSimple
               clients={filteredClients}
-              onClientSelect={handleRowClick}
+              onClientSelect={(id) => {
+                console.log(`👆 Seleccionando cliente con ID ${id}.`);
+                handleRowClick(id);
+              }}
               selectedClients={selectedClients}
               onClientCheckboxToggle={toggleClientSelection}
             />

@@ -1,44 +1,120 @@
-import React, { useState } from 'react';  
+// src/components/ClassList/ClassList.tsx
+
+import React, { useState, useEffect } from 'react';  
 import { Search, X, Plus, Filter, Download, Users, Calendar, Clock, Target, Edit, Trash } from 'lucide-react';
 import Button from '../Common/Button';
 import Table from '../Common/Table';
 import { useTheme } from '../../contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import axios from 'axios';
+import CrearClasePopup from './CrearClasePopup'; // Asegúrate de la ruta correcta
+
+interface Entrenador {
+  _id: string;
+  nombre: string;
+  email: string;
+  // otros campos que necesites
+}
+
+interface PlanDePago {
+  _id: string;
+  precio: number;
+  moneda: string;
+  frecuencia: string;
+  detalles: string;
+  stripeProductId: string;
+  stripePriceId: string;
+  servicio: string;
+  clientes: string[];
+  fechaCreacion: string;
+  __v: number;
+}
+
+interface ClaseGrupal {
+  _id: string;
+  nombre: string;
+  descripcion: string;
+  tipo: string;
+  entrenador: Entrenador;
+  clientes: any[]; // Ajusta el tipo según tus necesidades
+  serviciosAdicionales: any[]; // Ajusta el tipo según tus necesidades
+  sesiones: any[]; // Ajusta el tipo según tus necesidades
+  fechaCreacion: string;
+  __v: number;
+  planDePago: PlanDePago[];
+}
 
 const ClassList: React.FC = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [classData, setClassData] = useState<ClaseGrupal[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const classData = [
-    {
-      id: 1,
-      nombre: 'Yoga Matutino',
-      descripcion: 'Clase de yoga para comenzar el día con energía',
-      clientes: 12,
-      maxParticipantes: 15,
-      sesiones: '3/semana',
-      acciones: 'Editar'
-    },
-    {
-      id: 2,
-      nombre: 'CrossFit Intensivo',
-      descripcion: 'Entrenamiento funcional de alta intensidad',
-      clientes: 8,
-      maxParticipantes: 10,
-      sesiones: '5/semana',
-      acciones: 'Editar'
-    },
-    {
-      id: 3,
-      nombre: 'Pilates Terapéutico',
-      descripcion: 'Pilates enfocado en rehabilitación y postura',
-      clientes: 6,
-      maxParticipantes: 8,
-      sesiones: '2/semana',
-      acciones: 'Editar'
+  // Obtener el token del localStorage
+  const token = localStorage.getItem('token');
+
+  useEffect(() => {
+    const fetchClassData = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get<ClaseGrupal[]>(
+          'https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services/tipo/ClaseGrupal',
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setClassData(response.data);
+        setLoading(false);
+      } catch (err: any) {
+        console.error('Error al obtener las clases:', err);
+        setError('No se pudieron cargar las clases. Por favor, intenta de nuevo más tarde.');
+        setLoading(false);
+      }
+    };
+
+    fetchClassData();
+  }, [token]);
+
+  // Función para actualizar la lista después de crear una nueva clase
+  const refreshClassData = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get<ClaseGrupal[]>(
+        'https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services/tipo/ClaseGrupal',
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setClassData(response.data);
+      setLoading(false);
+    } catch (err: any) {
+      console.error('Error al actualizar las clases:', err);
+      setError('No se pudieron actualizar las clases. Por favor, intenta de nuevo más tarde.');
+      setLoading(false);
     }
-  ];
+  };
+
+  // Transformar los datos recibidos para adaptarlos al formato esperado por la tabla
+  const transformedClassData = classData.map(item => ({
+    id: item._id,
+    nombre: item.nombre,
+    descripcion: item.descripcion,
+    clientes: item.clientes.length, // Asumiendo que 'clientes' es un array
+    maxParticipantes: 15, // Puedes ajustar esto según tus datos
+    sesiones: item.sesiones.length > 0 ? `${item.sesiones.length}/semana` : 'N/A', // Ajusta según la estructura de 'sesiones'
+    acciones: 'Editar'
+  }));
+
+  const filteredClassData = transformedClassData.filter(item =>
+    item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const statsCards = [
     {
@@ -66,11 +142,6 @@ const ClassList: React.FC = () => {
       color: "bg-amber-500"
     }
   ];
-
-  const filteredClassData = classData.filter(item =>
-    item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const renderCell = (key: string, value: any, row: any) => {
     switch (key) {
@@ -116,6 +187,7 @@ const ClassList: React.FC = () => {
               className={`${
                 theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'
               } transition-colors duration-150`}
+              onClick={() => handleEdit(row.id)} // Define esta función según tus necesidades
             >
               <Edit className="w-5 h-5" />
             </motion.button>
@@ -125,6 +197,7 @@ const ClassList: React.FC = () => {
               className={`${
                 theme === 'dark' ? 'text-red-400 hover:text-red-300' : 'text-red-600 hover:text-red-800'
               } transition-colors duration-150`}
+              onClick={() => handleDelete(row.id)} // Define esta función según tus necesidades
             >
               <Trash className="w-5 h-5" />
             </motion.button>
@@ -132,6 +205,32 @@ const ClassList: React.FC = () => {
         );
       default:
         return value;
+    }
+  };
+
+  // Funciones de manejo para acciones (editar y eliminar)
+  const handleEdit = (id: string) => {
+    // Implementa la lógica para editar la clase con el id proporcionado
+    console.log(`Editar clase con id: ${id}`);
+    // Por ejemplo, abrir el modal y cargar los datos de la clase
+  };
+
+  const handleDelete = async (id: string) => {
+    // Implementa la lógica para eliminar la clase con el id proporcionado
+    const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar esta clase?');
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log(`✅ Clase con id ${id} eliminada.`);
+      refreshClassData(); // Actualizar la lista después de eliminar
+    } catch (err: any) {
+      console.error('❌ Error al eliminar la clase:', err);
+      setError('No se pudo eliminar la clase. Por favor, intenta de nuevo más tarde.');
     }
   };
 
@@ -143,7 +242,7 @@ const ClassList: React.FC = () => {
         className="mb-8"
       >
         <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent mb-2">
-          Gestión de Clases
+          Lista de Clases Grupales
         </h2>
         <p className="text-gray-500 dark:text-gray-400">
           Administra y organiza las clases grupales de tu centro
@@ -216,49 +315,43 @@ const ClassList: React.FC = () => {
         </Button>
       </motion.div>
 
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={`rounded-lg shadow-lg overflow-hidden ${
-          theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-        }`}
-      >
-        <Table
-          headers={['Nombre', 'Descripción', 'Clientes', 'Capacidad', 'Sesiones', 'Acciones']}
-          data={filteredClassData.map(item => ({
-            nombre: item.nombre,
-            descripcion: item.descripcion,
-            clientes: renderCell('clientes', item.clientes, item),
-            capacidad: renderCell('capacidad', null, item),
-            sesiones: renderCell('sesiones', item.sesiones, item),
-            acciones: renderCell('acciones', null, item)
-          }))}
-          variant={theme === 'dark' ? 'dark' : 'white'}
-        />
-      </motion.div>
+      {loading ? (
+        <div className="text-center py-10">
+          <p>Cargando clases...</p>
+        </div>
+      ) : error ? (
+        <div className="text-center py-10 text-red-500">
+          <p>{error}</p>
+        </div>
+      ) : (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`rounded-lg shadow-lg overflow-hidden ${
+            theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+          }`}
+        >
+          <Table
+            headers={['Nombre', 'Descripción', 'Clientes', 'Capacidad', 'Sesiones', 'Acciones']}
+            data={filteredClassData.map(item => ({
+              nombre: item.nombre,
+              descripcion: item.descripcion,
+              clientes: renderCell('clientes', item.clientes, item),
+              capacidad: renderCell('capacidad', null, item),
+              sesiones: renderCell('sesiones', item.sesiones, item),
+              acciones: renderCell('acciones', null, item)
+            }))}
+            variant={theme === 'dark' ? 'dark' : 'white'}
+          />
+        </motion.div>
+      )}
 
       <AnimatePresence>
         {isModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-2xl`}
-            >
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-2xl font-bold">Crear Nueva Clase</h3>
-                <Button variant="normal" onClick={() => setIsModalOpen(false)}>
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
+          <CrearClasePopup 
+            onClose={() => setIsModalOpen(false)} 
+            onCreate={refreshClassData} // Actualizar la lista después de crear
+          />
         )}
       </AnimatePresence>
     </div>

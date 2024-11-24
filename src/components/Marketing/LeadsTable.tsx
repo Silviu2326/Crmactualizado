@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Plus,
   Search,
@@ -359,6 +359,54 @@ export function LeadsTable() {
     link.click();
     document.body.removeChild(link);
   };
+
+  // Función para obtener leads desde la API
+  const fetchLeads = async () => {
+    console.log('Iniciando la petición para obtener leads...');
+    try {
+      const token = localStorage.getItem('token'); // Ajusta esto según cómo almacenes tu token
+      if (!token) {
+        console.error('No se encontró el token de autenticación.');
+        toast.error('No se encontró el token de autenticación.');
+        return;
+      }
+
+      console.log('Token obtenido:', token);
+
+      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/leads/', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log('Respuesta de la API:', response);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error en la respuesta de la API:', errorData);
+        toast.error(
+          errorData.message || 'Error al obtener los leads desde la API.'
+        );
+        return;
+      }
+
+      const data: Lead[] = await response.json();
+      console.log('Leads obtenidos:', data);
+      setLeads(data);
+      toast.success('Leads obtenidos correctamente');
+    } catch (error) {
+      console.error('Error al realizar la petición para obtener leads:', error);
+      toast.error('Error al obtener los leads.');
+    }
+  };
+
+  // useEffect para obtener los leads al montar el componente
+  useEffect(() => {
+    fetchLeads();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Dependencias vacías para que se ejecute una vez al montar
 
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">

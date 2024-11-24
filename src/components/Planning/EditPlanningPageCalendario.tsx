@@ -1,43 +1,73 @@
-import React, { useState, useEffect } from 'react';
+// src/components/Planning/EditPlanningPageCalendario.tsx
+
+import React from 'react';
 import { ChevronLeft, ChevronRight, Plus, Calendar } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface EditPlanningPageCalendarioProps {
-  semanas: number;
+  weeks: WeekPlan[];
   semanaActual: number;
   setSemanaActual: (semana: number) => void;
   onAddWeek: () => void;
 }
 
+interface WeekPlan {
+  _id: string;
+  weekNumber: number;
+  startDate: string;
+  days: { [key: string]: DayPlan };
+  // ... otros campos si es necesario
+}
+
+interface DayPlan {
+  _id: string;
+  day: string;
+  fecha: string;
+  sessions: Session[];
+  // ... otros campos si es necesario
+}
+
+interface Session {
+  id: string;
+  name: string;
+  exercises: Exercise[];
+}
+
+interface Exercise {
+  id: string;
+  name: string;
+  sets: Array<{
+    id: string;
+    reps: number;
+    weight?: number;
+    rest?: number;
+  }>;
+}
+
 const EditPlanningPageCalendario: React.FC<EditPlanningPageCalendarioProps> = ({
-  semanas,
+  weeks,
   semanaActual,
   setSemanaActual,
   onAddWeek,
 }) => {
   const { theme } = useTheme();
-  const [isHovered, setIsHovered] = useState(false);
-  const [startIndex, setStartIndex] = useState(0);
-
-  useEffect(() => {
-    if (semanaActual > startIndex + 6) {
-      setStartIndex(semanaActual - 6);
-    } else if (semanaActual <= startIndex) {
-      setStartIndex(Math.max(0, semanaActual - 1));
-    }
-  }, [semanaActual]);
+  const [isHovered, setIsHovered] = React.useState(false);
 
   const cambiarSemana = (direccion: 'anterior' | 'siguiente') => {
-    setSemanaActual((prev) =>
-      direccion === 'anterior'
-        ? Math.max(1, prev - 1)
-        : Math.min(semanas, prev + 1)
-    );
+    const currentIndex = weeks.findIndex((week) => week.weekNumber === semanaActual);
+    if (direccion === 'anterior') {
+      if (currentIndex > 0) {
+        setSemanaActual(weeks[currentIndex - 1].weekNumber);
+      }
+    } else {
+      if (currentIndex < weeks.length - 1) {
+        setSemanaActual(weeks[currentIndex + 1].weekNumber);
+      }
+    }
   };
 
-  const getFechasRango = (semana: number) => {
-    const fechaInicio = new Date();
-    fechaInicio.setDate(fechaInicio.getDate() + (semana - 1) * 7);
+  const getFechasRango = (startDate: string) => {
+    const fechaInicio = new Date(startDate);
     const fechaFin = new Date(fechaInicio);
     fechaFin.setDate(fechaFin.getDate() + 6);
     return `${fechaInicio.toLocaleDateString('es-ES', {
@@ -65,7 +95,8 @@ const EditPlanningPageCalendario: React.FC<EditPlanningPageCalendarioProps> = ({
         <div className="flex items-center justify-between mb-8 text-white">
           <button
             onClick={() => cambiarSemana('anterior')}
-            className="p-3 rounded-full bg-opacity-20 bg-white hover:bg-opacity-30 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white transform hover:scale-110"
+            className="p-3 rounded-full bg-opacity-20 bg-white hover:bg-opacity-30 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white transform hover:scale-110 disabled:opacity-50 disabled:pointer-events-none"
+            disabled={semanaActual === 1}
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
@@ -77,36 +108,34 @@ const EditPlanningPageCalendario: React.FC<EditPlanningPageCalendarioProps> = ({
           </div>
           <button
             onClick={() => cambiarSemana('siguiente')}
-            className="p-3 rounded-full bg-opacity-20 bg-white hover:bg-opacity-30 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white transform hover:scale-110"
+            className="p-3 rounded-full bg-opacity-20 bg-white hover:bg-opacity-30 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white transform hover:scale-110 disabled:opacity-50 disabled:pointer-events-none"
+            disabled={semanaActual === weeks.length}
           >
             <ChevronRight className="w-6 h-6" />
           </button>
         </div>
 
         <div className="flex justify-between items-center space-x-3 mb-6">
-          {Array.from({ length: 6 }, (_, i) => {
-            const weekNumber = startIndex + i + 1;
-            return (
-              <button
-                key={weekNumber}
-                onClick={() => setSemanaActual(weekNumber)}
-                className={`flex-1 py-4 px-2 rounded-xl transition-all duration-300 text-center text-sm md:text-base font-semibold focus:outline-none focus:ring-2 focus:ring-white ${
-                  semanaActual === weekNumber
-                    ? `${
-                        theme === 'dark' ? 'bg-indigo-600' : 'bg-white'
-                      } text-${
-                        theme === 'dark' ? 'white' : 'indigo-600'
-                      } shadow-lg transform scale-105`
-                    : `${
-                        theme === 'dark' ? 'bg-gray-700' : 'bg-indigo-400'
-                      } text-white hover:bg-opacity-80`
-                }`}
-              >
-                <div>Semana {weekNumber}</div>
-                <div className="text-xs mt-1">{getFechasRango(weekNumber)}</div>
-              </button>
-            );
-          })}
+          {weeks.map((week) => (
+            <button
+              key={week.weekNumber}
+              onClick={() => setSemanaActual(week.weekNumber)}
+              className={`flex-1 py-4 px-2 rounded-xl transition-all duration-300 text-center text-sm md:text-base font-semibold focus:outline-none focus:ring-2 focus:ring-white ${
+                semanaActual === week.weekNumber
+                  ? `${
+                      theme === 'dark' ? 'bg-indigo-600' : 'bg-white'
+                    } text-${
+                      theme === 'dark' ? 'white' : 'indigo-600'
+                    } shadow-lg transform scale-105`
+                  : `${
+                      theme === 'dark' ? 'bg-gray-700' : 'bg-indigo-400'
+                    } text-white hover:bg-opacity-80`
+              }`}
+            >
+              <div>Semana {week.weekNumber}</div>
+              <div className="text-xs mt-1">{getFechasRango(week.startDate)}</div>
+            </button>
+          ))}
         </div>
 
         <div className="flex justify-center items-center">
@@ -128,7 +157,7 @@ const EditPlanningPageCalendario: React.FC<EditPlanningPageCalendarioProps> = ({
         className={`h-full ${
           theme === 'dark' ? 'bg-purple-500' : 'bg-indigo-600'
         } transition-all duration-300 ease-in-out`}
-        style={{ width: `${(semanaActual / semanas) * 100}%` }}
+        style={{ width: `${(semanaActual / weeks.length) * 100}%` }}
       ></div>
     </div>
   );

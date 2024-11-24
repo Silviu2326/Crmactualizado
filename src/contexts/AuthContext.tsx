@@ -1,16 +1,23 @@
-// src/contexts/AuthContext.tsx
+// AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import jwt_decode from 'jwt-decode';
 
+// Interface para el usuario autenticado
 interface User {
   id: string;
   email: string;
   nombre: string;
   rol: string;
-  // Agrega otros campos si es necesario
 }
 
+// Interface para el token decodificado
+interface DecodedToken {
+  exp: number;
+}
+
+// Interface para el contexto de autenticación
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
@@ -18,11 +25,26 @@ interface AuthContextType {
   loading: boolean;
 }
 
+// Crear el contexto
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// URL de la API directamente en el código
-const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api';
+// URL de la API
+const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api'; // Asegúrate de usar la URL correcta
 
+// Función para verificar si el token ha expirado
+const isTokenExpired = (token: string): boolean => {
+  const decoded: DecodedToken = jwt_decode(token);
+  const currentTime = Date.now() / 1000; // Tiempo actual en segundos
+  console.log('⏰ Decoded exp:', decoded.exp);
+  console.log('⏰ Current time:', currentTime);
+  if (!decoded.exp) {
+    console.warn('El token no tiene campo exp, se considerará válido.');
+    return false;
+  }
+  return decoded.exp < currentTime;
+};
+
+// Componente proveedor del contexto
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,22 +57,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (savedUser && token) {
       try {
-        const parsedUser: User = JSON.parse(savedUser);
+        // Validar si el token ha expirado
+        if (isTokenExpired(token)) {
+          console.warn('Token expirado, cerrando sesión automáticamente.');
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          setLoading(false);
+          return;
+        }
 
-        // Validar que parsedUser tenga las propiedades esperadas
+        const parsedUser: User = JSON.parse(savedUser);
         if (parsedUser && parsedUser.id && parsedUser.email) {
           setUser(parsedUser);
-          // Configurar el header de autorización para futuras solicitudes
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           if (location.pathname === '/login') {
             navigate('/');
           }
         } else {
-          throw new Error('Datos de usuario inválidos');
+          throw new Error('Datos de usuario inválidos.');
         }
       } catch (error) {
-        console.error('Error al parsear el usuario guardado:', error);
-        // Si hay un error al parsear, limpiar localStorage
+        console.error('Error al procesar los datos guardados:', error);
         localStorage.removeItem('user');
         localStorage.removeItem('token');
       }
@@ -60,27 +87,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     try {
-      // Enviar solicitud de login al backend
+      // Solicitar inicio de sesión al backend
       const response = await axios.post(`${API_URL}/auth/login/entrenador`, {
         email,
-        password
+        password,
       });
-
+  
+      console.log('🔑 Respuesta del backend:', response.data);
+  
       const { token, user: loggedInUser } = response.data;
-
+  
       if (!loggedInUser || !token) {
-        throw new Error('Respuesta del servidor incompleta');
+        throw new Error('Respuesta del servidor incompleta.');
       }
+  
 
-      // Actualizar el estado y almacenar en localStorage
+      // Almacenar el usuario y el token
       setUser(loggedInUser);
       localStorage.setItem('user', JSON.stringify(loggedInUser));
       localStorage.setItem('token', token);
-
-      // Configurar el header de autorización para futuras solicitudes
+      console.log('📝 Usuario guardado en localStorage:', loggedInUser);
+      console.log('🔐 Token guardado en localStorage:', token);
+      
+      // Configurar headers para futuras solicitudes
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-      // Redirigir al usuario después del login exitoso
+      // Redirigir al usuario
       navigate('/');
     } catch (error: any) {
       console.error('Error en el inicio de sesión:', error);
@@ -93,6 +125,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    // Eliminar datos de usuario y token
     setUser(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
@@ -111,10 +144,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
+// Hook para consumir el contexto
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
+    throw new Error('useAuth debe ser usado dentro de un AuthProvider.');
   }
   return context;
 };

@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Plus, X, Save, List, Edit3, Trash2 } from 'lucide-react';
 import Button from '../Common/Button';
+import axios from 'axios';
+import jwtDecode from 'jwt-decode'; // Importar jwt-decode
 
 interface PreguntaPredefinida {
   id: string;
@@ -108,7 +110,6 @@ const preguntasPredefinidas: PreguntaPredefinida[] = [
     categoria: 'Comentarios',
   },
 ];
-
 interface CuestionarioPlantilla {
   id: string;
   titulo: string;
@@ -150,9 +151,15 @@ const cuestionariosPlantilla: CuestionarioPlantilla[] = [
   },
 ];
 
+
 interface CrearCuestionarioProps {
   onClose: () => void;
   onSave: (cuestionario: any) => void;
+}
+
+interface DecodedToken {
+  id: string; // Asegúrate de que este campo coincide con el que contiene el ID del entrenador en tu token
+  // Otros campos que puedas tener en el token
 }
 
 const CrearCuestionario: React.FC<CrearCuestionarioProps> = ({
@@ -163,14 +170,69 @@ const CrearCuestionario: React.FC<CrearCuestionarioProps> = ({
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [frecuencia, setFrecuencia] = useState('semanal');
-  const [preguntasSeleccionadas, setPreguntasSeleccionadas] = useState<
-    PreguntaPredefinida[]
-  >([]);
+  const [preguntasSeleccionadas, setPreguntasSeleccionadas] = useState<PreguntaPredefinida[]>([]);
   const [nuevaPregunta, setNuevaPregunta] = useState('');
   const [categoriaNuevaPregunta, setCategoriaNuevaPregunta] = useState('');
-  const [plantillaSeleccionada, setPlantillaSeleccionada] =
-    useState<CuestionarioPlantilla | null>(null);
+  const [plantillaSeleccionada, setPlantillaSeleccionada] = useState<CuestionarioPlantilla | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Función para manejar la solicitud de guardar el cuestionario
+  const handleGuardar = async () => {
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      // Obtener el token desde localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación.');
+      }
+
+      // Decodificar el token para obtener el ID del entrenador
+      const decoded: DecodedToken = jwtDecode(token);
+      const entrenadorId = decoded.id;
+
+      if (!entrenadorId) {
+        throw new Error('No se pudo extraer el ID del entrenador del token.');
+      }
+
+      // Construir el objeto del cuestionario
+      const cuestionario = {
+        titulo,
+        descripcion,
+        frecuencia,
+        preguntas: preguntasSeleccionadas.map(p => ({
+          texto: p.texto,
+          categoria: p.categoria,
+        })),
+        entrenador: entrenadorId,
+      };
+
+      // Realizar la solicitud POST al backend
+      const response = await axios.post(
+        'http://localhost:3000/api/cuestionarios/',
+        cuestionario,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Manejar la respuesta exitosa
+      onSave(response.data);
+      onClose();
+    } catch (err: any) {
+      console.error('Error al crear el cuestionario:', err);
+      setError(err.response?.data?.mensaje || err.message || 'Error al crear el cuestionario.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Funciones para manejar preguntas y plantillas (sin cambios)
   const handleAgregarPreguntaPredefinida = (pregunta: PreguntaPredefinida) => {
     if (!preguntasSeleccionadas.find((p) => p.id === pregunta.id)) {
       setPreguntasSeleccionadas([...preguntasSeleccionadas, pregunta]);
@@ -200,19 +262,6 @@ const CrearCuestionario: React.FC<CrearCuestionarioProps> = ({
     setPlantillaSeleccionada(plantilla);
     setTitulo(plantilla.titulo);
     setPreguntasSeleccionadas(plantilla.preguntas);
-  };
-
-  const handleGuardar = () => {
-    const cuestionario = {
-      titulo,
-      descripcion,
-      frecuencia,
-      preguntas: preguntasSeleccionadas,
-      fechaCreacion: new Date().toISOString(),
-      estado: 'activo',
-    };
-    onSave(cuestionario);
-    onClose();
   };
 
   return (
@@ -430,6 +479,13 @@ const CrearCuestionario: React.FC<CrearCuestionarioProps> = ({
                 </div>
               </div>
             )}
+
+            {/* Mostrar mensaje de error si existe */}
+            {error && (
+              <div className="p-4 bg-red-100 text-red-700 rounded-lg">
+                {error}
+              </div>
+            )}
           </div>
         </div>
 
@@ -440,10 +496,10 @@ const CrearCuestionario: React.FC<CrearCuestionarioProps> = ({
           <Button
             variant="create"
             onClick={handleGuardar}
-            disabled={!titulo || preguntasSeleccionadas.length === 0}
+            disabled={!titulo || preguntasSeleccionadas.length === 0 || isSubmitting}
           >
             <Save className="w-5 h-5 mr-2" />
-            Guardar Cuestionario
+            {isSubmitting ? 'Guardando...' : 'Guardar Cuestionario'}
           </Button>
         </div>
       </motion.div>

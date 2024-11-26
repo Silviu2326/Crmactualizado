@@ -1,7 +1,19 @@
+// src/components/Economics/Cashflow/CashflowWidget.tsx
 import React, { useState, useMemo } from 'react';
-import { BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 import { TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import Button from '../../Common/Button';
 
 interface CashflowData {
   label: string;
@@ -15,7 +27,7 @@ interface CashflowWidgetProps {
   gastos: number;
   isEditMode: boolean;
   onRemove: () => void;
-  onUpdate: () => void;  // Añadido onUpdate aquí
+  onUpdate: () => void;
 }
 
 const CashflowWidget: React.FC<CashflowWidgetProps> = ({
@@ -29,39 +41,48 @@ const CashflowWidget: React.FC<CashflowWidgetProps> = ({
   const [currentDate, setCurrentDate] = useState(new Date());
   const { theme } = useTheme();
 
-  // Datos de ejemplo para el gráfico (sin cambios)
-  const weeklyData: CashflowData[] = useMemo(() => [
-    { label: 'Lun', ingresos, gastos, beneficio:  ingresos - gastos },
-    { label: 'Mar', ingresos: 1200, gastos: 900, beneficio:  ingresos - gastos },
-    { label: 'Mié', ingresos: 1100, gastos: 850, beneficio:  ingresos - gastos },
-    { label: 'Jue', ingresos: 1300, gastos: 950, beneficio:  ingresos - gastos },
-    { label: 'Vie', ingresos: 1500, gastos: 1100, beneficio:  ingresos - gastos },
-    { label: 'Sáb', ingresos: 1400, gastos: 1000, beneficio:  ingresos - gastos },
-    { label: 'Dom', ingresos: 900, gastos: 700, beneficio:  ingresos - gastos },
-  ], [ingresos, gastos]);
+  // Datos de ejemplo para el gráfico
+  const weeklyData: CashflowData[] = useMemo(
+    () => [
+      { label: 'Lun', ingresos, gastos, beneficio: ingresos - gastos },
+      { label: 'Mar', ingresos: 1200, gastos: 900, beneficio: 1200 - 900 },
+      { label: 'Mié', ingresos: 1100, gastos: 850, beneficio: 1100 - 850 },
+      { label: 'Jue', ingresos: 1300, gastos: 950, beneficio: 1300 - 950 },
+      { label: 'Vie', ingresos: 1500, gastos: 1100, beneficio: 1500 - 1100 },
+      { label: 'Sáb', ingresos: 1400, gastos: 1000, beneficio: 1400 - 1000 },
+      { label: 'Dom', ingresos: 900, gastos: 700, beneficio: 900 - 700 },
+    ],
+    [ingresos, gastos]
+  );
 
-  const monthlyData: CashflowData[] = useMemo(() => [
-    { label: 'Ene', ingresos, gastos, beneficio:  ingresos - gastos },
-    { label: 'Feb', ingresos: 4000, gastos: 2000, beneficio: 2000 },
-    { label: 'Mar', ingresos: 3200, gastos: 1800, beneficio: 1400 },
-    { label: 'Abr', ingresos: 5000, gastos: 2300, beneficio: 2700 },
-    { label: 'May', ingresos: 4500, gastos: 2100, beneficio: 2400 },
-    { label: 'Jun', ingresos: 4800, gastos: 2200, beneficio: 2600 },
-    { label: 'Jul', ingresos: 5200, gastos: 2600, beneficio: 2600 },
-    { label: 'Ago', ingresos: 4300, gastos: 2100, beneficio: 2200 },
-    { label: 'Sep', ingresos: 4100, gastos: 2000, beneficio: 2100 },
-    { label: 'Oct', ingresos: 3900, gastos: 1900, beneficio: 2000 },
-    { label: 'Nov', ingresos: 5700, gastos: 2700, beneficio: 3000 },
-    { label: 'Dic', ingresos: 5900, gastos: 2900, beneficio: 3000 },
-  ], [ingresos, gastos]);
+  const monthlyData: CashflowData[] = useMemo(
+    () => [
+      { label: 'Ene', ingresos, gastos, beneficio: ingresos - gastos },
+      { label: 'Feb', ingresos: 4000, gastos: 2000, beneficio: 4000 - 2000 },
+      { label: 'Mar', ingresos: 3200, gastos: 1800, beneficio: 3200 - 1800 },
+      { label: 'Abr', ingresos: 5000, gastos: 2300, beneficio: 5000 - 2300 },
+      { label: 'May', ingresos: 4500, gastos: 2100, beneficio: 4500 - 2100 },
+      { label: 'Jun', ingresos: 4800, gastos: 2200, beneficio: 4800 - 2200 },
+      { label: 'Jul', ingresos: 5200, gastos: 2600, beneficio: 5200 - 2600 },
+      { label: 'Ago', ingresos: 4300, gastos: 2100, beneficio: 4300 - 2100 },
+      { label: 'Sep', ingresos: 4100, gastos: 2000, beneficio: 4100 - 2000 },
+      { label: 'Oct', ingresos: 3900, gastos: 1900, beneficio: 3900 - 1900 },
+      { label: 'Nov', ingresos: 5700, gastos: 2700, beneficio: 5700 - 2700 },
+      { label: 'Dic', ingresos: 5900, gastos: 2900, beneficio: 5900 - 2900 },
+    ],
+    [ingresos, gastos]
+  );
 
-  const annualData: CashflowData[] = useMemo(() => [
-    { label: '2020', ingresos, gastos, beneficio: ingresos - gastos },
-    { label: '2021', ingresos: 55000, gastos: 42000, beneficio: 13000 },
-    { label: '2022', ingresos: 60000, gastos: 45000, beneficio: 15000 },
-    { label: '2023', ingresos: 65000, gastos: 48000, beneficio: 17000 },
-    { label: '2024', ingresos: 70000, gastos: 50000, beneficio: 20000 },
-  ], [ingresos, gastos]);
+  const annualData: CashflowData[] = useMemo(
+    () => [
+      { label: '2020', ingresos, gastos, beneficio: ingresos - gastos },
+      { label: '2021', ingresos: 55000, gastos: 42000, beneficio: 55000 - 42000 },
+      { label: '2022', ingresos: 60000, gastos: 45000, beneficio: 60000 - 45000 },
+      { label: '2023', ingresos: 65000, gastos: 48000, beneficio: 65000 - 48000 },
+      { label: '2024', ingresos: 70000, gastos: 50000, beneficio: 70000 - 50000 },
+    ],
+    [ingresos, gastos]
+  );
 
   const getData = () => {
     switch (viewType) {
@@ -75,7 +96,7 @@ const CashflowWidget: React.FC<CashflowWidgetProps> = ({
   };
 
   const handlePrev = () => {
-    setCurrentDate(prevDate => {
+    setCurrentDate((prevDate) => {
       const newDate = new Date(prevDate);
       switch (viewType) {
         case 'weekly':
@@ -93,7 +114,7 @@ const CashflowWidget: React.FC<CashflowWidgetProps> = ({
   };
 
   const handleNext = () => {
-    setCurrentDate(prevDate => {
+    setCurrentDate((prevDate) => {
       const newDate = new Date(prevDate);
       switch (viewType) {
         case 'weekly':
@@ -113,7 +134,11 @@ const CashflowWidget: React.FC<CashflowWidgetProps> = ({
   const getDateDisplay = () => {
     switch (viewType) {
       case 'weekly':
-        return `Semana del ${currentDate.toLocaleDateString()}`;
+        const weekStart = new Date(currentDate);
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1); // Lunes
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6); // Domingo
+        return `Semana del ${weekStart.toLocaleDateString()} al ${weekEnd.toLocaleDateString()}`;
       case 'monthly':
         return currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
       case 'annual':
@@ -121,40 +146,126 @@ const CashflowWidget: React.FC<CashflowWidgetProps> = ({
     }
   };
 
+  // Definir colores basados en el tema
+  const colors = {
+    ingresos: theme === 'dark' ? '#3B82F6' : '#60A5FA', // Azul
+    gastos: theme === 'dark' ? '#EF4444' : '#F87171',   // Rojo
+    beneficio: theme === 'dark' ? '#10B981' : '#34D399', // Verde
+    grid: theme === 'dark' ? '#374151' : '#E5E7EB',
+    axis: theme === 'dark' ? '#9CA3AF' : '#4B5563',
+    tooltipBg: theme === 'dark' ? '#1F2937' : '#FFFFFF',
+    tooltipBorder: theme === 'dark' ? '#374151' : '#E5E7EB',
+    legendText: theme === 'dark' ? '#D1D5DB' : '#1F2937',
+    background: theme === 'dark' ? '#2D3748' : '#FFFFFF',
+  };
+
+  // Personalizar Tooltip
+  const CustomTooltip = ({
+    active,
+    payload,
+    label,
+  }: {
+    active?: boolean;
+    payload?: any;
+    label?: string;
+  }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div
+          style={{
+            backgroundColor: colors.tooltipBg,
+            border: `1px solid ${colors.tooltipBorder}`,
+            borderRadius: '0.375rem',
+            padding: '10px',
+            color: theme === 'dark' ? '#FFFFFF' : '#000000',
+          }}
+        >
+          <p className="label font-semibold">{`${label}`}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={`item-${index}`} style={{ color: entry.color, margin: 0 }}>
+              {`${entry.name}: ${entry.value.toLocaleString('es-ES', {
+                style: 'currency',
+                currency: 'EUR',
+              })}`}
+            </p>
+          ))}
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
-    <div className={`p-4 h-full flex flex-col justify-between ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-lg shadow-md transition-colors duration-200`}>
+    <div
+      className={`relative p-6 h-full flex flex-col justify-between ${
+        theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'
+      } rounded-lg shadow-md transition-colors duration-200`}
+    >
       {isEditMode && (
         <>
-          <button onClick={onRemove} className={`absolute top-2 right-2 ${theme === 'dark' ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'} bg-white rounded-full p-1 shadow-md`}>
+          <button
+            onClick={onRemove}
+            className={`absolute top-2 right-2 ${
+              theme === 'dark' ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+            } bg-transparent rounded-full p-1`}
+            title="Eliminar Widget"
+          >
             <TrendingUp className="w-4 h-4" />
           </button>
-          <button onClick={onUpdate} className={`absolute top-2 right-10 ${theme === 'dark' ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'} bg-white rounded-full p-1 shadow-md`}>
+          <button
+            onClick={onUpdate}
+            className={`absolute top-2 right-10 ${
+              theme === 'dark' ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+            } bg-transparent rounded-full p-1`}
+            title="Actualizar Widget"
+          >
             Actualizar
           </button>
         </>
       )}
       <div className="flex items-center justify-between mb-4">
-        <h3 className={`text-2xl font-bold ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>Cash Flow</h3>
+        <h3 className={`text-2xl font-bold ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>
+          Cash Flow
+        </h3>
         <div className="flex items-center space-x-2">
-          <select
-            value={viewType}
-            onChange={(e) => setViewType(e.target.value as 'weekly' | 'monthly' | 'annual')}
-            className={`${
-              theme === 'dark'
-                ? 'bg-gray-700 text-white border-gray-600'
-                : 'bg-white text-gray-700 border-gray-300'
-            } border py-1 px-2 rounded leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500`}
-          >
-            <option>weekly</option>
-            <option>monthly</option>
-            <option>annual</option>
-          </select>
+          {/* Desplegable de selección de vista */}
+          <div className="relative inline-block text-left">
+            <select
+              value={viewType}
+              onChange={(e) => setViewType(e.target.value as 'weekly' | 'monthly' | 'annual')}
+              className={`block w-full pl-3 pr-10 py-2 text-base border ${
+                theme === 'dark'
+                  ? 'bg-gray-700 border-gray-600 text-white'
+                  : 'bg-white border-gray-300 text-gray-800'
+              } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+            >
+              <option>weekly</option>
+              <option>monthly</option>
+              <option>annual</option>
+            </select>
+          </div>
+          {/* Controles de navegación de fechas */}
           <div className="flex items-center space-x-1">
-            <button onClick={handlePrev} className={`p-1 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}>
+            <button
+              onClick={handlePrev}
+              className={`p-1 rounded-full ${
+                theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'
+              } transition-colors duration-200`}
+              title="Anterior"
+            >
               <ChevronLeft className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`} />
             </button>
-            <span className={`text-lg font-semibold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>{getDateDisplay()}</span>
-            <button onClick={handleNext} className={`p-1 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}>
+            <span className={`text-lg font-semibold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+              {getDateDisplay()}
+            </span>
+            <button
+              onClick={handleNext}
+              className={`p-1 rounded-full ${
+                theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'
+              } transition-colors duration-200`}
+              title="Siguiente"
+            >
               <ChevronRight className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`} />
             </button>
           </div>
@@ -162,27 +273,104 @@ const CashflowWidget: React.FC<CashflowWidgetProps> = ({
       </div>
       <div className="flex-grow">
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={getData()} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={theme === 'dark' ? '#4a5568' : '#f0f0f0'} />
-            <XAxis dataKey="label" stroke={theme === 'dark' ? '#a0aec0' : '#888888'} />
-            <YAxis stroke={theme === 'dark' ? '#a0aec0' : '#888888'} />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: theme === 'dark' ? '#2d3748' : 'white',
-                borderRadius: '8px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                color: theme === 'dark' ? '#e2e8f0' : 'inherit'
-              }}
-              formatter={(value) => [`${value}€`, '']}
+          <ComposedChart
+            data={getData()}
+            margin={{ top: 20, right: 50, left: 20, bottom: 20 }}
+          >
+            {/* Rejilla del gráfico */}
+            <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
+
+            {/* Eje X */}
+            <XAxis
+              dataKey="label"
+              stroke={colors.axis}
+              tick={{ fill: colors.axis }}
+              fontSize={12}
             />
-            <Legend />
-            <Bar dataKey="ingresos" fill={theme === 'dark' ? '#4c51bf' : '#4ade80'} name="Ingresos" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="gastos" fill={theme === 'dark' ? '#e53e3e' : '#f87171'} name="Gastos" radius={[4, 4, 0, 0]} />
-            <Line type="monotone" dataKey="beneficio" stroke={theme === 'dark' ? '#38b2ac' : '#60a5fa'} strokeWidth={2} name="Beneficio" dot={{ fill: theme === 'dark' ? '#38b2ac' : '#60a5fa', r: 4 }} />
-          </BarChart>
+
+            {/* Eje Y Primario */}
+            <YAxis
+              yAxisId="left"
+              stroke={colors.axis}
+              tick={{ fill: colors.axis }}
+              fontSize={12}
+              label={{
+                value: 'Euros',
+                angle: -90,
+                position: 'insideLeft',
+                fill: colors.axis,
+                fontSize: 12,
+              }}
+            />
+
+            {/* Eje Y Secundario para Beneficio */}
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              stroke={colors.axis}
+              tick={{ fill: colors.axis }}
+              fontSize={12}
+              label={{
+                value: 'Beneficio (€)',
+                angle: 90,
+                position: 'insideRight',
+                fill: colors.axis,
+                fontSize: 12,
+              }}
+            />
+
+            {/* Tooltip Personalizado */}
+            <Tooltip content={<CustomTooltip />} />
+
+            {/* Leyenda */}
+            <Legend
+              verticalAlign="top"
+              height={36}
+              wrapperStyle={{
+                color: colors.legendText,
+                fontSize: 12,
+              }}
+            />
+
+            {/* Barras de Ingresos */}
+            <Bar
+              yAxisId="left"
+              dataKey="ingresos"
+              name="Ingresos"
+              fill={colors.ingresos}
+              barSize={30}
+              radius={[4, 4, 0, 0]}
+            />
+
+            {/* Barras de Gastos */}
+            <Bar
+              yAxisId="left"
+              dataKey="gastos"
+              name="Gastos"
+              fill={colors.gastos}
+              barSize={30}
+              radius={[4, 4, 0, 0]}
+            />
+
+            {/* Línea de Beneficio */}
+            <Line
+              type="monotone"
+              dataKey="beneficio"
+              name="Beneficio"
+              stroke={colors.beneficio}
+              strokeWidth={3}
+              dot={{ fill: colors.beneficio, r: 4 }}
+              activeDot={{ r: 6 }}
+              yAxisId="right"
+            />
+          </ComposedChart>
         </ResponsiveContainer>
       </div>
-      <div className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} mt-2 text-center`}>
+      <div
+        className={`text-xs ${
+          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+        } mt-2 text-center`}
+      >
         Resumen de ingresos, gastos y beneficios para {getDateDisplay()}
       </div>
     </div>

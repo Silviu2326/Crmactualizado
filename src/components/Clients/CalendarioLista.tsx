@@ -18,7 +18,7 @@ const localizer = dateFnsLocalizer({
 });
 
 interface Evento {
-  id: number;
+  id: string;
   title: string;
   start: Date;
   end: Date;
@@ -41,7 +41,7 @@ interface Categoria {
 
 const CATEGORIAS: Categoria[] = [
   {
-    id: 'entrenamiento',
+    id: 'Training',
     nombre: 'Entrenamiento',
     color: '#4F46E5',
     subcategorias: [
@@ -50,87 +50,13 @@ const CATEGORIAS: Categoria[] = [
     ]
   },
   {
-    id: 'nutricion',
-    nombre: 'Nutrición',
+    id: 'Workshop',
+    nombre: 'Taller',
     color: '#059669',
     subcategorias: [
       { id: 'consulta', nombre: 'Consulta' },
       { id: 'seguimiento', nombre: 'Seguimiento' }
     ]
-  }
-];
-
-const today = new Date();
-const EVENTOS_EJEMPLO: Evento[] = [
-  {
-    id: 1,
-    title: 'Entrenamiento Personal - Juan García',
-    start: setMinutes(setHours(today, 10), 0),
-    end: setMinutes(setHours(today, 11), 0),
-    descripcion: 'Sesión de entrenamiento de fuerza y resistencia',
-    color: '#4F46E5',
-    categoria: 'entrenamiento',
-    subcategoria: 'personal',
-    cliente: 'Juan García',
-    ubicacion: 'Sala de Pesas',
-    recordatorios: ['30 minutos antes'],
-    notas: 'Enfoque en ejercicios de pierna'
-  },
-  {
-    id: 2,
-    title: 'Clase Grupal - Yoga',
-    start: setMinutes(setHours(addDays(today, 1), 17), 0),
-    end: setMinutes(setHours(addDays(today, 1), 18), 0),
-    descripcion: 'Clase de yoga para principiantes',
-    color: '#4F46E5',
-    subcategoria: 'grupo',
-    categoria: 'entrenamiento',
-    cliente: 'Grupo',
-    ubicacion: 'Sala de Yoga',
-    recordatorios: ['1 hora antes'],
-    notas: 'Preparar música relajante'
-  },
-  {
-    id: 3,
-    title: 'Consulta Nutrición - María López',
-    start: setMinutes(setHours(addDays(today, 2), 15), 30),
-    end: setMinutes(setHours(addDays(today, 2), 16), 30),
-    descripcion: 'Primera consulta nutricional y evaluación',
-    color: '#059669',
-    categoria: 'nutricion',
-    subcategoria: 'consulta',
-    cliente: 'María López',
-    ubicacion: 'Consultorio 2',
-    recordatorios: ['1 día antes', '1 hora antes'],
-    notas: 'Primera consulta - realizar evaluación completa'
-  },
-  {
-    id: 4,
-    title: 'Seguimiento Nutrición - Carlos Ruiz',
-    start: setMinutes(setHours(today, 14), 0),
-    end: setMinutes(setHours(today, 15), 0),
-    descripcion: 'Revisión de progreso y ajuste de plan alimenticio',
-    color: '#059669',
-    categoria: 'nutricion',
-    subcategoria: 'seguimiento',
-    cliente: 'Carlos Ruiz',
-    ubicacion: 'Consultorio 1',
-    recordatorios: ['2 horas antes'],
-    notas: 'Revisar registro alimenticio de la semana'
-  },
-  {
-    id: 5,
-    title: 'Entrenamiento Personal - Ana Martínez',
-    start: setMinutes(setHours(addDays(today, -1), 9), 0),
-    end: setMinutes(setHours(addDays(today, -1), 10), 0),
-    descripcion: 'Entrenamiento de alta intensidad',
-    color: '#4F46E5',
-    categoria: 'entrenamiento',
-    subcategoria: 'personal',
-    cliente: 'Ana Martínez',
-    ubicacion: 'Área Funcional',
-    recordatorios: ['1 hora antes'],
-    notas: 'Preparar circuito HIIT'
   }
 ];
 
@@ -145,6 +71,81 @@ export default function CalendarioLista() {
     categorias: CATEGORIAS.map(cat => cat.id),
     subcategorias: CATEGORIAS.flatMap(cat => cat.subcategorias?.map(sub => sub.id) || [])
   });
+  const [eventos, setEventos] = useState<Evento[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Función para mapear los datos de la API al formato del frontend
+  const mapearEventos = (data: any[]): Evento[] => {
+    console.log("Datos crudos de la API:", data);
+    return data.map(evento => {
+      const start = new Date(evento.date);
+      const end = new Date(start);
+      end.setHours(end.getHours() + 1); // Asignar una duración de 1 hora por defecto
+
+      console.log(`Mapeando evento: ${evento.name}`);
+      console.log(`Start: ${start}, End: ${end}`);
+
+      return {
+        id: evento._id,
+        title: evento.name,
+        start: start,
+        end: end,
+        descripcion: evento.type,
+        color: CATEGORIAS.find(cat => cat.id === evento.type)?.color || '#4F46E5',
+        categoria: evento.type,
+        subcategoria: '', // Puedes asignar subcategoría si tienes más información
+        cliente: evento.client ? evento.client.toString() : 'N/A',
+        ubicacion: 'Ubicación por Defecto', // Asigna según tu lógica
+        recordatorios: ['30 minutos antes'], // Valores por defecto o basados en tu lógica
+        notas: 'Notas por defecto' // Valores por defecto o basados en tu lógica
+      };
+    });
+  };
+
+  useEffect(() => {
+    const fetchEventos = async () => {
+      const token = localStorage.getItem('token');
+      console.log("Token obtenido de localStorage:", token);
+
+      if (!token) {
+        setError('No se encontró el token de autenticación.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:3000/api/events', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        console.log("Respuesta de la API:", response);
+
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("Datos recibidos de la API:", data);
+
+        const eventosMapeados = mapearEventos(data);
+        console.log("Eventos mapeados:", eventosMapeados);
+
+        setEventos(eventosMapeados);
+      } catch (err: any) {
+        console.error("Error al obtener eventos:", err);
+        setError(err.message || 'Ocurrió un error al obtener los eventos.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEventos();
+  }, []);
 
   useEffect(() => {
     const headers = document.querySelectorAll('.rbc-header');
@@ -153,7 +154,7 @@ export default function CalendarioLista() {
     headers.forEach((header, index) => {
       header.textContent = daysInSpanish[index];
     });
-  }, [view]);
+  }, [view, eventos]);
 
   const handleNavigate = (action: 'PREV' | 'NEXT' | 'TODAY') => {
     const newDate = new Date(date);
@@ -169,20 +170,25 @@ export default function CalendarioLista() {
         break;
     }
     setDate(newDate);
+    console.log(`Navegando a: ${newDate}`);
   };
 
   const handleSelectSlot = (slotInfo: SlotInfo) => {
+    console.log("Slot seleccionado:", slotInfo);
     setSelectedSlot(slotInfo);
     setShowNewEventModal(true);
   };
 
   const handleNewEvent = (evento: Evento) => {
-    console.log('Nuevo evento:', evento);
+    console.log('Nuevo evento creado:', evento);
     setSelectedSlot(null);
     setShowNewEventModal(false);
+    // Opcional: actualizar el estado de eventos
+    setEventos(prev => [...prev, evento]);
   };
 
   const handleToggleFiltro = (categoriaId: string, subcategoriaId?: string) => {
+    console.log(`Togling filtro: Categoria - ${categoriaId}, Subcategoria - ${subcategoriaId}`);
     if (categoriaId === 'reset') {
       setFiltrosActivos({
         categorias: CATEGORIAS.map(cat => cat.id),
@@ -209,7 +215,11 @@ export default function CalendarioLista() {
   const eventStyleGetter = (event: Evento) => ({
     className: `event-card hover-lift ${isSameDay(event.start, new Date()) ? 'ring-2 ring-indigo-500 ring-offset-2' : ''}`,
     style: {
-      '--event-color': event.color || '#4F46E5'
+      backgroundColor: event.color || '#4F46E5',
+      borderRadius: '4px',
+      color: 'white',
+      border: 'none',
+      padding: '2px',
     } as React.CSSProperties
   });
 
@@ -221,12 +231,26 @@ export default function CalendarioLista() {
   });
 
   const eventosFiltrados = useMemo(() => {
-    return EVENTOS_EJEMPLO.filter(evento => 
+    const filtrados = eventos.filter(evento => 
       filtrosActivos.categorias.includes(evento.categoria || '') &&
-      filtrosActivos.subcategorias.includes(evento.subcategoria || '')
-    );
-  }, [filtrosActivos]);
+      (evento.subcategoria ? filtrosActivos.subcategorias.includes(evento.subcategoria) : true)
+    ).map(evento => ({
+      ...evento,
+      start: new Date(evento.start),
+      end: new Date(evento.end),
+    }));
+  
+    console.log("Eventos filtrados:", filtrados);
+    return filtrados;
+  }, [filtrosActivos, eventos]);
+  
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">Cargando eventos...</div>;
+  }
 
+  if (error) {
+    return <div className="flex justify-center items-center h-screen text-red-500">{error}</div>;
+  }
 
   return (
     <div className="h-screen flex flex-col calendar-background">
@@ -310,4 +334,4 @@ export default function CalendarioLista() {
       )}
     </div>
   );
-}
+};

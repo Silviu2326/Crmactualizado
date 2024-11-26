@@ -1,19 +1,22 @@
-import React, { useState } from 'react';
+// src/components/Economics/Cashflow/GastoWidget.tsx
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, Plus, Copy, Link, X, ChevronDown, ChevronRight, DollarSign } from 'lucide-react';
 import Table from '../../Common/Table';
 import Button from '../../Common/Button';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
+interface GastoWidgetProps { }
+
 interface Gasto {
-  id: number;
-  concepto: string;
-  descripcion: string;
-  importe: number;
-  estado: string;
+  _id: string;
+  entrenador: string;
+  concepto: string;        // Mapeado desde 'categoria'
   fecha: string;
-  tipo: 'Directo' | 'Indirecto';
-  asociadoA: string;
+  estado: string;          // Asignado como 'Pendiente'
+  importe: number;         // Mapeado desde 'monto' o 'importe'
+  tipoDeGasto: 'fijo' | 'variable'; // Asignado como 'fijo'
+  descripcion?: string;    // Opcional
 }
 
 interface Servicio {
@@ -27,44 +30,15 @@ interface Plan {
   nombre: string;
 }
 
-const GastoWidget: React.FC = () => {
+const GastoWidget: React.FC<GastoWidgetProps> = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [selectedGastoId, setSelectedGastoId] = useState<number | null>(null);
+  const [selectedGastoId, setSelectedGastoId] = useState<string | null>(null);
   const [expandedServices, setExpandedServices] = useState<number[]>([]);
-  const [gastos, setGastos] = useState<Gasto[]>([
-    {
-      id: 1,
-      concepto: 'Alquiler',
-      descripcion: 'Alquiler mensual del local',
-      importe: 1500,
-      estado: 'Pagado',
-      fecha: '2023-08-01',
-      tipo: 'Directo',
-      asociadoA: 'Servicio General'
-    },
-    {
-      id: 2,
-      concepto: 'Suministros',
-      descripcion: 'Electricidad y agua',
-      importe: 300,
-      estado: 'Pendiente',
-      fecha: '2023-08-15',
-      tipo: 'Indirecto',
-      asociadoA: 'N/A'
-    },
-    {
-      id: 3,
-      concepto: 'Equipamiento',
-      descripcion: 'Nuevas máquinas de ejercicio',
-      importe: 5000,
-      estado: 'Pagado',
-      fecha: '2023-07-20',
-      tipo: 'Directo',
-      asociadoA: 'Plan Premium'
-    },
-  ]);
+  const [gastos, setGastos] = useState<Gasto[]>([]);
   const { theme } = useTheme();
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   const servicios: Servicio[] = [
     {
@@ -94,23 +68,88 @@ const GastoWidget: React.FC = () => {
     },
   ];
 
+  // Función para obtener el token del localStorage
+  const getToken = (): string | null => {
+    return localStorage.getItem('token'); // Asegúrate de que la clave sea correcta
+  };
+
+  // Función para formatear el importe
+  const formatImporte = (importe: number): string => {
+    return importe.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+  };
+
+  // Función para obtener los gastos desde la API
+  useEffect(() => {
+    const fetchGastos = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = getToken();
+        if (!token) {
+          throw new Error('Token no encontrado. Por favor, inicia sesión nuevamente.');
+        }
+
+        const response = await fetch('http://localhost:3000/api/gastos', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al obtener los gastos.');
+        }
+
+        const data: any[] = await response.json();
+        console.log('Datos obtenidos de la API:', data); // Log para depuración
+
+        // Mapear los datos recibidos a la interfaz Gasto
+        const dataMapped: Gasto[] = data.map((gasto: any) => ({
+          _id: gasto._id,
+          entrenador: gasto.entrenador,
+          concepto: gasto.categoria || 'N/A',        // Mapear 'categoria' a 'concepto'
+          fecha: gasto.fecha,
+          estado: 'Pendiente',                       // Asignar valor predeterminado
+          importe: gasto.monto !== undefined ? gasto.monto : (gasto.importe || 0), // Mapeo flexible
+          tipoDeGasto: 'fijo',                        // Asignar valor predeterminado
+          descripcion: gasto.descripcion,
+        }));
+
+        setGastos(dataMapped);
+      } catch (err: any) {
+        console.error('Error al obtener gastos:', err);
+        setError(err.message || 'Error desconocido.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGastos();
+  }, []);
+
+  // Función de búsqueda y filtrado
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
 
   const handleFilter = () => {
     console.log('Filtrar gastos');
+    // Implementa aquí la lógica de filtrado avanzada si es necesario
   };
 
   const handleAddGasto = () => {
     console.log('Añadir nuevo gasto');
+    // Implementa aquí la lógica para añadir un nuevo gasto (e.g., abrir un formulario)
   };
 
-  const handleCopyGasto = (id: number) => {
+  const handleCopyGasto = (id: string) => {
     console.log(`Copiar gasto con ID: ${id}`);
+    // Implementa aquí la lógica para copiar el gasto (e.g., copiar al portapapeles)
   };
 
-  const handleAsociarGasto = (id: number) => {
+  const handleAsociarGasto = (id: string) => {
     setSelectedGastoId(id);
     setIsPopupOpen(true);
   };
@@ -131,27 +170,48 @@ const GastoWidget: React.FC = () => {
 
   const handleAddServicio = () => {
     console.log('Añadir nuevo servicio');
+    // Implementa aquí la lógica para añadir un nuevo servicio
   };
 
   const handleAddPlan = (servicioId: number) => {
     console.log(`Añadir nuevo plan al servicio ${servicioId}`);
+    // Implementa aquí la lógica para añadir un nuevo plan al servicio correspondiente
   };
 
   const handleAsociar = (tipo: 'Servicio' | 'Plan', id: number, nombre: string) => {
+    if (!selectedGastoId) return;
+
     setGastos(prevGastos =>
       prevGastos.map(gasto =>
-        gasto.id === selectedGastoId
-          ? { ...gasto, asociadoA: `${tipo}: ${nombre}` }
+        gasto._id === selectedGastoId
+          ? { ...gasto, descripcion: `${tipo}: ${nombre}` } // Ajusta según tus necesidades
           : gasto
       )
     );
     handleClosePopup();
   };
 
+  // Filtrar los gastos según el término de búsqueda
+  const filteredGastos = gastos.filter((gasto) => {
+    console.log('Procesando gasto:', gasto); // Log para depuración
+
+    if (!gasto.concepto) {
+      console.warn('Gasto sin concepto:', gasto);
+      return false;
+    }
+
+    const search = searchTerm.toLowerCase();
+    const conceptoMatch = gasto.concepto.toLowerCase().includes(search);
+    const descripcionMatch = gasto.descripcion ? gasto.descripcion.toLowerCase().includes(search) : false;
+
+    return conceptoMatch || descripcionMatch;
+  });
+
   return (
     <div className={`p-6 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl`}>
       <div className="flex items-center justify-between mb-6">
         <h3 className={`text-2xl font-bold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+          Gastos
         </h3>
         <div className={`p-2 rounded-full ${theme === 'dark' ? 'bg-blue-900' : 'bg-blue-100'}`}>
           <DollarSign className={`w-6 h-6 ${theme === 'dark' ? 'text-blue-300' : 'text-blue-600'}`} />
@@ -165,8 +225,8 @@ const GastoWidget: React.FC = () => {
             value={searchTerm}
             onChange={handleSearchChange}
             className={`w-full px-4 py-2 pr-10 border ${
-              theme === 'dark' 
-                ? 'bg-gray-700 border-gray-600 text-white' 
+              theme === 'dark'
+                ? 'bg-gray-700 border-gray-600 text-white'
                 : 'bg-white border-gray-300 text-gray-800'
             } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300`}
           />
@@ -182,58 +242,62 @@ const GastoWidget: React.FC = () => {
         </Button>
       </div>
       <div className="overflow-x-auto">
-        <Table
-          headers={['Concepto', 'Descripción', 'Importe', 'Estado', 'Fecha', 'Tipo', 'Asociado a', 'Acciones']}
-          data={gastos.map(gasto => ({
-            Concepto: gasto.concepto,
-            Descripción: gasto.descripcion,
-            Importe: (
-              <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
-                {gasto.importe.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
-              </span>
-            ),
-            
-            Estado: (
-              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                gasto.estado === 'Pagado' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'
-              }`}>
-                {gasto.estado}
-              </span>
-            ),
-            Fecha: gasto.fecha,
-            Tipo: (
-              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                gasto.tipo === 'Directo' ? 'bg-blue-200 text-blue-800' : 'bg-purple-200 text-purple-800'
-              }`}>
-                {gasto.tipo}
-              </span>
-            ),
-            'Asociado a': gasto.asociadoA,
-            Acciones: (
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => handleCopyGasto(gasto.id)}
-                  className={`p-1 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} transition-colors duration-200`}
-                  title="Copiar gasto"
-                >
-                  <Copy className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => handleAsociarGasto(gasto.id)}
-                  className={`p-1 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} transition-colors duration-200`}
-                  title="Asociar gasto"
-                >
-                  <Link className="w-5 h-5" />
-                </button>
-              </div>
-            ),
-          }))}
-          variant={theme === 'dark' ? 'dark' : 'white'}
-        />
+        {loading ? (
+          <p>Loading...</p>
+        ) : error ? (
+          <p className="text-red-500">{error}</p>
+        ) : (
+          <Table
+            headers={['Concepto', 'Descripción', 'Importe', 'Estado', 'Fecha', 'Tipo de Gasto', 'Acciones']}
+            data={filteredGastos.map(gasto => ({
+              Concepto: gasto.concepto,
+              Descripción: gasto.descripcion || 'N/A',
+              Importe: (
+                <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+                  {formatImporte(gasto.importe)}
+                </span>
+              ),
+              Estado: (
+                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                  gasto.estado === 'Pagado' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'
+                }`}>
+                  {gasto.estado}
+                </span>
+              ),
+              Fecha: new Date(gasto.fecha).toLocaleDateString('es-ES'),
+              'Tipo de Gasto': (
+                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                  gasto.tipoDeGasto === 'fijo' ? 'bg-blue-200 text-blue-800' : 'bg-purple-200 text-purple-800'
+                }`}>
+                  {gasto.tipoDeGasto.charAt(0).toUpperCase() + gasto.tipoDeGasto.slice(1)}
+                </span>
+              ),
+              Acciones: (
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleCopyGasto(gasto._id)}
+                    className={`p-1 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} transition-colors duration-200`}
+                    title="Copiar gasto"
+                  >
+                    <Copy className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleAsociarGasto(gasto._id)}
+                    className={`p-1 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} transition-colors duration-200`}
+                    title="Asociar gasto"
+                  >
+                    <Link className="w-5 h-5" />
+                  </button>
+                </div>
+              ),
+            }))}
+            variant={theme === 'dark' ? 'dark' : 'white'}
+          />
+        )}
       </div>
 
       <AnimatePresence>
-        {isPopupOpen && (
+        {isPopupOpen && selectedGastoId && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -367,6 +431,7 @@ const GastoWidget: React.FC = () => {
       </AnimatePresence>
     </div>
   );
+
 };
 
 export default GastoWidget;

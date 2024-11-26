@@ -53,7 +53,6 @@ const CashflowPage: React.FC = () => {
           transition={{ duration: 0.3 }}
         >
           <div className="p-4">
-            <h3 className="text-2xl font-semibold mb-4 bg-gradient-to-r from-blue-400 to-indigo-500 text-transparent bg-clip-text">Gráfico de Ingreso</h3>
             <IngresoGrafico />
           </div>
         </motion.div>

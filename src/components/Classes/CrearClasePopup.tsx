@@ -37,7 +37,7 @@ const CrearClasePopup: React.FC<CrearClasePopupProps> = ({ onClose, onCreate }) 
       };
 
       const response = await axios.post(
-        'https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services',
+        'http://localhost:3000/api/servicios/services',
         payload,
         {
           headers: {

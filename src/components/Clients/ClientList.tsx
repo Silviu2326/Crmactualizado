@@ -43,7 +43,7 @@ interface Cliente {
   pagosAlDia: boolean;
 }
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api';
 
 const ClientList: React.FC = () => {
   const { theme } = useTheme();

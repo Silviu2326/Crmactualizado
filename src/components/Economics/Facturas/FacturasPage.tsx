@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import { motion } from 'framer-motion';
 import { FileText, Download, Search, Filter, Plus } from 'lucide-react';
 import Button from '../../Common/Button';
@@ -18,12 +18,13 @@ interface FacturasPageProps {
 }
 
 interface Factura {
-  id: number;
+  id: string;
   numero: string;
   monto: number;
-  estado: 'Pagada' | 'Pendiente';
-  tipo: 'Escaneada' | 'Emitida';
+  estado: string;
+  tipo: string;
   fecha: string;
+  currency: string;
 }
 
 const FacturasPage: React.FC<FacturasPageProps> = ({
@@ -37,7 +38,7 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [isExportMode, setIsExportMode] = useState(false);
-  const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);
+  const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterValues>({
     estado: [],
@@ -48,13 +49,88 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
     montoMax: '',
   });
 
-  const facturas: Factura[] = [
-    { id: 1, numero: 'F-001', monto: 1500, estado: 'Pagada', tipo: 'Escaneada', fecha: '2024-03-01' },
-    { id: 2, numero: 'F-002', monto: 2000, estado: 'Pendiente', tipo: 'Emitida', fecha: '2024-03-02' },
-    { id: 3, numero: 'F-003', monto: 1800, estado: 'Pagada', tipo: 'Emitida', fecha: '2024-03-03' },
-    { id: 4, numero: 'F-004', monto: 2200, estado: 'Pendiente', tipo: 'Escaneada', fecha: '2024-03-04' },
-    { id: 5, numero: 'F-005', monto: 1600, estado: 'Pagada', tipo: 'Emitida', fecha: '2024-03-05' },
-  ];
+  const [facturas, setFacturas] = useState<Factura[]>([]);
+
+  useEffect(() => {
+    const fetchFacturas = async () => {
+      try {
+        // Obtener el token del localStorage
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+          // Manejar el caso donde no hay token (el usuario no está autenticado)
+          console.error('No se encontró el token de autenticación.');
+          return;
+        }
+
+        // Realizar la petición GET al backend incluyendo el token en los encabezados
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/invoice', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        // Verificar si la respuesta es exitosa
+        if (!response.ok) {
+          throw new Error(`Error en la petición: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const invoices = data.invoices;
+
+        const mappedFacturas = invoices.map((invoice: any) => ({
+          id: invoice._id,
+          numero: invoice.numeroFactura,
+          monto: invoice.totalAmount,
+          estado: mapEstado(invoice.status),
+          tipo: mapTipo(invoice.tipoFactura),
+          fecha: formatFecha(invoice.fecha),
+          currency: invoice.currency,
+        }));
+
+        setFacturas(mappedFacturas);
+      } catch (error) {
+        console.error('Error fetching invoices:', error);
+        // Aquí puedes manejar el error, por ejemplo, mostrando un mensaje al usuario
+      }
+    };
+
+    fetchFacturas();
+  }, []);
+
+  // Función para mapear el estado de la factura
+  const mapEstado = (status: string): string => {
+    switch (status) {
+      case 'paid':
+        return 'Pagada';
+      case 'pending':
+      case 'overdue':
+      case 'partial':
+        return 'Pendiente';
+      default:
+        return 'Desconocido';
+    }
+  };
+
+  // Función para mapear el tipo de factura
+  const mapTipo = (tipoFactura: string): string => {
+    switch (tipoFactura) {
+      case 'completa':
+      case 'proforma':
+        return 'Emitida';
+      case 'simple':
+        return 'Escaneada';
+      default:
+        return 'Otro';
+    }
+  };
+
+  // Función para formatear la fecha
+  const formatFecha = (fecha: string): string => {
+    const date = new Date(fecha);
+    return date.toLocaleDateString('es-ES');
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -75,7 +151,7 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
     }
   };
 
-  const toggleSelectFactura = (id: number) => {
+  const toggleSelectFactura = (id: string) => {
     setSelectedInvoices(prev =>
       prev.includes(id) ? prev.filter(facturaId => facturaId !== id) : [...prev, id]
     );
@@ -157,7 +233,7 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
 
       <div className={`bg-${theme === 'dark' ? 'gray-800' : 'white'} rounded-lg shadow-md overflow-hidden`}>
         <Table
-          headers={['Número', 'Fecha', 'Importe ', 'Estado', 'Tipo', 'Acciones']}
+          headers={['Número', 'Fecha', 'Importe', 'Estado', 'Tipo', 'Acciones']}
           data={filteredFacturas.map(factura => ({
             Número: (
               <div className="flex items-center">
@@ -166,7 +242,7 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
               </div>
             ),
             Fecha: factura.fecha,
-            Monto: `€${factura.monto.toLocaleString()}`,
+            Importe: `${factura.currency === 'USD' ? '$' : '€'}${factura.monto.toLocaleString()}`,
             Estado: (
               <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                 factura.estado === 'Pagada' 

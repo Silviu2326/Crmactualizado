@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Table from '../../Common/Table';
 import Button from '../../Common/Button';
 import { Download, FileText, Calendar, Search, Filter } from 'lucide-react';
@@ -18,6 +18,9 @@ const ReportesPage: React.FC = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [reportesData, setReportesData] = useState<Reporte[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<FilterValues>({
     tipo: [],
     fechaDesde: '',
@@ -25,13 +28,38 @@ const ReportesPage: React.FC = () => {
     estado: [],
   });
 
-  const reportesData: Reporte[] = [
-    { id: 1, titulo: 'Reporte Mensual Agosto', fecha: '2024-08-01', tipo: 'Mensual', estado: 'Generado' },
-    { id: 2, titulo: 'Reporte Mensual Julio', fecha: '2024-07-01', tipo: 'Mensual', estado: 'Pendiente' },
-    { id: 3, titulo: 'Reporte Trimestral Q2', fecha: '2024-06-30', tipo: 'Trimestral', estado: 'En Proceso' },
-    { id: 4, titulo: 'Reporte Mensual Junio', fecha: '2024-06-01', tipo: 'Mensual', estado: 'Generado' },
-    { id: 5, titulo: 'Reporte Anual 2023', fecha: '2024-01-01', tipo: 'Anual', estado: 'Generado' },
-  ];
+  useEffect(() => {
+    const fetchReportes = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setError('No se encontró el token de autenticación');
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/reports', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al obtener los reportes');
+        }
+
+        const data = await response.json();
+        setReportesData(data);
+        setLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error al cargar los reportes');
+        setLoading(false);
+      }
+    };
+
+    fetchReportes();
+  }, []);
 
   const handleGenerateRecurringReport = () => {
     console.log('Generando reporte recurrente');
@@ -85,6 +113,34 @@ const ReportesPage: React.FC = () => {
         return 'bg-gray-200 text-gray-800';
     }
   };
+
+  if (loading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className={`p-6 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}
+      >
+        <h2 className="text-3xl font-bold mb-8 text-center">Reportes Detallados</h2>
+        <div className="text-center">Cargando...</div>
+      </motion.div>
+    );
+  }
+
+  if (error) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className={`p-6 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}
+      >
+        <h2 className="text-3xl font-bold mb-8 text-center">Reportes Detallados</h2>
+        <div className="text-center text-red-500">{error}</div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div

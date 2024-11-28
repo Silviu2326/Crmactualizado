@@ -1,5 +1,5 @@
 // src/components/Economics/Cashflow/GraficoCashflow.tsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   ComposedChart,
   Bar,
@@ -22,14 +22,146 @@ interface CashflowData {
   beneficio: number;
 }
 
+interface Ingreso {
+  _id: string;
+  entrenador: string;
+  monto: number;
+  moneda: string;
+  fecha: string;
+  descripcion: string;
+}
+
+interface Gasto {
+  _id: string;
+  entrenador: string;
+  monto: number;
+  fecha: string;
+  descripcion: string;
+}
+
 const GraficoCashflow: React.FC = () => {
   const { theme } = useTheme();
   const [viewType, setViewType] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [chartData, setChartData] = useState<{
+    weekly: CashflowData[];
+    monthly: CashflowData[];
+    yearly: CashflowData[];
+  }>({
+    weekly: [],
+    monthly: [],
+    yearly: []
+  });
 
-  // Datos de ejemplo para el gráfico
-  const data = useMemo(
-    () => ({
+  const getToken = () => localStorage.getItem('token');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = getToken();
+        if (!token) {
+          throw new Error('Token no encontrado');
+        }
+
+        console.log('Iniciando peticiones a las APIs...');
+
+        // Obtener ingresos
+        const ingresosResponse = await fetch('http://localhost:3000/api/ingresos', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        // Obtener gastos
+        const gastosResponse = await fetch('http://localhost:3000/api/gastos', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!ingresosResponse.ok || !gastosResponse.ok) {
+          throw new Error('Error al obtener los datos');
+        }
+
+        const ingresosData: Ingreso[] = await ingresosResponse.json();
+        const gastosData: Gasto[] = await gastosResponse.json();
+
+        console.log('Datos de ingresos recibidos:', ingresosData);
+        console.log('Datos de gastos recibidos:', gastosData);
+
+        // Procesar datos para el gráfico
+        const processedData = processDataForChart(ingresosData, gastosData);
+        setChartData(processedData);
+
+      } catch (err: any) {
+        console.error('Error al obtener datos:', err);
+        setError(err.message || 'Error al cargar los datos');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const processDataForChart = (ingresos: Ingreso[], gastos: Gasto[]) => {
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const weekDays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+    // Procesar datos mensuales
+    const monthlyData = new Map<string, { ingresos: number; gastos: number }>();
+    const currentYear = new Date().getFullYear();
+
+    // Inicializar todos los meses
+    monthNames.forEach((month, index) => {
+      monthlyData.set(month, { ingresos: 0, gastos: 0 });
+    });
+
+    // Procesar ingresos por mes
+    ingresos.forEach(ingreso => {
+      const fecha = new Date(ingreso.fecha);
+      if (fecha.getFullYear() === currentYear) {
+        const monthKey = monthNames[fecha.getMonth()];
+        const currentData = monthlyData.get(monthKey) || { ingresos: 0, gastos: 0 };
+        monthlyData.set(monthKey, {
+          ...currentData,
+          ingresos: currentData.ingresos + ingreso.monto
+        });
+      }
+    });
+
+    // Procesar gastos por mes
+    gastos.forEach(gasto => {
+      const fecha = new Date(gasto.fecha);
+      if (fecha.getFullYear() === currentYear) {
+        const monthKey = monthNames[fecha.getMonth()];
+        const currentData = monthlyData.get(monthKey) || { ingresos: 0, gastos: 0 };
+        monthlyData.set(monthKey, {
+          ...currentData,
+          gastos: currentData.gastos + gasto.monto
+        });
+      }
+    });
+
+    // Convertir a formato del gráfico
+    const monthlyChartData: CashflowData[] = Array.from(monthlyData.entries()).map(([month, data]) => ({
+      name: month,
+      ingresos: data.ingresos,
+      gastos: data.gastos,
+      beneficio: data.ingresos - data.gastos
+    }));
+
+    console.log('Datos procesados para el gráfico:', monthlyChartData);
+
+    // Por ahora, mantenemos datos de ejemplo para weekly y yearly
+    return {
+      monthly: monthlyChartData,
       weekly: [
         { name: 'Lun', ingresos: 4000, gastos: 3000, beneficio: 1000 },
         { name: 'Mar', ingresos: 3000, gastos: 2500, beneficio: 500 },
@@ -39,24 +171,14 @@ const GraficoCashflow: React.FC = () => {
         { name: 'Sáb', ingresos: 2390, gastos: 1500, beneficio: 890 },
         { name: 'Dom', ingresos: 3490, gastos: 2100, beneficio: 1390 },
       ],
-      monthly: [
-        { name: 'Ene', ingresos: 65000, gastos: 55000, beneficio: 10000 },
-        { name: 'Feb', ingresos: 59000, gastos: 52000, beneficio: 7000 },
-        { name: 'Mar', ingresos: 80000, gastos: 70000, beneficio: 10000 },
-        { name: 'Abr', ingresos: 81000, gastos: 68000, beneficio: 13000 },
-        { name: 'May', ingresos: 56000, gastos: 51000, beneficio: 5000 },
-        { name: 'Jun', ingresos: 55000, gastos: 54000, beneficio: 1000 },
-        { name: 'Jul', ingresos: 40000, gastos: 45000, beneficio: -5000 },
-      ],
       yearly: [
         { name: '2020', ingresos: 800000, gastos: 700000, beneficio: 100000 },
         { name: '2021', ingresos: 900000, gastos: 750000, beneficio: 150000 },
         { name: '2022', ingresos: 950000, gastos: 800000, beneficio: 150000 },
         { name: '2023', ingresos: 1000000, gastos: 820000, beneficio: 180000 },
       ],
-    }),
-    []
-  );
+    };
+  };
 
   // Definir colores basados en el tema
   const colors = {
@@ -219,109 +341,128 @@ const GraficoCashflow: React.FC = () => {
         </span>
       </div>
 
+      {/* Estado de carga y error */}
+      {loading && (
+        <div className="flex justify-center items-center h-64">
+          <p className={`text-lg ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+            Cargando datos...
+          </p>
+        </div>
+      )}
+
+      {error && (
+        <div className="flex justify-center items-center h-64">
+          <p className="text-red-500 text-lg">
+            {error}
+          </p>
+        </div>
+      )}
+
       {/* Gráfico Responsivo */}
-      <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart
-          data={data[viewType]}
-          margin={{
-            top: 20,
-            right: 50, // Aumentado para el eje Y secundario si se implementa
-            left: 20,
-            bottom: 20,
-          }}
-        >
-          {/* Rejilla del gráfico */}
-          <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
-
-          {/* Eje X */}
-          <XAxis
-            dataKey="name"
-            stroke={colors.axis}
-            tick={{ fill: colors.axis }}
-            fontSize={12}
-          />
-
-          {/* Eje Y Primario */}
-          <YAxis
-            yAxisId="left"
-            stroke={colors.axis}
-            tick={{ fill: colors.axis }}
-            fontSize={12}
-            label={{
-              value: 'Euros',
-              angle: -90,
-              position: 'insideLeft',
-              fill: colors.axis,
-              fontSize: 12,
+      {!loading && !error && (
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart
+            data={chartData[viewType]}
+            margin={{
+              top: 20,
+              right: 50, // Aumentado para el eje Y secundario si se implementa
+              left: 20,
+              bottom: 20,
             }}
-          />
+          >
+            {/* Rejilla del gráfico */}
+            <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
 
-          {/* Eje Y Secundario para Beneficio (opcional) */}
-          {/* Descomenta las siguientes líneas si los beneficios tienen un rango muy diferente */}
-          {/* <YAxis
-            yAxisId="right"
-            orientation="right"
-            stroke={colors.axis}
-            tick={{ fill: colors.axis }}
-            fontSize={12}
-            label={{
-              value: 'Beneficio (€)',
-              angle: 90,
-              position: 'insideRight',
-              fill: colors.axis,
-              fontSize: 12,
-            }}
-          /> */}
+            {/* Eje X */}
+            <XAxis
+              dataKey="name"
+              stroke={colors.axis}
+              tick={{ fill: colors.axis }}
+              fontSize={12}
+            />
 
-          {/* Tooltip Personalizado */}
-          <Tooltip content={<CustomTooltip />} />
+            {/* Eje Y Primario */}
+            <YAxis
+              yAxisId="left"
+              stroke={colors.axis}
+              tick={{ fill: colors.axis }}
+              fontSize={12}
+              label={{
+                value: 'Euros',
+                angle: -90,
+                position: 'insideLeft',
+                fill: colors.axis,
+                fontSize: 12,
+              }}
+            />
 
-          {/* Leyenda */}
-          <Legend
-            verticalAlign="top"
-            height={36}
-            wrapperStyle={{
-              color: colors.legendText,
-              fontSize: 12,
-            }}
-          />
+            {/* Eje Y Secundario para Beneficio (opcional) */}
+            {/* Descomenta las siguientes líneas si los beneficios tienen un rango muy diferente */}
+            {/* <YAxis
+              yAxisId="right"
+              orientation="right"
+              stroke={colors.axis}
+              tick={{ fill: colors.axis }}
+              fontSize={12}
+              label={{
+                value: 'Beneficio (€)',
+                angle: 90,
+                position: 'insideRight',
+                fill: colors.axis,
+                fontSize: 12,
+              }}
+            /> */}
 
-          {/* Barras de Ingresos */}
-          <Bar
-            yAxisId="left"
-            dataKey="ingresos"
-            name="Ingresos"
-            fill={colors.ingresos}
-            barSize={30}
-            radius={[4, 4, 0, 0]}
-            animationDuration={800}
-          />
+            {/* Tooltip Personalizado */}
+            <Tooltip content={<CustomTooltip />} />
 
-          {/* Barras de Gastos */}
-          <Bar
-            yAxisId="left"
-            dataKey="gastos"
-            name="Gastos"
-            fill={colors.gastos}
-            barSize={30}
-            radius={[4, 4, 0, 0]}
-            animationDuration={800}
-          />
+            {/* Leyenda */}
+            <Legend
+              verticalAlign="top"
+              height={36}
+              wrapperStyle={{
+                color: colors.legendText,
+                fontSize: 12,
+              }}
+            />
 
-          {/* Línea de Beneficio */}
-          <Line
-            type="monotone"
-            dataKey="beneficio"
-            name="Beneficio"
-            stroke={colors.beneficio}
-            strokeWidth={3}
-            dot={{ fill: colors.beneficio, r: 4 }}
-            activeDot={{ r: 6 }}
-            yAxisId="left" // Cambia a 'right' si usas Dual Y-Axis
-            animationDuration={800}
-          />
-        </ComposedChart>
-      </ResponsiveContainer>
+            {/* Barras de Ingresos */}
+            <Bar
+              yAxisId="left"
+              dataKey="ingresos"
+              name="Ingresos"
+              fill={colors.ingresos}
+              barSize={30}
+              radius={[4, 4, 0, 0]}
+              animationDuration={800}
+            />
+
+            {/* Barras de Gastos */}
+            <Bar
+              yAxisId="left"
+              dataKey="gastos"
+              name="Gastos"
+              fill={colors.gastos}
+              barSize={30}
+              radius={[4, 4, 0, 0]}
+              animationDuration={800}
+            />
+
+            {/* Línea de Beneficio */}
+            <Line
+              type="monotone"
+              dataKey="beneficio"
+              name="Beneficio"
+              stroke={colors.beneficio}
+              strokeWidth={3}
+              dot={{ fill: colors.beneficio, r: 4 }}
+              activeDot={{ r: 6 }}
+              yAxisId="left" // Cambia a 'right' si usas Dual Y-Axis
+              animationDuration={800}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 // src/components/Economics/Cashflow/IngresoGrafico.tsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   BarChart,
   Bar,
@@ -13,6 +13,11 @@ import {
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 
+interface Ingreso {
+  monto: number;
+  fecha: string;
+}
+
 interface IngresoData {
   name: string;
   ingresos: number;
@@ -20,43 +25,196 @@ interface IngresoData {
 
 const IngresoGrafico: React.FC = () => {
   const { theme } = useTheme();
-  const [viewType, setViewType] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
+  const [viewType, setViewType] = useState<'annual' | 'monthly' | 'weekly'>('annual');
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [ingresoData, setIngresoData] = useState<IngresoData[]>([]);
 
-  // Datos de ejemplo para el gráfico
-  const data = useMemo(
-    () => ({
-      daily: [
-        { name: 'Lun', ingresos: 4000 },
-        { name: 'Mar', ingresos: 3000 },
-        { name: 'Mié', ingresos: 2000 },
-        { name: 'Jue', ingresos: 2780 },
-        { name: 'Vie', ingresos: 1890 },
-        { name: 'Sáb', ingresos: 2390 },
-        { name: 'Dom', ingresos: 3490 },
-      ],
-      weekly: [
-        { name: 'Semana 1', ingresos: 15000 },
-        { name: 'Semana 2', ingresos: 18000 },
-        { name: 'Semana 3', ingresos: 16000 },
-        { name: 'Semana 4', ingresos: 19000 },
-      ],
-      monthly: [
-        { name: 'Ene', ingresos: 65000 },
-        { name: 'Feb', ingresos: 59000 },
-        { name: 'Mar', ingresos: 80000 },
-        { name: 'Abr', ingresos: 81000 },
-        { name: 'May', ingresos: 56000 },
-        { name: 'Jun', ingresos: 55000 },
-        { name: 'Jul', ingresos: 40000 },
-      ],
-    }),
-    []
-  );
+  const getToken = () => {
+    return localStorage.getItem('token');
+  };
+
+  useEffect(() => {
+    const fetchIngresos = async () => {
+      try {
+        const token = getToken();
+        if (!token) {
+          throw new Error('Token no encontrado. Por favor, inicia sesión nuevamente.');
+        }
+
+        const response = await fetch('http://localhost:3000/api/ingresos', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al obtener los ingresos.');
+        }
+
+        const data: Ingreso[] = await response.json();
+        const processedData = processIngresos(data);
+        setIngresoData(processedData);
+      } catch (err: any) {
+        console.error('Error al obtener ingresos:', err);
+      }
+    };
+
+    fetchIngresos();
+  }, [currentDate, viewType]);
+
+  const processIngresos = (ingresos: Ingreso[]) => {
+    const aggregatedData: { [key: string]: number } = {};
+    
+    ingresos.forEach((ingreso) => {
+      const date = new Date(ingreso.fecha);
+      let key = '';
+
+      switch (viewType) {
+        case 'annual':
+          // Procesar vista anual (12 meses del año actual)
+          if (date.getFullYear() === currentDate.getFullYear()) {
+            key = date.toLocaleDateString('es-ES', { month: 'short' });
+            if (!aggregatedData[key]) aggregatedData[key] = 0;
+            aggregatedData[key] += ingreso.monto;
+          }
+          break;
+
+        case 'monthly':
+          // Procesar vista mensual (días del mes actual)
+          if (date.getMonth() === currentDate.getMonth() && 
+              date.getFullYear() === currentDate.getFullYear()) {
+            key = date.getDate().toString();
+            if (!aggregatedData[key]) aggregatedData[key] = 0;
+            aggregatedData[key] += ingreso.monto;
+          }
+          break;
+
+        case 'weekly':
+          // Procesar vista semanal (7 días de la semana actual)
+          const startOfWeek = new Date(currentDate);
+          startOfWeek.setDate(currentDate.getDate() - currentDate.getDay() + 1);
+          const endOfWeek = new Date(startOfWeek);
+          endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+          if (date >= startOfWeek && date <= endOfWeek) {
+            key = date.toLocaleDateString('es-ES', { weekday: 'short' });
+            if (!aggregatedData[key]) aggregatedData[key] = 0;
+            aggregatedData[key] += ingreso.monto;
+          }
+          break;
+      }
+    });
+
+    // Asegurar que todos los períodos estén representados
+    const result: IngresoData[] = [];
+    
+    switch (viewType) {
+      case 'annual':
+        // Generar todos los meses del año
+        const months = Array.from({ length: 12 }, (_, i) => {
+          const date = new Date(currentDate.getFullYear(), i, 1);
+          return date.toLocaleDateString('es-ES', { month: 'short' });
+        });
+        months.forEach(month => {
+          result.push({
+            name: month,
+            ingresos: aggregatedData[month] || 0
+          });
+        });
+        break;
+
+      case 'monthly':
+        // Generar todos los días del mes
+        const daysInMonth = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth() + 1,
+          0
+        ).getDate();
+        
+        Array.from({ length: daysInMonth }, (_, i) => (i + 1).toString())
+          .forEach(day => {
+            result.push({
+              name: day,
+              ingresos: aggregatedData[day] || 0
+            });
+          });
+        break;
+
+      case 'weekly':
+        // Generar todos los días de la semana
+        const weekDays = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
+        weekDays.forEach(day => {
+          result.push({
+            name: day,
+            ingresos: aggregatedData[day] || 0
+          });
+        });
+        break;
+    }
+
+    return result;
+  };
+
+  const handleViewTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setViewType(e.target.value as 'annual' | 'monthly' | 'weekly');
+  };
+
+  const handlePrev = () => {
+    setCurrentDate(prevDate => {
+      const newDate = new Date(prevDate);
+      switch (viewType) {
+        case 'annual':
+          newDate.setFullYear(newDate.getFullYear() - 1);
+          break;
+        case 'monthly':
+          newDate.setMonth(newDate.getMonth() - 1);
+          break;
+        case 'weekly':
+          newDate.setDate(newDate.getDate() - 7);
+          break;
+      }
+      return newDate;
+    });
+  };
+
+  const handleNext = () => {
+    setCurrentDate(prevDate => {
+      const newDate = new Date(prevDate);
+      switch (viewType) {
+        case 'annual':
+          newDate.setFullYear(newDate.getFullYear() + 1);
+          break;
+        case 'monthly':
+          newDate.setMonth(newDate.getMonth() + 1);
+          break;
+        case 'weekly':
+          newDate.setDate(newDate.getDate() + 7);
+          break;
+      }
+      return newDate;
+    });
+  };
+
+  const getDateDisplay = () => {
+    switch (viewType) {
+      case 'annual':
+        return currentDate.getFullYear().toString();
+      case 'monthly':
+        return currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+      case 'weekly':
+        const startOfWeek = new Date(currentDate);
+        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay() + 1);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        return `${startOfWeek.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} - ${endOfWeek.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+    }
+  };
 
   // Definir colores basados en el tema
   const colors = {
-    ingresos: theme === 'dark' ? '#3B82F6' : '#60A5FA', // Azul
+    ingresos: theme === 'dark' ? '#3B82F6' : '#60A5FA',
     grid: theme === 'dark' ? '#374151' : '#E5E7EB',
     axis: theme === 'dark' ? '#9CA3AF' : '#4B5563',
     tooltipBg: theme === 'dark' ? '#1F2937' : '#FFFFFF',
@@ -64,7 +222,6 @@ const IngresoGrafico: React.FC = () => {
     legendText: theme === 'dark' ? '#D1D5DB' : '#1F2937',
   };
 
-  // Personalizar Tooltip
   const CustomTooltip = ({
     active,
     payload,
@@ -97,84 +254,16 @@ const IngresoGrafico: React.FC = () => {
         </div>
       );
     }
-
     return null;
-  };
-
-  // Manejar cambio de vista desde el desplegable
-  const handleViewTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setViewType(e.target.value as 'daily' | 'weekly' | 'monthly');
-  };
-
-  // Manejar cambio de fechas
-  const handlePrev = () => {
-    setCurrentDate((prevDate) => {
-      const newDate = new Date(prevDate);
-      switch (viewType) {
-        case 'daily':
-          newDate.setDate(newDate.getDate() - 1);
-          break;
-        case 'weekly':
-          newDate.setDate(newDate.getDate() - 7);
-          break;
-        case 'monthly':
-          newDate.setMonth(newDate.getMonth() - 1);
-          break;
-      }
-      return newDate;
-    });
-  };
-
-  const handleNext = () => {
-    setCurrentDate((prevDate) => {
-      const newDate = new Date(prevDate);
-      switch (viewType) {
-        case 'daily':
-          newDate.setDate(newDate.getDate() + 1);
-          break;
-        case 'weekly':
-          newDate.setDate(newDate.getDate() + 7);
-          break;
-        case 'monthly':
-          newDate.setMonth(newDate.getMonth() + 1);
-          break;
-      }
-      return newDate;
-    });
-  };
-
-  // Obtener la visualización de fecha según el viewType y currentDate
-  const getDateDisplay = () => {
-    switch (viewType) {
-      case 'daily':
-        return currentDate.toLocaleDateString('es-ES', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        });
-      case 'weekly':
-        const weekStart = new Date(currentDate);
-        weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1); // Lunes
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekEnd.getDate() + 6); // Domingo
-        return `Semana del ${weekStart.toLocaleDateString()} al ${weekEnd.toLocaleDateString()}`;
-      case 'monthly':
-        return currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-      default:
-        return '';
-    }
   };
 
   return (
     <div className={`relative h-96 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md transition-colors duration-200`}>
-      {/* Encabezado con título, desplegable y botones de navegación alineados a la derecha */}
       <div className="flex justify-between items-center mb-4">
         <h3 className={`text-2xl font-bold ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>
           Ingresos
         </h3>
         <div className="flex items-center space-x-2">
-          {/* Botón Anterior */}
           <button
             onClick={handlePrev}
             className={`p-1 rounded-full ${
@@ -184,7 +273,6 @@ const IngresoGrafico: React.FC = () => {
           >
             <ChevronLeft className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`} />
           </button>
-          {/* Desplegable de selección de vista */}
           <div className="relative inline-block text-left">
             <select
               value={viewType}
@@ -195,12 +283,11 @@ const IngresoGrafico: React.FC = () => {
                   : 'bg-white border-gray-300 text-gray-800'
               } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
             >
-              <option>daily</option>
-              <option>weekly</option>
-              <option>monthly</option>
+              <option value="annual">Anual</option>
+              <option value="monthly">Mensual</option>
+              <option value="weekly">Semanal</option>
             </select>
           </div>
-          {/* Botón Siguiente */}
           <button
             onClick={handleNext}
             className={`p-1 rounded-full ${
@@ -213,73 +300,47 @@ const IngresoGrafico: React.FC = () => {
         </div>
       </div>
 
-      {/* Visualización de la fecha actual */}
-      <div className="mb-4 text-center">
-        <span className={`text-lg font-semibold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+      <div className="mt-4 text-center">
+        <span className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
           {getDateDisplay()}
         </span>
       </div>
 
-      {/* Gráfico Responsivo */}
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={data[viewType]}
-          margin={{
-            top: 20,
-            right: 30,
-            left: 20,
-            bottom: 20,
-          }}
-        >
-          {/* Rejilla del gráfico */}
-          <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
-
-          {/* Eje X */}
-          <XAxis
-            dataKey="name"
-            stroke={colors.axis}
-            tick={{ fill: colors.axis }}
-            fontSize={12}
-          />
-
-          {/* Eje Y */}
-          <YAxis
-            stroke={colors.axis}
-            tick={{ fill: colors.axis }}
-            fontSize={12}
-            label={{
-              value: 'Euros',
-              angle: -90,
-              position: 'insideLeft',
-              fill: colors.axis,
-              fontSize: 12,
-            }}
-          />
-
-          {/* Tooltip Personalizado */}
-          <Tooltip content={<CustomTooltip />} />
-
-          {/* Leyenda */}
-          <Legend
-            verticalAlign="top"
-            height={36}
-            wrapperStyle={{
-              color: colors.legendText,
-              fontSize: 12,
-            }}
-          />
-
-          {/* Barras de Ingresos */}
-          <Bar
-            dataKey="ingresos"
-            name="Ingresos"
-            fill={colors.ingresos}
-            barSize={30}
-            radius={[4, 4, 0, 0]}
-            animationDuration={800}
-          />
-        </BarChart>
-      </ResponsiveContainer>
+      <div className="w-full h-[calc(100%-100px)]">
+        <ResponsiveContainer>
+          <BarChart data={ingresoData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
+            <XAxis
+              dataKey="name"
+              stroke={colors.axis}
+              tick={{ fill: colors.axis }}
+            />
+            <YAxis
+              stroke={colors.axis}
+              tick={{ fill: colors.axis }}
+              tickFormatter={(value) =>
+                new Intl.NumberFormat('es-ES', {
+                  style: 'currency',
+                  currency: 'EUR',
+                  maximumFractionDigits: 0,
+                }).format(value)
+              }
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend
+              wrapperStyle={{
+                color: colors.legendText,
+              }}
+            />
+            <Bar
+              dataKey="ingresos"
+              fill={colors.ingresos}
+              name="Ingresos"
+              radius={[4, 4, 0, 0]}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };

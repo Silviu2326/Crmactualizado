@@ -1,20 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Table from '../../Common/Table';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { Search, Filter } from 'lucide-react';
 import Button from '../../Common/Button';
 
+interface Ingreso {
+  _id: string;
+  entrenador: string;
+  monto: number;
+  moneda: string;
+  fecha: string;
+  descripcion: string;
+}
+
 const IngresosTabla: React.FC = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
+  const [ingresos, setIngresos] = useState<Ingreso[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const ingresos = [
-    { fecha: '2023-08-01', concepto: 'Venta de servicios', monto: 5000 },
-    { fecha: '2023-08-02', concepto: 'Suscripciones', monto: 3000 },
-    { fecha: '2023-08-03', concepto: 'Venta de productos', monto: 2500 },
-    { fecha: '2023-08-04', concepto: 'Consultoría', monto: 4000 },
-    { fecha: '2023-08-05', concepto: 'Eventos', monto: 6000 },
-  ];
+  const getToken = () => localStorage.getItem('token');
+
+  useEffect(() => {
+    const fetchIngresos = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = getToken();
+        if (!token) {
+          throw new Error('Token no encontrado. Por favor, inicia sesión nuevamente.');
+        }
+
+        console.log('Iniciando petición a la API de ingresos...');
+        const response = await fetch('http://localhost:3000/api/ingresos', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al obtener los ingresos.');
+        }
+
+        const data: Ingreso[] = await response.json();
+        console.log('Datos crudos de ingresos recibidos:', data);
+
+        // Log de cada ingreso individual
+        data.forEach((ingreso, index) => {
+          console.log(`Ingreso ${index + 1}:`, {
+            id: ingreso._id,
+            entrenador: ingreso.entrenador,
+            monto: ingreso.monto,
+            moneda: ingreso.moneda,
+            fecha: ingreso.fecha,
+            descripcion: ingreso.descripcion
+          });
+        });
+
+        setIngresos(data);
+        console.log('Total de ingresos cargados:', data.length);
+      } catch (err: any) {
+        console.error('Error al obtener ingresos:', err);
+        setError(err.message || 'Error desconocido.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchIngresos();
+  }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -24,6 +81,20 @@ const IngresosTabla: React.FC = () => {
     // Implementar lógica de filtrado
     console.log('Filtrar ingresos');
   };
+
+  const filteredIngresos = ingresos.filter(ingreso =>
+    ingreso.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    ingreso.moneda.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    ingreso.monto.toString().includes(searchTerm)
+  );
+
+  if (loading) {
+    return <div className="text-center py-4">Cargando ingresos...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-4 text-red-500">{error}</div>;
+  }
 
   return (
     <div>
@@ -47,11 +118,12 @@ const IngresosTabla: React.FC = () => {
         </Button>
       </div>
       <Table
-        headers={['Fecha', 'Concepto', 'Monto']}
-        data={ingresos.map(ingreso => ({
-          Fecha: ingreso.fecha,
-          Concepto: ingreso.concepto,
-          Monto: `$${ingreso.monto.toLocaleString()}`
+        headers={['Fecha', 'Descripción', 'Monto', 'Moneda']}
+        data={filteredIngresos.map(ingreso => ({
+          Fecha: new Date(ingreso.fecha).toLocaleDateString(),
+          Descripción: ingreso.descripcion,
+          Monto: ingreso.monto.toLocaleString(),
+          Moneda: ingreso.moneda
         }))}
         variant={theme === 'dark' ? 'dark' : 'white'}
       />

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, DollarSign, PieChart, Users } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { motion } from 'framer-motion';
@@ -8,16 +8,170 @@ import IngresosTabla from './IngresosTabla';
 import GraficoCashflow from './GraficoCashflow';
 import GastoWidget from './GastoWidget';
 
+interface Gasto {
+  _id: string;
+  entrenador: string;
+  concepto: string;
+  fecha: string;
+  estado: string;
+  importe: number;
+  tipoDeGasto: string;
+  descripcion: string;
+}
+
+interface Ingreso {
+  _id: string;
+  entrenador: string;
+  monto: number;
+  moneda: string;
+  fecha: string;
+  descripcion: string;
+}
+
 const CashflowPage: React.FC = () => {
   const { theme } = useTheme();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [totalGastos, setTotalGastos] = useState(0);
+  const [totalIngresos, setTotalIngresos] = useState(0);
+
+  const getToken = () => localStorage.getItem('token');
+
+  useEffect(() => {
+    const fetchGastos = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = getToken();
+        if (!token) {
+          throw new Error('Token no encontrado. Por favor, inicia sesión nuevamente.');
+        }
+
+        const response = await fetch('http://localhost:3000/api/gastos', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al obtener los gastos.');
+        }
+
+        const data: any[] = await response.json();
+        console.log('Datos crudos de gastos:', data);
+        
+        data.forEach((gasto, index) => {
+          console.log(`Gasto ${index + 1}:`, {
+            monto: gasto.monto,
+            importe: gasto.importe,
+            categoria: gasto.categoria,
+            fecha: gasto.fecha,
+            descripcion: gasto.descripcion
+          });
+        });
+        
+        const total = data.reduce((sum, gasto) => {
+          const valor = gasto.monto || gasto.importe || 0;
+          console.log('Sumando gasto:', valor);
+          return sum + valor;
+        }, 0);
+        
+        console.log('Total gastos calculado:', total);
+        setTotalGastos(total);
+      } catch (err: any) {
+        console.error('Error al obtener gastos:', err);
+        setError(err.message || 'Error desconocido.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGastos();
+  }, []);
+
+  useEffect(() => {
+    const fetchIngresos = async () => {
+      try {
+        const token = getToken();
+        if (!token) {
+          throw new Error('Token no encontrado. Por favor, inicia sesión nuevamente.');
+        }
+
+        const response = await fetch('http://localhost:3000/api/ingresos', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al obtener los ingresos.');
+        }
+
+        const data: Ingreso[] = await response.json();
+        console.log('Datos crudos de ingresos:', data);
+
+        const total = data.reduce((sum, ingreso) => {
+          console.log('Sumando ingreso:', ingreso.monto);
+          return sum + (ingreso.monto || 0);
+        }, 0);
+
+        console.log('Total ingresos calculado:', total);
+        setTotalIngresos(total);
+      } catch (err: any) {
+        console.error('Error al obtener ingresos:', err);
+      }
+    };
+
+    fetchIngresos();
+  }, []);
+
+  const calcularMargenGanancia = () => {
+    if (totalIngresos === 0) return 0;
+    return ((totalIngresos - totalGastos) / totalIngresos) * 100;
+  };
 
   const metricData = [
-    { title: "Proyección del mes", value: "$10,000", icon: <TrendingUp className="w-6 h-6 text-green-500" />, change: "↑ 15%" },
-    { title: "Gasto Mensual", value: "$7,500", icon: <DollarSign className="w-6 h-6 text-red-500" />, change: "↑ 10%" },
-    { title: "Beneficio neto", value: "$2,500", icon: <TrendingUp className="w-6 h-6 text-blue-500" />, change: "↑ 5%" },
-    { title: "Ingresos", value: "$15,000", icon: <DollarSign className="w-6 h-6 text-green-500" />, change: "↑ 20%" },
-    { title: "Margen de ganancia", value: "16.67%", icon: <PieChart className="w-6 h-6 text-purple-500" />, change: "↑ 2%" },
-    { title: "Clientes Nuevos (este mes)", value: "25", icon: <Users className="w-6 h-6 text-yellow-500" />, change: "↑ 5" },
+    { 
+      title: "Proyección del mes", 
+      value: loading ? "Cargando..." : `$${(totalIngresos * 1.1).toLocaleString()}`, 
+      icon: <TrendingUp className="w-6 h-6 text-green-500" />, 
+      change: "↑ 10%" 
+    },
+    { 
+      title: "Gasto Mensual", 
+      value: loading ? "Cargando..." : error ? "Error" : `$${totalGastos.toLocaleString()}`, 
+      icon: <DollarSign className="w-6 h-6 text-red-500" />, 
+      change: totalGastos > 0 ? "↑" : "↓" 
+    },
+    { 
+      title: "Beneficio neto", 
+      value: loading ? "Cargando..." : `$${(totalIngresos - totalGastos).toLocaleString()}`, 
+      icon: <TrendingUp className="w-6 h-6 text-blue-500" />, 
+      change: totalIngresos - totalGastos > 0 ? "↑" : "↓" 
+    },
+    { 
+      title: "Ingresos", 
+      value: loading ? "Cargando..." : `$${totalIngresos.toLocaleString()}`, 
+      icon: <DollarSign className="w-6 h-6 text-green-500" />, 
+      change: totalIngresos > 0 ? "↑" : "↓" 
+    },
+    { 
+      title: "Margen de ganancia", 
+      value: loading ? "Cargando..." : `${calcularMargenGanancia().toFixed(2)}%`, 
+      icon: <PieChart className="w-6 h-6 text-purple-500" />, 
+      change: calcularMargenGanancia() > 0 ? "↑" : "↓" 
+    },
+    { 
+      title: "Clientes Nuevos (este mes)", 
+      value: "25", 
+      icon: <Users className="w-6 h-6 text-yellow-500" />, 
+      change: "↑ 5" 
+    },
   ];
 
   return (

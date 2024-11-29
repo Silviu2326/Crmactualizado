@@ -1,36 +1,93 @@
-import React, { useState } from 'react';
-import { Users, Search, Filter, Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Users, Search, Filter, X } from 'lucide-react';
+import axios from 'axios';
 import Table from '../../Common/Table';
 import Button from '../../Common/Button';
 import { useTheme } from '../../../contexts/ThemeContext';
 
 interface Cliente {
-  id: number;
+  _id: string;
   nombre: string;
-  plan: string;
-  fechaInicio: string;
+  email: string;
+  trainer: string;
+  fechaRegistro: string;
+  servicios: any[];
+  planesDePago: any[];
+  transacciones: any[];
+}
+
+interface FilterOptions {
+  conServicios: boolean;
+  conPlanesPago: boolean;
+  conTransacciones: boolean;
 }
 
 const ClientesWidget: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+    conServicios: false,
+    conPlanesPago: false,
+    conTransacciones: false
+  });
   const { theme } = useTheme();
 
-  const clientes: Cliente[] = [
-    { id: 1, nombre: "Juan Pérez", plan: "Premium", fechaInicio: "2023-01-15" },
-    { id: 2, nombre: "María García", plan: "Básico", fechaInicio: "2023-02-01" },
-    { id: 3, nombre: "Carlos López", plan: "Estándar", fechaInicio: "2023-03-10" },
-  ];
+  const fetchClientes = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      setClientes(response.data);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching clientes:', err);
+      setError('Error al cargar los clientes');
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchClientes();
+  }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
 
-  const handleFilter = () => {
-    console.log('Filtrar clientes');
+  const handleFilterToggle = () => {
+    setShowFilters(!showFilters);
   };
 
-  const handleAddCliente = () => {
-    console.log('Añadir nuevo cliente');
+  const handleFilterChange = (filterName: keyof FilterOptions) => {
+    setFilterOptions(prev => ({
+      ...prev,
+      [filterName]: !prev[filterName]
+    }));
+  };
+
+  const filteredClientes = clientes.filter(cliente => {
+    // Aplicar búsqueda por texto
+    const matchesSearch = 
+      cliente.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cliente.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Aplicar filtros
+    const matchesFilters = 
+      (!filterOptions.conServicios || cliente.servicios.length > 0) &&
+      (!filterOptions.conPlanesPago || cliente.planesDePago.length > 0) &&
+      (!filterOptions.conTransacciones || cliente.transacciones.length > 0);
+
+    return matchesSearch && matchesFilters;
+  });
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
   };
 
   return (
@@ -41,38 +98,90 @@ const ClientesWidget: React.FC = () => {
           <Users className={`w-5 h-5 ${theme === 'dark' ? 'text-green-400' : 'text-green-500'}`} />
         </div>
       </div>
-      <div className="flex items-center space-x-2 mb-4">
-        <div className="relative flex-grow">
-          <input
-            type="text"
-            placeholder="Buscar clientes..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            className={`w-full px-3 py-2 border ${
-              theme === 'dark' 
-                ? 'bg-gray-700 border-gray-600 text-white' 
-                : 'bg-white border-gray-300 text-gray-800'
-            } rounded-md focus:outline-none focus:ring-2 focus:ring-green-500`}
-          />
-          <Search className={`absolute right-3 top-2.5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
+      
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <div className="relative flex-grow">
+            <input
+              type="text"
+              placeholder="Buscar por nombre o email..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className={`w-full px-3 py-2 border ${
+                theme === 'dark' 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-800'
+              } rounded-md focus:outline-none focus:ring-2 focus:ring-green-500`}
+            />
+            <Search className={`absolute right-3 top-2.5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
+          </div>
+          <Button 
+            variant={showFilters ? "active" : "filter"}
+            onClick={handleFilterToggle}
+          >
+            {showFilters ? <X className="w-4 h-4" /> : <Filter className="w-4 h-4" />}
+          </Button>
         </div>
-        <Button variant="filter" onClick={handleFilter}>
-          <Filter className="w-4 h-4" />
-        </Button>
-        <Button variant="create" onClick={handleAddCliente}>
-          <Plus className="w-4 h-4 mr-1" />
-          Añadir
-        </Button>
+
+        {showFilters && (
+          <div className={`p-4 rounded-md ${
+            theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+          }`}>
+            <div className="space-y-2">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={filterOptions.conServicios}
+                  onChange={() => handleFilterChange('conServicios')}
+                  className="rounded text-green-500 focus:ring-green-500"
+                />
+                <span>Con servicios activos</span>
+              </label>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={filterOptions.conPlanesPago}
+                  onChange={() => handleFilterChange('conPlanesPago')}
+                  className="rounded text-green-500 focus:ring-green-500"
+                />
+                <span>Con planes de pago</span>
+              </label>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={filterOptions.conTransacciones}
+                  onChange={() => handleFilterChange('conTransacciones')}
+                  className="rounded text-green-500 focus:ring-green-500"
+                />
+                <span>Con transacciones</span>
+              </label>
+            </div>
+          </div>
+        )}
       </div>
-      <Table
-        headers={['Nombre', 'Plan', 'Fecha de Inicio']}
-        data={clientes.map(cliente => ({
-          Nombre: cliente.nombre,
-          Plan: cliente.plan,
-          'Fecha de Inicio': cliente.fechaInicio
-        }))}
-        variant={theme === 'dark' ? 'dark' : 'white'}
-      />
+
+      {loading ? (
+        <div className="text-center py-4">Cargando clientes...</div>
+      ) : error ? (
+        <div className="text-red-500 text-center py-4">{error}</div>
+      ) : (
+        <div className="mt-4">
+          <Table
+            headers={['Nombre', 'Email', 'Fecha de Registro', 'Servicios', 'Planes de Pago']}
+            data={filteredClientes.map(cliente => ({
+              Nombre: cliente.nombre,
+              Email: cliente.email,
+              'Fecha de Registro': formatDate(cliente.fechaRegistro),
+              Servicios: cliente.servicios.length.toString(),
+              'Planes de Pago': cliente.planesDePago.length.toString()
+            }))}
+            variant={theme === 'dark' ? 'dark' : 'white'}
+          />
+          <div className="text-sm text-gray-500 mt-2">
+            Mostrando {filteredClientes.length} de {clientes.length} clientes
+          </div>
+        </div>
+      )}
     </div>
   );
 };

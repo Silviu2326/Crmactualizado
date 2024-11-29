@@ -1,20 +1,59 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import LicenciasWidget from './LicenciasWidget';
 import ContratosWidget from './ContratosWidget';
 import OtrosDocumentosWidget from './OtrosDocumentosWidget';
 import AlertasLicenciasWidget from './AlertasLicenciasWidget';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { FileText, FileSignature, File, AlertTriangle } from 'lucide-react';
+import { FileText, FileSignature, File, AlertTriangle, Loader2 } from 'lucide-react';
+import axios from 'axios';
+
+interface Stats {
+  licencias: number;
+  contratos: number;
+  otrosDocumentos: number;
+}
 
 const DocumentosPage: React.FC = () => {
   const { theme } = useTheme();
+  const [stats, setStats] = useState<Stats>({
+    licencias: 0,
+    contratos: 0,
+    otrosDocumentos: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const stats = {
-    licencias: 15,
-    contratos: 23,
-    otrosDocumentos: 42
-  };
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = {
+          Authorization: `Bearer ${token}`
+        };
+
+        const [licenciasRes, contratosRes, documentosRes] = await Promise.all([
+          axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/licenses', { headers }),
+          axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/contracts', { headers }),
+          axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/otros-documentos', { headers })
+        ]);
+
+        setStats({
+          licencias: licenciasRes.data.results || licenciasRes.data.data?.licencias?.length || 0,
+          contratos: contratosRes.data.results || contratosRes.data.data?.contratos?.length || 0,
+          otrosDocumentos: documentosRes.data.results || documentosRes.data.data?.documentos?.length || 0
+        });
+        setError('');
+      } catch (err) {
+        console.error('Error fetching stats:', err);
+        setError('Error al cargar las estadísticas');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   const pageVariants = {
     initial: { opacity: 0, y: 20 },
@@ -44,14 +83,18 @@ const DocumentosPage: React.FC = () => {
     visible: { y: 0, opacity: 1 }
   };
 
-  const StatCard = ({ title, value, icon: Icon }) => (
+  const StatCard = ({ title, value, icon: Icon, loading = false }) => (
     <div className={`p-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md flex items-center space-x-4`}>
       <div className={`p-3 rounded-full ${theme === 'dark' ? 'bg-blue-900' : 'bg-blue-100'}`}>
         <Icon className={`w-6 h-6 ${theme === 'dark' ? 'text-blue-300' : 'text-blue-600'}`} />
       </div>
       <div>
         <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{title}</p>
-        <p className="text-2xl font-bold">{value}</p>
+        {loading ? (
+          <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+        ) : (
+          <p className="text-2xl font-bold">{value}</p>
+        )}
       </div>
     </div>
   );
@@ -69,6 +112,14 @@ const DocumentosPage: React.FC = () => {
         Gestión de Documentos
       </h2>
 
+      {error && (
+        <div className={`mb-4 p-4 rounded-lg text-center ${
+          theme === 'dark' ? 'bg-red-900/20 text-red-200' : 'bg-red-100 text-red-800'
+        }`}>
+          {error}
+        </div>
+      )}
+
       {/* Mini sección de estadísticas */}
       <motion.div
         variants={containerVariants}
@@ -77,13 +128,13 @@ const DocumentosPage: React.FC = () => {
         className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"
       >
         <motion.div variants={itemVariants}>
-          <StatCard title="Total Licencias" value={stats.licencias} icon={FileText} />
+          <StatCard title="Total Licencias" value={stats.licencias} icon={FileText} loading={loading} />
         </motion.div>
         <motion.div variants={itemVariants}>
-          <StatCard title="Total Contratos" value={stats.contratos} icon={FileSignature} />
+          <StatCard title="Total Contratos" value={stats.contratos} icon={FileSignature} loading={loading} />
         </motion.div>
         <motion.div variants={itemVariants}>
-          <StatCard title="Otros Documentos" value={stats.otrosDocumentos} icon={File} />
+          <StatCard title="Otros Documentos" value={stats.otrosDocumentos} icon={File} loading={loading} />
         </motion.div>
       </motion.div>
 
@@ -105,23 +156,18 @@ const DocumentosPage: React.FC = () => {
         <AlertasLicenciasWidget />
       </motion.div>
 
-      {/* Otros widgets */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 gap-8"
-      >
-        <motion.div variants={itemVariants} className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg`}>
+      {/* Grid de widgets principales */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg`}>
           <LicenciasWidget />
-        </motion.div>
-        <motion.div variants={itemVariants} className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg`}>
+        </div>
+        <div className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg`}>
           <ContratosWidget />
-        </motion.div>
-        <motion.div variants={itemVariants} className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg`}>
+        </div>
+        <div className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg`}>
           <OtrosDocumentosWidget />
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </motion.div>
   );
 };

@@ -1,37 +1,90 @@
-import React, { useState } from 'react';
-import { Package, Search, Filter, Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Package, Search, Filter } from 'lucide-react';
+import axios from 'axios';
 import Table from '../../Common/Table';
 import Button from '../../Common/Button';
 import { useTheme } from '../../../contexts/ThemeContext';
 
-interface Servicio {
-  id: number;
-  nombre: string;
+interface PlanDePago {
+  _id: string;
   precio: number;
-  categoria: string;
+  moneda: string;
+  frecuencia: string;
+}
+
+interface Servicio {
+  _id: string;
+  nombre: string;
+  tipo: string;
+  planDePago: PlanDePago[];
+  descripcion: string;
+}
+
+interface FilterOptions {
+  tipo: string;
+  minPlanes: number;
+  maxPlanes: number;
 }
 
 const ServiciosWidget: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+    tipo: '',
+    minPlanes: 0,
+    maxPlanes: 999,
+  });
   const { theme } = useTheme();
 
-  const servicios: Servicio[] = [
-    { id: 1, nombre: "Entrenamiento Personal", precio: 50, categoria: "Fitness" },
-    { id: 2, nombre: "Clase de Yoga", precio: 20, categoria: "Bienestar" },
-    { id: 3, nombre: "Nutrición Personalizada", precio: 80, categoria: "Salud" },
-  ];
+  const fetchServicios = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      setServicios(response.data);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching servicios:', err);
+      setError('Error al cargar los servicios');
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchServicios();
+  }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
 
-  const handleFilter = () => {
-    console.log('Filtrar servicios');
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFilterOptions(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleAddServicio = () => {
-    console.log('Añadir nuevo servicio');
-  };
+  const filteredServicios = servicios.filter(servicio => {
+    const matchesSearch = servicio.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         servicio.tipo.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesTipo = filterOptions.tipo === '' || servicio.tipo === filterOptions.tipo;
+    const planesCount = servicio.planDePago?.length || 0;
+    const matchesPlanes = planesCount >= filterOptions.minPlanes && 
+                         planesCount <= filterOptions.maxPlanes;
+
+    return matchesSearch && matchesTipo && matchesPlanes;
+  });
+
+  const tiposUnicos = Array.from(new Set(servicios.map(s => s.tipo)));
 
   return (
     <div className={`p-4 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-lg shadow-md`}>
@@ -45,7 +98,7 @@ const ServiciosWidget: React.FC = () => {
         <div className="relative flex-grow">
           <input
             type="text"
-            placeholder="Buscar servicios..."
+            placeholder="Buscar por nombre o tipo..."
             value={searchTerm}
             onChange={handleSearchChange}
             className={`w-full px-3 py-2 border ${
@@ -56,23 +109,94 @@ const ServiciosWidget: React.FC = () => {
           />
           <Search className={`absolute right-3 top-2.5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
         </div>
-        <Button variant="filter" onClick={handleFilter}>
+        <Button 
+          variant="filter" 
+          onClick={() => setShowFilters(!showFilters)}
+          className={showFilters ? 'bg-blue-500 text-white' : ''}
+        >
           <Filter className="w-4 h-4" />
         </Button>
-        <Button variant="create" onClick={handleAddServicio}>
-          <Plus className="w-4 h-4 mr-1" />
-          Añadir
-        </Button>
       </div>
-      <Table
-        headers={['Nombre', 'Precio', 'Categoría']}
-        data={servicios.map(servicio => ({
-          Nombre: servicio.nombre,
-          Precio: `${servicio.precio}€`,
-          Categoría: servicio.categoria
-        }))}
-        variant={theme === 'dark' ? 'dark' : 'white'}
-      />
+
+      {showFilters && (
+        <div className={`p-4 mb-4 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Tipo de Servicio</label>
+              <select
+                name="tipo"
+                value={filterOptions.tipo}
+                onChange={handleFilterChange}
+                className={`w-full px-3 py-2 rounded-md ${
+                  theme === 'dark' 
+                    ? 'bg-gray-600 text-white' 
+                    : 'bg-white text-gray-800'
+                }`}
+              >
+                <option value="">Todos</option>
+                {tiposUnicos.map(tipo => (
+                  <option key={tipo} value={tipo}>{tipo}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Mínimo de Planes</label>
+              <input
+                type="number"
+                name="minPlanes"
+                value={filterOptions.minPlanes}
+                onChange={handleFilterChange}
+                min="0"
+                className={`w-full px-3 py-2 rounded-md ${
+                  theme === 'dark' 
+                    ? 'bg-gray-600 text-white' 
+                    : 'bg-white text-gray-800'
+                }`}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Máximo de Planes</label>
+              <input
+                type="number"
+                name="maxPlanes"
+                value={filterOptions.maxPlanes}
+                onChange={handleFilterChange}
+                min="0"
+                className={`w-full px-3 py-2 rounded-md ${
+                  theme === 'dark' 
+                    ? 'bg-gray-600 text-white' 
+                    : 'bg-white text-gray-800'
+                }`}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="text-center py-4">Cargando servicios...</div>
+      ) : error ? (
+        <div className="text-red-500 text-center py-4">{error}</div>
+      ) : (
+        <div className="mt-4">
+          <div style={{ height: '300px' }} className="overflow-y-auto">
+            <div className="min-w-full">
+              <Table
+                headers={['Nombre', 'Tipo', 'Planes de Pago']}
+                data={filteredServicios.map(servicio => ({
+                  Nombre: servicio.nombre,
+                  Tipo: servicio.tipo,
+                  'Planes de Pago': servicio.planDePago ? servicio.planDePago.length.toString() : '0'
+                }))}
+                variant={theme === 'dark' ? 'dark' : 'white'}
+              />
+            </div>
+          </div>
+          <div className="text-sm text-gray-500 mt-2">
+            Mostrando {filteredServicios.length} de {servicios.length} servicios
+          </div>
+        </div>
+      )}
     </div>
   );
 };

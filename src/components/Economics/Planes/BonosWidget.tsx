@@ -1,25 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Gift, Search, Filter, Plus } from 'lucide-react';
+import axios from 'axios';
 import Table from '../../Common/Table';
 import Button from '../../Common/Button';
 import { useTheme } from '../../../contexts/ThemeContext';
+import AddBonoModal from './AddBonoModal';
+
+interface Trainer {
+  _id: string;
+  nombre: string;
+  email: string;
+}
 
 interface Bono {
-  id: number;
+  _id: string;
   nombre: string;
-  valor: number;
-  estado: 'Activo' | 'Inactivo';
+  tipo: string;
+  descripcion: string;
+  primeraFecha: string;
+  segundaFecha: string;
+  terceraFecha: string;
+  servicio: string;
+  sesiones: number;
+  precio: number;
+  trainer: Trainer;
+  estado: string;
+  sesionesRestantes: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const BonosWidget: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [bonos, setBonos] = useState<Bono[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { theme } = useTheme();
 
-  const bonos: Bono[] = [
-    { id: 1, nombre: "Bono de Bienvenida", valor: 50, estado: "Activo" },
-    { id: 2, nombre: "Bono de Referidos", valor: 30, estado: "Activo" },
-    { id: 3, nombre: "Bono de Fidelidad", valor: 100, estado: "Inactivo" },
-  ];
+  const fetchBonos = async () => {
+    try {
+      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/bonos');
+      setBonos(response.data.data.bonos);
+      setLoading(false);
+    } catch (err) {
+      setError('Error al cargar los bonos');
+      setLoading(false);
+      console.error('Error fetching bonos:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchBonos();
+  }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -30,7 +63,24 @@ const BonosWidget: React.FC = () => {
   };
 
   const handleAddBono = () => {
-    console.log('Añadir nuevo bono');
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleBonoAdded = () => {
+    fetchBonos();
+  };
+
+  const filteredBonos = bonos.filter(bono =>
+    bono.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    bono.servicio.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
   };
 
   return (
@@ -64,14 +114,36 @@ const BonosWidget: React.FC = () => {
           Añadir
         </Button>
       </div>
-      <Table
-        headers={['Nombre', 'Valor', 'Estado']}
-        data={bonos.map(bono => ({
-          Nombre: bono.nombre,
-          Valor: `${bono.valor}€`,
-          Estado: bono.estado
-        }))}
-        variant={theme === 'dark' ? 'dark' : 'white'}
+      {loading ? (
+        <div className="text-center py-4">Cargando bonos...</div>
+      ) : error ? (
+        <div className="text-red-500 text-center py-4">{error}</div>
+      ) : (
+        <Table
+          headers={['Nombre', 'Servicio', 'Sesiones', 'Precio', 'Trainer', 'Estado']}
+          data={filteredBonos.map(bono => ({
+            Nombre: bono.nombre,
+            Servicio: bono.servicio,
+            Sesiones: `${bono.sesionesRestantes}/${bono.sesiones}`,
+            Precio: `${bono.precio}€`,
+            Trainer: bono.trainer.nombre,
+            Estado: (
+              <span className={`px-2 py-1 rounded-full text-sm ${
+                bono.estado === 'activo' ? 'bg-green-100 text-green-800' :
+                bono.estado === 'expirado' ? 'bg-red-100 text-red-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {bono.estado.charAt(0).toUpperCase() + bono.estado.slice(1)}
+              </span>
+            )
+          }))}
+          variant={theme === 'dark' ? 'dark' : 'white'}
+        />
+      )}
+      <AddBonoModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onBonoAdded={handleBonoAdded}
       />
     </div>
   );

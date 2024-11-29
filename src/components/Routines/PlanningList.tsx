@@ -22,6 +22,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import PopupCrearPlanificacion from './PopupCrearPlanificacion';
+import PopupCrearEsqueleto from './PopupCrearEsqueleto';
 // Importa otros componentes si es necesario
 
 interface PlanningSchema {
@@ -47,6 +48,7 @@ const PlanningList: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
   const [isFormulasModalOpen, setIsFormulasModalOpen] = useState(false);
+  const [isEsqueletoModalOpen, setIsEsqueletoModalOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('todos');
 
   // Estados para planificaciones, carga y errores
@@ -171,7 +173,7 @@ const PlanningList: React.FC = () => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch('http://localhost:3000/api/plannings/schemas', {
+      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/schemas', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -208,6 +210,17 @@ const PlanningList: React.FC = () => {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCrearEsqueleto = async (esqueletoData: any) => {
+    try {
+      // Aquí implementarás la llamada a la API para crear el esqueleto
+      console.log('Datos del esqueleto:', esqueletoData);
+      // TODO: Implementar la llamada a la API
+      setIsEsqueletoModalOpen(false);
+    } catch (error) {
+      console.error('Error al crear el esqueleto:', error);
     }
   };
 
@@ -275,13 +288,13 @@ const PlanningList: React.FC = () => {
             <Plus className="w-5 h-5 mr-2" />
             Crear Planificación
           </Button>
-          <Button variant="normal" onClick={() => setIsFormulasModalOpen(true)}>
-            <Plus className="w-5 h-5 mr-2" />
-            Crear Fórmula
-          </Button>
           <Button variant="normal" onClick={() => setIsFilesModalOpen(true)}>
             <FileText className="w-5 h-5 mr-2" />
             Ver Archivos
+          </Button>
+          <Button variant="normal" onClick={() => setIsEsqueletoModalOpen(true)}>
+            <Plus className="w-5 h-5 mr-2" />
+            Crear Fórmula
           </Button>
           <Button variant="normal">
             <Download className="w-5 h-5 mr-2" />
@@ -436,6 +449,24 @@ const PlanningList: React.FC = () => {
               <h3 className="text-2xl font-bold mb-4">Archivos Asociados</h3>
               {/* Lista de archivos o componentes relacionados */}
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal para Crear Esqueleto */}
+      <AnimatePresence>
+        {isEsqueletoModalOpen && (
+          <motion.div
+            key="modal-crear-esqueleto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+          >
+            <PopupCrearEsqueleto
+              onClose={() => setIsEsqueletoModalOpen(false)}
+              onCrear={handleCrearEsqueleto}
+            />
           </motion.div>
         )}
       </AnimatePresence>

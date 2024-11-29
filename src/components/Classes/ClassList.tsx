@@ -51,6 +51,12 @@ const ClassList: React.FC = () => {
   const [classData, setClassData] = useState<ClaseGrupal[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    capacity: 'all',
+    sessions: 'all',
+    trainer: 'all'
+  });
 
   // Obtener el token del localStorage
   const token = localStorage.getItem('token');
@@ -60,7 +66,7 @@ const ClassList: React.FC = () => {
       try {
         setLoading(true);
         const response = await axios.get<ClaseGrupal[]>(
-          'http://localhost:3000/api/servicios/services/tipo/ClaseGrupal',
+          'https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services/tipo/ClaseGrupal',
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -79,12 +85,24 @@ const ClassList: React.FC = () => {
     fetchClassData();
   }, [token]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (isFilterOpen && !target.closest('.filter-dropdown')) {
+        setIsFilterOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isFilterOpen]);
+
   // Función para actualizar la lista después de crear una nueva clase
   const refreshClassData = async () => {
     try {
       setLoading(true);
       const response = await axios.get<ClaseGrupal[]>(
-        'http://localhost:3000/api/servicios/services/tipo/ClaseGrupal',
+        'https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services/tipo/ClaseGrupal',
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -105,16 +123,29 @@ const ClassList: React.FC = () => {
     id: item._id,
     nombre: item.nombre,
     descripcion: item.descripcion,
-    clientes: item.clientes.length, // Asumiendo que 'clientes' es un array
-    maxParticipantes: 15, // Puedes ajustar esto según tus datos
-    sesiones: item.sesiones.length > 0 ? `${item.sesiones.length}/semana` : 'N/A', // Ajusta según la estructura de 'sesiones'
+    clientes: item.clientes.length,
+    maxParticipantes: 15,
+    sesiones: item.sesiones.length > 0 ? `${item.sesiones.length}/semana` : 'N/A',
     acciones: 'Editar'
   }));
 
-  const filteredClassData = transformedClassData.filter(item =>
-    item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredClassData = transformedClassData.filter(item => {
+    const matchesSearch = item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.descripcion.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesCapacity = filters.capacity === 'all' ? true :
+      filters.capacity === 'available' ? item.clientes < item.maxParticipantes :
+      item.clientes >= item.maxParticipantes;
+
+    const matchesSessions = filters.sessions === 'all' ? true :
+      filters.sessions === '1-2' ? parseInt(item.sesiones) <= 2 :
+      filters.sessions === '3-4' ? (parseInt(item.sesiones) >= 3 && parseInt(item.sesiones) <= 4) :
+      parseInt(item.sesiones) >= 5;
+
+    const matchesTrainer = filters.trainer === 'all' ? true : true; // TODO: Implementar filtro de entrenador cuando tengamos los datos
+
+    return matchesSearch && matchesCapacity && matchesSessions && matchesTrainer;
+  });
 
   const statsCards = [
     {
@@ -221,7 +252,7 @@ const ClassList: React.FC = () => {
     if (!confirmDelete) return;
 
     try {
-      await axios.delete(`http://localhost:3000/api/servicios/services/${id}`, {
+      await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -245,7 +276,7 @@ const ClassList: React.FC = () => {
           Lista de Clases Grupales
         </h2>
         <p className="text-gray-500 dark:text-gray-400">
-          Administra y organiza las clases grupales de tu centro
+          Administra y organiza las clases grupales de tu negocio
         </p>
       </motion.div>
 
@@ -290,6 +321,78 @@ const ClassList: React.FC = () => {
             Exportar
           </Button>
         </div>
+        <div className="relative">
+          <Button 
+            variant="filter" 
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+          >
+            <Filter className="w-5 h-5 mr-2" />
+            Filtros
+          </Button>
+          {isFilterOpen && (
+            <div className={`absolute right-0 mt-2 w-64 rounded-lg shadow-lg ${
+              theme === 'dark' ? 'bg-gray-700' : 'bg-white'
+            } z-50 filter-dropdown`}>
+              <div className="p-4">
+                <div className="mb-4">
+                  <label className={`block text-sm font-medium mb-2 ${
+                    theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                  }`}>
+                    Capacidad
+                  </label>
+                  <select
+                    value={filters.capacity}
+                    onChange={(e) => setFilters(prev => ({ ...prev, capacity: e.target.value }))}
+                    className={`w-full p-2 rounded ${
+                      theme === 'dark' ? 'bg-gray-600 text-white border-gray-600' : 'bg-gray-100 border-gray-300'
+                    } border focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                  >
+                    <option value="all">Todas</option>
+                    <option value="available">Con cupo</option>
+                    <option value="full">Llenas</option>
+                  </select>
+                </div>
+                <div className="mb-4">
+                  <label className={`block text-sm font-medium mb-2 ${
+                    theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                  }`}>
+                    Sesiones
+                  </label>
+                  <select
+                    value={filters.sessions}
+                    onChange={(e) => setFilters(prev => ({ ...prev, sessions: e.target.value }))}
+                    className={`w-full p-2 rounded ${
+                      theme === 'dark' ? 'bg-gray-600 text-white border-gray-600' : 'bg-gray-100 border-gray-300'
+                    } border focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                  >
+                    <option value="all">Todas</option>
+                    <option value="1-2">1-2 por semana</option>
+                    <option value="3-4">3-4 por semana</option>
+                    <option value="5+">5+ por semana</option>
+                  </select>
+                </div>
+                <div className="mb-4">
+                  <label className={`block text-sm font-medium mb-2 ${
+                    theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                  }`}>
+                    Entrenador
+                  </label>
+                  <select
+                    value={filters.trainer}
+                    onChange={(e) => setFilters(prev => ({ ...prev, trainer: e.target.value }))}
+                    className={`w-full p-2 rounded ${
+                      theme === 'dark' ? 'bg-gray-600 text-white border-gray-600' : 'bg-gray-100 border-gray-300'
+                    } border focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                  >
+                    <option value="all">Todos</option>
+                    <option value="active">Activos</option>
+                    <option value="inactive">Inactivos</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </motion.div>
 
       <motion.div 
@@ -309,10 +412,6 @@ const ClassList: React.FC = () => {
           />
           <Search className="absolute right-3 top-3 text-gray-400" />
         </div>
-        <Button variant="filter">
-          <Filter className="w-5 h-5 mr-2" />
-          Filtros
-        </Button>
       </motion.div>
 
       {loading ? (

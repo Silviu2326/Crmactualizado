@@ -1,20 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'; 
 import { motion } from 'framer-motion';
-import { X, Plus, ChevronRight, ChevronLeft } from 'lucide-react';
+import { X, Plus, ChevronRight, ChevronLeft, Edit2 } from 'lucide-react';
 import Button from '../Common/Button';
 import { useTheme } from '../../contexts/ThemeContext';
+import { DateRange, Range } from 'react-date-range';
+import 'react-date-range/dist/styles.css';
+import 'react-date-range/dist/theme/default.css';
+import { addDays, format, eachWeekOfInterval, eachDayOfInterval, startOfWeek, endOfWeek } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+interface Exercise {
+  id: string;
+  nombre: string;
+  series: string;
+  repeticiones: string;
+  descanso: string;
+  isEditing: boolean;
+}
+
+interface Day {
+  date: Date;
+  exercises: Exercise[];
+}
 
 interface Period {
-  startWeek: number;
-  startDay: number;
-  endWeek: number;
-  endDay: number;
-  exercises: {
-    nombre: string;
-    series: string;
-    repeticiones: string;
-    descanso: string;
-  }[];
+  weekNumber: number;
+  startDate: Date;
+  endDate: Date;
+  days: Day[];
 }
 
 interface PopupCrearEsqueletoProps {
@@ -29,39 +42,74 @@ const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onCr
     nombre: '',
     descripcion: '',
     tipo: 'fuerza',
-    totalSemanas: 4,
     periodos: [] as Period[]
   });
 
-  const [currentPeriod, setCurrentPeriod] = useState({
-    startWeek: 1,
-    startDay: 1,
-    endWeek: 1,
-    endDay: 1
+  const [dateRange, setDateRange] = useState<Range>({
+    startDate: new Date(),
+    endDate: addDays(new Date(), 7),
+    key: 'selection'
   });
 
   const handleAddPeriod = () => {
-    const newPeriod: Period = {
-      ...currentPeriod,
-      exercises: [{ nombre: '', series: '', repeticiones: '', descanso: '' }]
-    };
-    setFormData(prev => ({
-      ...prev,
-      periodos: [...prev.periodos, newPeriod]
-    }));
-    setCurrentPeriod({
-      startWeek: currentPeriod.endWeek,
-      startDay: currentPeriod.endDay,
-      endWeek: currentPeriod.endWeek,
-      endDay: currentPeriod.endDay + 1
-    });
+    if (dateRange.startDate && dateRange.endDate) {
+      const weeks = eachWeekOfInterval(
+        { start: dateRange.startDate, end: dateRange.endDate },
+        { locale: es, weekStartsOn: 1 } // Semana empieza el lunes
+      );
+
+      const newPeriodos: Period[] = weeks.map((weekStartDate, index) => {
+        const weekEndDate = endOfWeek(weekStartDate, { locale: es, weekStartsOn: 1 });
+        const days = eachDayOfInterval({
+          start: weekStartDate,
+          end: weekEndDate > dateRange.endDate ? dateRange.endDate : weekEndDate
+        }).map(date => ({
+          date,
+          exercises: [] as Exercise[]
+        }));
+
+        return {
+          weekNumber: index + 1,
+          startDate: weekStartDate,
+          endDate: weekEndDate > dateRange.endDate ? dateRange.endDate : weekEndDate,
+          days
+        };
+      });
+
+      setFormData(prev => ({
+        ...prev,
+        periodos: newPeriodos
+      }));
+    }
   };
 
-  const handleRemovePeriod = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      periodos: prev.periodos.filter((_, i) => i !== index)
-    }));
+  const handleAddExercise = (periodIndex: number, dayIndex: number) => {
+    const newPeriodos = [...formData.periodos];
+    newPeriodos[periodIndex].days[dayIndex].exercises.push({
+      id: `exercise_${Date.now()}`,
+      nombre: '',
+      series: '',
+      repeticiones: '',
+      descanso: '',
+      isEditing: true
+    });
+    setFormData({ ...formData, periodos: newPeriodos });
+  };
+
+  const handleExerciseChange = (periodIndex: number, dayIndex: number, exerciseIndex: number, field: string, value: string) => {
+    const newPeriodos = [...formData.periodos];
+    newPeriodos[periodIndex].days[dayIndex].exercises[exerciseIndex] = {
+      ...newPeriodos[periodIndex].days[dayIndex].exercises[exerciseIndex],
+      [field]: value
+    };
+    setFormData({ ...formData, periodos: newPeriodos });
+  };
+
+  const toggleExerciseEdit = (periodIndex: number, dayIndex: number, exerciseIndex: number) => {
+    const newPeriodos = [...formData.periodos];
+    const exercise = newPeriodos[periodIndex].days[dayIndex].exercises[exerciseIndex];
+    exercise.isEditing = !exercise.isEditing;
+    setFormData({ ...formData, periodos: newPeriodos });
   };
 
   const handleNextStep = () => {
@@ -76,7 +124,13 @@ const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onCr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onCrear(formData);
+    if (currentStep === 2 && formData.periodos.length > 0) {
+      onCrear(formData);
+      onClose();
+    } else {
+      // Mostrar un mensaje de error o feedback al usuario
+      alert('Por favor, genera el calendario y agrega ejercicios antes de enviar.');
+    }
   };
 
   const renderStep1 = () => (
@@ -127,176 +181,181 @@ const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onCr
           <option value="cardio">Cardio</option>
         </select>
       </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">Número de Semanas</label>
-        <select
-          value={formData.totalSemanas}
-          onChange={(e) => setFormData(prev => ({ ...prev, totalSemanas: parseInt(e.target.value) }))}
-          className={`w-full p-2 rounded border ${
-            theme === 'dark'
-              ? 'bg-gray-700 border-gray-600'
-              : 'bg-white border-gray-300'
-          }`}
-        >
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
-            <option key={num} value={num}>{num} semanas</option>
-          ))}
-        </select>
-      </div>
     </div>
   );
 
-  const renderWeekSelector = () => {
-    const weeks = Array.from({ length: formData.totalSemanas }, (_, i) => i + 1);
-    const days = Array.from({ length: 7 }, (_, i) => i + 1);
-
-    return (
-      <div className="mb-6">
-        <div className="grid grid-cols-8 gap-2 mb-4">
-          <div className="font-medium">Semana</div>
-          {days.map(day => (
-            <div key={day} className="font-medium text-center">Día {day}</div>
-          ))}
-        </div>
-        {weeks.map(week => (
-          <div key={week} className="grid grid-cols-8 gap-2 mb-2">
-            <div className="font-medium">Semana {week}</div>
-            {days.map(day => (
-              <button
-                key={`${week}-${day}`}
-                type="button"
-                onClick={() => {
-                  if (currentPeriod.startWeek === week && currentPeriod.startDay === day) {
-                    setCurrentPeriod(prev => ({
-                      ...prev,
-                      endWeek: week,
-                      endDay: day
-                    }));
-                  } else {
-                    setCurrentPeriod(prev => ({
-                      ...prev,
-                      startWeek: week,
-                      startDay: day,
-                      endWeek: week,
-                      endDay: day
-                    }));
-                  }
-                }}
-                className={`p-2 rounded ${
-                  (week === currentPeriod.startWeek && day === currentPeriod.startDay) ||
-                  (week === currentPeriod.endWeek && day === currentPeriod.endDay) ||
-                  (week >= currentPeriod.startWeek && week <= currentPeriod.endWeek &&
-                   ((week === currentPeriod.startWeek ? day >= currentPeriod.startDay : true) &&
-                    (week === currentPeriod.endWeek ? day <= currentPeriod.endDay : true)))
-                    ? 'bg-blue-500 text-white'
-                    : theme === 'dark'
-                    ? 'bg-gray-700 hover:bg-gray-600'
-                    : 'bg-gray-100 hover:bg-gray-200'
-                }`}
-              >
-                {day}
-              </button>
-            ))}
-          </div>
-        ))}
-        <div className="mt-4">
-          <Button
-            variant="create"
-            onClick={handleAddPeriod}
-            type="button"
-            className="w-full"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Agregar Periodo
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
-  const renderPeriodExercises = (period: Period, index: number) => (
-    <div key={index} className={`p-4 rounded-lg mb-4 ${
+  const renderExercise = (exercise: Exercise, periodIndex: number, dayIndex: number, exerciseIndex: number) => (
+    <div key={exercise.id} className={`p-4 rounded-lg mb-4 ${
       theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
     }`}>
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-medium">
-          Periodo {index + 1}: Semana {period.startWeek} Día {period.startDay} - 
-          Semana {period.endWeek} Día {period.endDay}
-        </h3>
-        <button
-          type="button"
-          onClick={() => handleRemovePeriod(index)}
-          className="text-red-500 hover:text-red-700"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-      
-      {period.exercises.map((ejercicio, ejIndex) => (
-        <div key={ejIndex} className="grid grid-cols-2 gap-4 mb-4">
+      {exercise.isEditing ? (
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Ejercicio</label>
+            <label className="block text-sm font-medium mb-1">Nombre del Ejercicio</label>
             <input
               type="text"
-              value={ejercicio.nombre}
-              onChange={(e) => {
-                const newPeriodos = [...formData.periodos];
-                newPeriodos[index].exercises[ejIndex].nombre = e.target.value;
-                setFormData(prev => ({ ...prev, periodos: newPeriodos }));
-              }}
+              value={exercise.nombre}
+              onChange={(e) => handleExerciseChange(periodIndex, dayIndex, exerciseIndex, 'nombre', e.target.value)}
               className={`w-full p-2 rounded border ${
-                theme === 'dark'
-                  ? 'bg-gray-600 border-gray-500'
-                  : 'bg-white border-gray-300'
+                theme === 'dark' ? 'bg-gray-600 border-gray-500' : 'bg-white border-gray-300'
               }`}
-              required
             />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Series</label>
             <input
               type="text"
-              value={ejercicio.series}
-              onChange={(e) => {
-                const newPeriodos = [...formData.periodos];
-                newPeriodos[index].exercises[ejIndex].series = e.target.value;
-                setFormData(prev => ({ ...prev, periodos: newPeriodos }));
-              }}
+              value={exercise.series}
+              onChange={(e) => handleExerciseChange(periodIndex, dayIndex, exerciseIndex, 'series', e.target.value)}
               className={`w-full p-2 rounded border ${
-                theme === 'dark'
-                  ? 'bg-gray-600 border-gray-500'
-                  : 'bg-white border-gray-300'
+                theme === 'dark' ? 'bg-gray-600 border-gray-500' : 'bg-white border-gray-300'
               }`}
-              required
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Repeticiones</label>
+            <input
+              type="text"
+              value={exercise.repeticiones}
+              onChange={(e) => handleExerciseChange(periodIndex, dayIndex, exerciseIndex, 'repeticiones', e.target.value)}
+              className={`w-full p-2 rounded border ${
+                theme === 'dark' ? 'bg-gray-600 border-gray-500' : 'bg-white border-gray-300'
+              }`}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Descanso (seg)</label>
+            <input
+              type="text"
+              value={exercise.descanso}
+              onChange={(e) => handleExerciseChange(periodIndex, dayIndex, exerciseIndex, 'descanso', e.target.value)}
+              className={`w-full p-2 rounded border ${
+                theme === 'dark' ? 'bg-gray-600 border-gray-500' : 'bg-white border-gray-300'
+              }`}
+            />
+          </div>
+          <div className="col-span-2 flex justify-end space-x-2">
+            <Button
+              variant="secondary"
+              onClick={() => toggleExerciseEdit(periodIndex, dayIndex, exerciseIndex)}
+              type="button"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => toggleExerciseEdit(periodIndex, dayIndex, exerciseIndex)}
+              type="button"
+            >
+              Guardar
+            </Button>
+          </div>
         </div>
-      ))}
-      
-      <Button
-        variant="secondary"
-        onClick={() => {
-          const newPeriodos = [...formData.periodos];
-          newPeriodos[index].exercises.push({ nombre: '', series: '', repeticiones: '', descanso: '' });
-          setFormData(prev => ({ ...prev, periodos: newPeriodos }));
-        }}
-        type="button"
-        className="mt-2"
-      >
-        <Plus className="w-4 h-4 mr-2" />
-        Agregar Ejercicio
-      </Button>
+      ) : (
+        <div className="flex justify-between items-center">
+          <div>
+            <h4 className="font-medium">{exercise.nombre}</h4>
+            <p className="text-sm text-gray-500">
+              {exercise.series} series × {exercise.repeticiones} reps | Descanso: {exercise.descanso}s
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            onClick={() => toggleExerciseEdit(periodIndex, dayIndex, exerciseIndex)}
+            type="button"
+          >
+            <Edit2 className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 
+  const renderDayCell = (periodIndex: number, dayIndex: number) => {
+    const day = formData.periodos[periodIndex].days[dayIndex];
+    return (
+      <td key={dayIndex} className="border px-2 py-2 align-top">
+        <div className="text-sm mb-2 font-medium">
+          {day ? format(day.date, 'dd/MM/yyyy') : ''}
+        </div>
+        {day ? (
+          <div className="space-y-2">
+            {day.exercises.map((exercise, exerciseIndex) =>
+              renderExercise(exercise, periodIndex, dayIndex, exerciseIndex)
+            )}
+            <Button
+              variant="secondary"
+              onClick={() => handleAddExercise(periodIndex, dayIndex)}
+              type="button"
+              className="w-full"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Agregar Ejercicio
+            </Button>
+          </div>
+        ) : null}
+      </td>
+    );
+  };
+
+  const renderPeriod = (period: Period, index: number) => (
+    <tr key={period.weekNumber} className="border">
+      <td className="border px-2 py-2 font-medium align-top">
+        Semana {period.weekNumber}<br/>
+        {format(period.startDate, 'dd/MM/yyyy')} - {format(period.endDate, 'dd/MM/yyyy')}
+      </td>
+      {Array.from({ length: 7 }).map((_, dayIndex) => renderDayCell(index, dayIndex))}
+    </tr>
+  );
+
   const renderStep2 = () => (
-    <div>
-      {renderWeekSelector()}
-      <div className="mt-6">
-        <h3 className="text-lg font-medium mb-4">Periodos de Entrenamiento</h3>
-        {formData.periodos.map((period, index) => renderPeriodExercises(period, index))}
+    <div className="space-y-6">
+      <div className={`p-6 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-white'} shadow-lg`}>
+        <h3 className="text-lg font-medium mb-4">Seleccionar Período</h3>
+        <DateRange
+          ranges={[dateRange]}
+          onChange={item => setDateRange(item.selection)}
+          months={2}
+          direction="horizontal"
+          locale={es}
+          minDate={new Date()}
+          className={theme === 'dark' ? 'dark-theme' : ''}
+        />
+        <Button
+          variant="create"
+          onClick={handleAddPeriod}
+          type="button"
+          className="mt-4 w-full"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Generar Calendario
+        </Button>
       </div>
+
+      {formData.periodos.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Periodos de Entrenamiento</h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse">
+              <thead>
+                <tr>
+                  <th className="border px-2 py-2">Semana</th>
+                  <th className="border px-2 py-2">Lunes</th>
+                  <th className="border px-2 py-2">Martes</th>
+                  <th className="border px-2 py-2">Miércoles</th>
+                  <th className="border px-2 py-2">Jueves</th>
+                  <th className="border px-2 py-2">Viernes</th>
+                  <th className="border px-2 py-2">Sábado</th>
+                  <th className="border px-2 py-2">Domingo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {formData.periodos.map((period, index) => renderPeriod(period, index))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -305,13 +364,13 @@ const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onCr
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto py-8"
     >
       <motion.div
         initial={{ scale: 0.95 }}
         animate={{ scale: 1 }}
         exit={{ scale: 0.95 }}
-        className={`w-full max-w-4xl p-6 rounded-lg shadow-xl ${
+        className={`w-full max-w-7xl mx-auto p-6 rounded-lg shadow-xl ${
           theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'
         }`}
       >
@@ -327,7 +386,7 @@ const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onCr
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-6">
           {currentStep === 1 ? renderStep1() : renderStep2()}
 
           <div className="flex justify-between mt-6">

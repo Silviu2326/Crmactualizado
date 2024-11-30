@@ -1,6 +1,6 @@
-// src/components/Economics/Cashflow/GastoWidget.tsx
-import React, { useState, useEffect } from 'react';
-import { DollarSign, TrendingDown, Search, Filter, Plus, Copy, Link } from 'lucide-react';
+// src/components/Economics/GastoWidget.tsx
+import React, { useState, useEffect, useRef } from 'react';
+import { DollarSign, TrendingDown, Search, Filter, Plus, Copy, Link, ChevronDown } from 'lucide-react';
 import Table from '../Common/Table';
 import Button from '../Common/Button';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -19,10 +19,20 @@ interface Gasto {
   Concepto: string;        // Mapeado desde 'categoria'
   Fecha: string;          // Mapeado desde 'fecha'
   Estado: string;         // Asignado como 'Pendiente'
-  Importe: number;        // Mapeado desde 'monto'
+  Importe: number;        // Mapeado desde 'monto' o 'importe'
+  Moneda: string;         // Moneda del importe
   TipoDeGasto: 'fijo' | 'variable'; // Asignado como 'fijo'
   descripcion?: string;   // Opcional
   categoria?: string;     // Opcional, mapeado a 'Concepto'
+}
+
+interface FilterOptions {
+  categoria: string;
+  tipo: string;
+  fechaDesde: string;
+  fechaHasta: string;
+  importeMin: string;
+  importeMax: string;
 }
 
 const GastoWidget: React.FC<GastoWidgetProps> = ({
@@ -37,15 +47,42 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({
   const [gastoData, setGastoData] = useState<Gasto[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+    categoria: '',
+    tipo: '',
+    fechaDesde: '',
+    fechaHasta: '',
+    importeMin: '',
+    importeMax: ''
+  });
 
   // Función para obtener el token del localStorage
   const getToken = (): string | null => {
     return localStorage.getItem('token'); // Asegúrate de que la clave sea correcta
   };
 
+  // Función para obtener el valor del importe/monto
+  const getImporte = (gasto: any): number => {
+    if (!gasto) return 0;
+    // Intentar obtener el valor de importe o monto, convertir a número y validar
+    const valor = gasto.importe !== undefined ? gasto.importe : gasto.monto;
+    const numeroValor = Number(valor);
+    return isNaN(numeroValor) ? 0 : numeroValor;
+  };
+
   // Función para formatear el importe
-  const formatImporte = (importe: number): string => {
-    return importe.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+  const formatImporte = (importe: number | undefined, moneda: string): string => {
+    if (importe === undefined || isNaN(Number(importe))) {
+      return `0 ${moneda || 'EUR'}`;
+    }
+    try {
+      return `${Number(importe).toLocaleString('es-ES')} ${moneda || 'EUR'}`;
+    } catch (error) {
+      console.error('Error al formatear importe:', error);
+      return `${importe} ${moneda || 'EUR'}`;
+    }
   };
 
   useEffect(() => {
@@ -58,7 +95,7 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({
           throw new Error('Token no encontrado. Por favor, inicia sesión nuevamente.');
         }
 
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos', {
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com//api/gastos', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -80,7 +117,8 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({
           Concepto: gasto.categoria || 'N/A',        // Mapear 'categoria' a 'Concepto'
           Fecha: gasto.fecha,
           Estado: 'Pendiente',                       // Asignar valor predeterminado
-          Importe: gasto.monto,
+          Importe: getImporte(gasto),
+          Moneda: gasto.moneda || 'EUR',
           TipoDeGasto: 'fijo',                        // Asignar valor predeterminado
           descripcion: gasto.descripcion,
           categoria: gasto.categoria,
@@ -97,6 +135,55 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({
 
     fetchGastos();
   }, []);
+
+  // Cerrar el filtro cuando se hace clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+        setIsFilterOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFilterOptions(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const applyFilters = (gastos: Gasto[]) => {
+    return gastos.filter(gasto => {
+      const importeValor = getImporte(gasto);
+      
+      const matchesCategoria = !filterOptions.categoria || 
+        gasto.categoria.toLowerCase().includes(filterOptions.categoria.toLowerCase());
+      
+      const matchesTipo = !filterOptions.tipo || 
+        gasto.TipoDeGasto === filterOptions.tipo;
+      
+      const matchesFechaDesde = !filterOptions.fechaDesde || 
+        new Date(gasto.Fecha) >= new Date(filterOptions.fechaDesde);
+      
+      const matchesFechaHasta = !filterOptions.fechaHasta || 
+        new Date(gasto.Fecha) <= new Date(filterOptions.fechaHasta);
+      
+      const matchesImporteMin = !filterOptions.importeMin || 
+        importeValor >= Number(filterOptions.importeMin);
+      
+      const matchesImporteMax = !filterOptions.importeMax || 
+        importeValor <= Number(filterOptions.importeMax);
+
+      return matchesCategoria && matchesTipo && matchesFechaDesde && 
+             matchesFechaHasta && matchesImporteMin && matchesImporteMax;
+    });
+  };
 
   // Filtrar los datos según el término de búsqueda
   const filteredGastoData = gastoData.filter((gasto) => {
@@ -137,7 +224,7 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({
             type="text"
             placeholder="Buscar gastos..."
             value={searchTerm}
-            onChange={handleSearchChange}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className={`w-full px-3 py-2 border ${
               theme === 'dark' 
                 ? 'bg-gray-700 border-gray-600 text-white' 
@@ -146,9 +233,117 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({
           />
           <Search className={`absolute right-3 top-2.5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
         </div>
-        <Button variant="filter" onClick={() => setIsFilterOpen(!isFilterOpen)}>
-          <Filter className="w-4 h-4" />
-        </Button>
+        <div className="flex gap-2 items-center relative" ref={filterRef}>
+          <Button
+            variant="filter"
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            className="flex items-center gap-2"
+          >
+            <Filter className="w-4 h-4" />
+            <ChevronDown className={`w-4 h-4 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
+          </Button>
+
+          <AnimatePresence>
+            {isFilterOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className={`absolute right-0 mt-2 w-80 p-4 rounded-lg shadow-lg z-50 ${
+                  theme === 'dark' ? 'bg-gray-700' : 'bg-white'
+                }`}
+              >
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Cawtegoría</label>
+                    <input
+                      type="text"
+                      name="categoria"
+                      value={filterOptions.categoria}
+                      onChange={handleFilterChange}
+                      className={`w-full px-3 py-2 rounded-md ${
+                        theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
+                      }`}
+                      placeholder="Filtrar por categoría"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Tipo</label>
+                    <select
+                      name="tipo"
+                      value={filterOptions.tipo}
+                      onChange={handleFilterChange}
+                      className={`w-full px-3 py-2 rounded-md ${
+                        theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
+                      }`}
+                    >
+                      <option value="">Todos</option>
+                      <option value="fijo">Fijo</option>
+                      <option value="variable">Variable</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Fecha desde</label>
+                      <input
+                        type="date"
+                        name="fechaDesde"
+                        value={filterOptions.fechaDesde}
+                        onChange={handleFilterChange}
+                        className={`w-full px-3 py-2 rounded-md ${
+                          theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Fecha hasta</label>
+                      <input
+                        type="date"
+                        name="fechaHasta"
+                        value={filterOptions.fechaHasta}
+                        onChange={handleFilterChange}
+                        className={`w-full px-3 py-2 rounded-md ${
+                          theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Importe mínimo</label>
+                      <input
+                        type="number"
+                        name="importeMin"
+                        value={filterOptions.importeMin}
+                        onChange={handleFilterChange}
+                        className={`w-full px-3 py-2 rounded-md ${
+                          theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
+                        }`}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Importe máximo</label>
+                      <input
+                        type="number"
+                        name="importeMax"
+                        value={filterOptions.importeMax}
+                        onChange={handleFilterChange}
+                        className={`w-full px-3 py-2 rounded-md ${
+                          theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
+                        }`}
+                        placeholder="999999"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
         <Button variant="create" onClick={onAddGasto}>
           <Plus className="w-4 h-4 mr-1" />
           Añadir
@@ -167,11 +362,11 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({
         ) : (
           <Table
             headers={['Concepto', 'Fecha', 'Estado', 'Importe', 'Tipo de Gasto']}
-            data={filteredGastoData.map(item => ({
+            data={applyFilters(filteredGastoData).map(item => ({
               Concepto: item.Concepto,
               Fecha: new Date(item.Fecha).toLocaleDateString('es-ES'),
               Estado: item.Estado,
-              Importe: formatImporte(item.Importe),
+              Importe: formatImporte(item.Importe, item.Moneda),
               'Tipo de Gasto': item.TipoDeGasto.charAt(0).toUpperCase() + item.TipoDeGasto.slice(1),
             }))}
             variant={theme === 'dark' ? 'dark' : 'white'}

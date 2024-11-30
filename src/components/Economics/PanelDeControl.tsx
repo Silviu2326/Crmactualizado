@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Edit, Save, TrendingUp, DollarSign, FileText, Users, PieChart, UserPlus } from 'lucide-react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import GastoWidget from './GastoWidget';
@@ -64,6 +64,13 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
     stripe: 850.50,
     cash: 325.25
   });
+  const [totalClientes, setTotalClientes] = useState(0);
+  const [clientesNuevos, setClientesNuevos] = useState(0);
+  const [ingresoTotal, setIngresoTotal] = useState(0);
+  const [ingresoMensual, setIngresoMensual] = useState(0);
+  const [gastoMensual, setGastoMensual] = useState(0);
+  const [proyeccionMensual, setProyeccionMensual] = useState(0);
+
   const handleRemove = () => {
     // In a real app, you might want to show a confirmation dialog
     console.log('Widget removed');
@@ -75,7 +82,6 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
       [accountType]: newValue
     }));
   };
-
 
   const toggleEditMode = () => {
     setIsEditMode(!isEditMode);
@@ -91,7 +97,146 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
     console.log('Nuevo layout:', newLayout);
   };
 
-  
+  useEffect(() => {
+    const fetchClientes = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.error('No se encontró el token');
+          return;
+        }
+
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com//api/clientes', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al obtener los clientes');
+        }
+
+        const clientes = await response.json();
+        
+        // Total de clientes
+        setTotalClientes(clientes.length);
+
+        // Clientes nuevos del mes actual
+        const ahora = new Date();
+        const primerDiaMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+        const clientesDelMes = clientes.filter((cliente: any) => {
+          const fechaRegistro = new Date(cliente.fechaRegistro);
+          return fechaRegistro >= primerDiaMes;
+        });
+
+        setClientesNuevos(clientesDelMes.length);
+      } catch (error) {
+        console.error('Error al obtener los clientes:', error);
+      }
+    };
+
+    fetchClientes();
+  }, []);
+
+  useEffect(() => {
+    const fetchIngresos = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.error('No se encontró el token');
+          return;
+        }
+
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com//api/ingresos', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al obtener los ingresos');
+        }
+
+        const ingresos = await response.json();
+        
+        // Calcular ingreso total
+        const total = ingresos.reduce((sum: number, ingreso: any) => {
+          return sum + (ingreso.monto || ingreso.importe || 0);
+        }, 0);
+        setIngresoTotal(total);
+
+        // Calcular ingreso mensual
+        const ahora = new Date();
+        const primerDiaMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+        const ingresosMes = ingresos.filter((ingreso: any) => {
+          const fechaIngreso = new Date(ingreso.fecha);
+          return fechaIngreso >= primerDiaMes;
+        });
+
+        const totalMes = ingresosMes.reduce((sum: number, ingreso: any) => {
+          return sum + (ingreso.monto || ingreso.importe || 0);
+        }, 0);
+        setIngresoMensual(totalMes);
+
+      } catch (error) {
+        console.error('Error al obtener los ingresos:', error);
+      }
+    };
+
+    fetchIngresos();
+  }, []);
+
+  useEffect(() => {
+    const fetchGastos = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.error('No se encontró el token');
+          return;
+        }
+
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com//api/gastos', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al obtener los gastos');
+        }
+
+        const gastos = await response.json();
+        
+        // Calcular gastos del mes actual
+        const ahora = new Date();
+        const primerDiaMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+        const gastosMes = gastos.filter((gasto: any) => {
+          const fechaGasto = new Date(gasto.fecha);
+          return fechaGasto >= primerDiaMes && fechaGasto <= ahora;
+        });
+
+        const totalGastosMes = gastosMes.reduce((sum: number, gasto: any) => {
+          return sum + (gasto.monto || gasto.importe || 0);
+        }, 0);
+
+        setGastoMensual(totalGastosMes);
+
+      } catch (error) {
+        console.error('Error al obtener los gastos:', error);
+      }
+    };
+
+    fetchGastos();
+  }, []);
+
+  useEffect(() => {
+    const proyeccion = ingresoMensual - gastoMensual;
+    setProyeccionMensual(proyeccion);
+  }, [ingresoMensual, gastoMensual]);
+
   function generateInitialLayout() {
     return [
       { i: 'proyeccionMes', x: 0, y: 0, w: 1, h: 1, minW: 1, minH: 1 },
@@ -162,6 +307,7 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
         </div>
       </div>
 
+
       <ResponsiveGridLayout
   className="layout"
   layouts={{ lg: layout }}
@@ -175,28 +321,58 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
   useCSSTransforms={false} // Desactiva las transformaciones visuales
 >
         <div key="proyeccionMes">
-          <SmallWidget title="Proyección del Mes" value="$0.00" icon={TrendingUp} subtitle="Proyección del mes" />
+          <SmallWidget 
+            title="Proyección del Mes" 
+            value={`$${Math.abs(proyeccionMensual).toFixed(2)}`}
+            icon={TrendingUp} 
+            subtitle={`${proyeccionMensual >= 0 ? 'Ganancia' : 'Pérdida'} proyectada`}
+          />
         </div>
         <div key="gastoMensual">
-          <SmallWidget title="Gasto Mensual" value="$0.00" icon={DollarSign} subtitle="Gasto mensual" />
+          <SmallWidget 
+            title="Gasto Mensual" 
+            value={`$${gastoMensual.toFixed(2)}`} 
+            icon={DollarSign} 
+            subtitle={`Gastos en ${new Date().toLocaleString('es-ES', { month: 'long' })}`} 
+          />
         </div>
         <div key="planesVendidos">
           <SmallWidget title="Planes Vendidos" value="0" icon={FileText} subtitle="Total planes vendidos" />
         </div>
         <div key="clientesActuales">
-          <SmallWidget title="Clientes Actuales" value="0" icon={Users} subtitle="Total clientes actuales" />
+        <SmallWidget
+          title="Clientes Actuales"
+          value={totalClientes.toString()}
+          icon={Users}
+          subtitle="Total clientes actuales"
+        />
         </div>
         <div key="ingresoMensual">
-          <SmallWidget title="Ingreso Mensual" value="$0.00" icon={DollarSign} subtitle="Ingreso mensual actual" />
+          <SmallWidget 
+            title="Ingreso Mensual" 
+            value={`$${ingresoMensual.toFixed(2)}`} 
+            icon={DollarSign} 
+            subtitle={`Ingreso en ${new Date().toLocaleString('es-ES', { month: 'long' })}`} 
+          />
         </div>
         <div key="ingresosTotales">
-          <SmallWidget title="Ingreso Total" value="$0.00" icon={DollarSign} subtitle="Ingresos historico en la plataforma" />
+          <SmallWidget 
+            title="Ingreso Total" 
+            value={`$${ingresoTotal.toFixed(2)}`} 
+            icon={DollarSign} 
+            subtitle="Ingresos históricos en la plataforma" 
+          />
         </div>
         <div key="margenGanancia">
           <SmallWidget title="Margen de Ganancia" value="0.00%" icon={PieChart} subtitle="Margen de ganancia" />
         </div>
         <div key="clientesNuevos">
-          <SmallWidget title="Clientes Nuevos" value="0" icon={UserPlus} subtitle="Clientes nuevos" />
+        <SmallWidget
+          title="Clientes Nuevos"
+          value={clientesNuevos.toString()}
+          icon={UserPlus}
+          subtitle={`Clientes nuevos en ${new Date().toLocaleString('es-ES', { month: 'long' })}`}
+        />
         </div>
 
         <div key="gastoWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
@@ -209,10 +385,7 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
         </div>
         <div key="alertasWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
           <AlertasWidget
-            alertas={[
-              { id: 1, mensaje: "Gasto elevado en marketing este mes", tipo: "warning" },
-              { id: 2, mensaje: "Ingresos por debajo del objetivo trimestral", tipo: "error" },
-            ]}
+              
             isEditMode={isEditMode}
             onRemove={() => {}}
           />
@@ -258,10 +431,7 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
         </div>
         <div key="serviciosWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
           <ServiciosWidget
-            servicios={[
-              { id: 1, nombre: "Entrenamiento Personal", ingresos: 5000 },
-              { id: 2, nombre: "Clases Grupales", ingresos: 3000 },
-            ]}
+          
             isEditMode={isEditMode}
             onRemove={() => {}}
             setIsServicioPopupOpen={setIsServicioPopupOpen} 
@@ -269,10 +439,7 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
         </div>
         <div key="bonosWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
           <BonosWidget
-            bonos={[
-              { id: 1, nombre: "Bono Navidad", valor: 1000, estado: "Activo" },
-              { id: 2, nombre: "Bono Rendimiento", valor: 1500, estado: "Inactivo" },
-            ]}
+           
             isEditMode={isEditMode}
             onRemove={() => {}}
             setIsBonoPopupOpen={setIsBonoPopupOpen} // Pasamos la función aquí

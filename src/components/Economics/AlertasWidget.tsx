@@ -1,52 +1,126 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AlertTriangle, Calendar, CheckCircle, Info, X } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
-interface Alerta {
-  id: number;
-  mensaje: string;
+interface Trainer {
+  _id: string;
+  nombre: string;
+  email: string;
+}
+
+interface Alert {
+  _id: string;
+  nombre: string;
+  tipo: string;
   fechaExpiracion: string;
-  tipo: 'info' | 'warning' | 'error';
+  estado: string;
+  contrato: string | null;
+  trainer: Trainer;
+  notas: string;
+  fechaFinalizacion: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface AlertResponse {
+  status: string;
+  results: number;
+  data: {
+    alerts: Alert[];
+  };
 }
 
 interface AlertasWidgetProps {
-  alertas: Alerta[];
   isEditMode: boolean;
-  onRemove: (id: number) => void;
+  onRemove?: (id: string) => void;
 }
 
 const AlertasWidget: React.FC<AlertasWidgetProps> = ({
-  alertas,
   isEditMode,
   onRemove,
 }) => {
   const { theme } = useTheme();
+  const [alertas, setAlertas] = useState<Alert[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const getAlertStyles = (tipo: 'info' | 'warning' | 'error') => {
-    switch (tipo) {
-      case 'info':
-        return 'bg-blue-50 border-blue-400 text-blue-800';
-      case 'warning':
+  useEffect(() => {
+    const fetchAlertas = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No se encontró el token de autenticación');
+        }
+
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com//api/economic-alerts', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al obtener las alertas');
+        }
+
+        const data: AlertResponse = await response.json();
+        setAlertas(data.data.alerts);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error desconocido');
+        console.error('Error fetching alerts:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAlertas();
+  }, []);
+
+  const getAlertStyles = (estado: string) => {
+    switch (estado.toLowerCase()) {
+      case 'activa':
         return 'bg-yellow-50 border-yellow-400 text-yellow-800';
-      case 'error':
-        return 'bg-red-50 border-red-400 text-red-800';
+      case 'finalizada':
+        return 'bg-green-50 border-green-400 text-green-800';
+      case 'pendiente':
+        return 'bg-blue-50 border-blue-400 text-blue-800';
       default:
-        return '';
+        return 'bg-gray-50 border-gray-400 text-gray-800';
     }
   };
 
-  const getIcon = (tipo: 'info' | 'warning' | 'error') => {
-    switch (tipo) {
-      case 'info':
-        return <Info className="text-blue-500 w-6 h-6" />;
-      case 'warning':
+  const getIcon = (estado: string) => {
+    switch (estado.toLowerCase()) {
+      case 'activa':
         return <AlertTriangle className="text-yellow-500 w-6 h-6" />;
-      case 'error':
-        return <AlertTriangle className="text-red-500 w-6 h-6 animate-pulse" />;
+      case 'finalizada':
+        return <CheckCircle className="text-green-500 w-6 h-6" />;
+      case 'pendiente':
+        return <Info className="text-blue-500 w-6 h-6" />;
       default:
-        return null;
+        return <Info className="text-gray-500 w-6 h-6" />;
     }
   };
+
+  if (loading) {
+    return (
+      <div className={`relative p-6 rounded-lg shadow-lg ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white'}`}>
+        <div className="flex items-center justify-center h-40">
+          <p>Cargando alertas...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`relative p-6 rounded-lg shadow-lg ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white'}`}>
+        <div className="flex items-center justify-center h-40">
+          <p className="text-red-500">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -64,19 +138,28 @@ const AlertasWidget: React.FC<AlertasWidgetProps> = ({
       <div className="space-y-4">
         {alertas.map((alerta) => (
           <div
-            key={alerta.id}
+            key={alerta._id}
             className={`p-5 rounded-lg border-l-4 shadow-sm hover:shadow-lg transform hover:scale-102 transition-transform duration-500 ${getAlertStyles(
-              alerta.tipo
+              alerta.estado
             )}`}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                {getIcon(alerta.tipo)}
-                <p className="text-lg font-medium">{alerta.mensaje}</p>
+                {getIcon(alerta.estado)}
+                <div>
+                  <p className="text-lg font-medium">{alerta.nombre}</p>
+                  <p className="text-sm">{alerta.notas}</p>
+                  <div className="text-xs mt-1 flex items-center space-x-2">
+                    <Calendar className="w-4 h-4" />
+                    <span>Expira: {new Date(alerta.fechaExpiracion).toLocaleDateString()}</span>
+                    <span>•</span>
+                    <span>Trainer: {alerta.trainer.nombre}</span>
+                  </div>
+                </div>
               </div>
-              {isEditMode && (
+              {isEditMode && onRemove && (
                 <button
-                  onClick={() => onRemove(alerta.id)}
+                  onClick={() => onRemove(alerta._id)}
                   className="ml-3 p-1 rounded-full bg-red-50 hover:bg-red-200 transition"
                 >
                   <X className="w-4 h-4 text-red-500" />
@@ -90,19 +173,6 @@ const AlertasWidget: React.FC<AlertasWidgetProps> = ({
       <div className="mt-4 text-sm text-gray-500">
         Total de alertas: {alertas.length}
       </div>
-
-      {isEditMode && (
-        <button
-          onClick={() => alertas.forEach((alerta) => onRemove(alerta.id))}
-          className={`absolute top-2 right-2 p-3 rounded-full shadow-md bg-red-50 hover:bg-red-100 transition ${
-            theme === 'dark'
-              ? 'text-red-400 hover:text-red-300'
-              : 'text-red-500 hover:text-red-700'
-          }`}
-        >
-          <AlertTriangle className="w-5 h-5" />
-        </button>
-      )}
     </div>
   );
 };

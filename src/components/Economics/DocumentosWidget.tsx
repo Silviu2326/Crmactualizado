@@ -1,31 +1,118 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, Search, Filter, Plus } from 'lucide-react';
 import Table from '../Common/Table';
 import Button from '../Common/Button';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface Documento {
-  id: number;
+  _id: string;
   nombre: string;
-  fecha: string;
+  fecha?: string;
+  fechaCreacion?: string;
+  fechaExpiracion?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
+  tipo: string;
+  estado?: string;
+  trainer?: {
+    nombre: string;
+    email: string;
+  };
+  notas?: string;
+  descripcion?: string;
 }
 
 interface DocumentosWidgetProps {
-  documentos: Documento[];
-  isEditMode: boolean;
-  onRemove: () => void;
-  setIsDocumentoPopupOpen: React.Dispatch<React.SetStateAction<boolean>>; // Agregamos esta prop
+  setIsDocumentoPopupOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
-  documentos,
-  isEditMode,
-  onRemove,
-  setIsDocumentoPopupOpen, // La recibimos aquí
+  setIsDocumentoPopupOpen,
 }) => {
+  const [documentos, setDocumentos] = useState<Documento[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const { theme } = useTheme();
+
+  useEffect(() => {
+    const fetchDocumentos = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No se encontró el token de autenticación');
+        }
+
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': `application/json`
+        };
+
+        // Fetch contracts
+        const contractsResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com//api/contracts', { headers });
+        const contractsData = await contractsResponse.json();
+        const contractsDocs = contractsData.data.contracts.map((contract: any) => ({
+          _id: contract._id,
+          nombre: contract.nombre,
+          fecha: contract.fechaInicio,
+          fechaInicio: contract.fechaInicio,
+          fechaFin: contract.fechaFin,
+          tipo: 'Contrato',
+          estado: contract.estado,
+          trainer: contract.trainer,
+          notas: contract.notas
+        }));
+
+        // Fetch otros documentos
+        const otrosDocsResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com//api/otros-documentos', { headers });
+        const otrosDocsData = await otrosDocsResponse.json();
+        const otrosDocs = otrosDocsData.data.documentos.map((doc: any) => ({
+          _id: doc._id,
+          nombre: doc.nombre,
+          fecha: doc.fechaCreacion,
+          fechaCreacion: doc.fechaCreacion,
+          fechaFinalizacion: doc.fechaFinalizacion,
+          tipo: 'Documento',
+          trainer: doc.trainer,
+          notas: doc.notas
+        }));
+
+        // Fetch licenses
+        const licensesResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com//api/licenses', { headers });
+        const licensesData = await licensesResponse.json();
+        const licensesDocs = licensesData.data.licenses.map((license: any) => ({
+          _id: license._id,
+          nombre: license.nombre,
+          fecha: license.fechaExpiracion,
+          fechaExpiracion: license.fechaExpiracion,
+          tipo: 'Licencia',
+          estado: license.estado,
+          descripcion: license.descripcion,
+          campo: license.campo
+        }));
+
+        // Combine all documents
+        const allDocuments = [...contractsDocs, ...otrosDocs, ...licensesDocs];
+        
+        // Sort by date (most recent first)
+        const sortedDocuments = allDocuments.sort((a, b) => {
+          const dateA = new Date(a.fecha || '');
+          const dateB = new Date(b.fecha || '');
+          return dateB.getTime() - dateA.getTime();
+        });
+
+        setDocumentos(sortedDocuments);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching documents:', err);
+        setError(err instanceof Error ? err.message : 'Error al cargar los documentos');
+        setLoading(false);
+      }
+    };
+
+    fetchDocumentos();
+  }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -35,6 +122,43 @@ const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
     setIsFilterOpen(!isFilterOpen);
   };
 
+  const formatDate = (dateString: string | undefined): string => {
+    if (!dateString) return 'Fecha no disponible';
+    
+    const date = new Date(dateString);
+    const options: Intl.DateTimeFormatOptions = {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    
+    return date.toLocaleDateString('es-ES', options);
+  };
+
+  if (loading) {
+    return (
+      <div className={`rounded-lg p-6 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-gray-300 rounded w-1/4"></div>
+          <div className="space-y-3">
+            <div className="h-4 bg-gray-300 rounded"></div>
+            <div className="h-4 bg-gray-300 rounded w-5/6"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`rounded-lg p-6 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
+        <p className="text-red-500">Error: {error}</p>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`p-4 h-full flex flex-col justify-between ${
@@ -43,18 +167,6 @@ const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
           : 'bg-purple-50 text-gray-800'
       } rounded-lg`}
     >
-      {isEditMode && (
-        <button
-          onClick={onRemove}
-          className={`absolute top-2 right-2 ${
-            theme === 'dark'
-              ? 'text-purple-400 hover:text-purple-300'
-              : 'text-purple-500 hover:text-purple-700'
-          } bg-white rounded-full p-1 shadow-md`}
-        >
-          <FileText className="w-4 h-4" />
-        </button>
-      )}
       <div className="flex items-center justify-between mb-4">
         <h3
           className={`text-lg font-semibold ${
@@ -98,7 +210,6 @@ const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
           <Filter className="w-4 h-4" />
         </Button>
         <Button variant="create" onClick={() => setIsDocumentoPopupOpen(true)}>
-          {/* Usamos setIsDocumentoPopupOpen directamente */}
           <Plus className="w-4 h-4 mr-1" />
           Añadir
         </Button>
@@ -120,7 +231,7 @@ const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
           headers={['Nombre', 'Fecha']}
           data={documentos.map((doc) => ({
             Nombre: doc.nombre,
-            Fecha: doc.fecha,
+            Fecha: formatDate(doc.fecha),
           }))}
           variant={theme === 'dark' ? 'dark' : 'white'}
         />

@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
-import { Calendar, DollarSign, Tag, FileText, Clock, CheckCircle } from 'lucide-react';
+import { Calendar, DollarSign, Tag, FileText, Clock } from 'lucide-react';
 
 interface GastoFormData {
-  concepto: string;
+  importe: number;
+  moneda: string;
+  fecha: string;
   descripcion: string;
   categoria: string;
-  importe: number;
-  estado: string;
-  fecha: string;
-  esRecurrente: boolean;
-  frecuencia?: string;
-  fechaFin?: string;
+  tipo: 'fijo' | 'variable';
 }
 
 interface GastoFormProps {
@@ -19,72 +16,137 @@ interface GastoFormProps {
 
 const GastoForm: React.FC<GastoFormProps> = ({ onSubmit }) => {
   const [formData, setFormData] = useState<GastoFormData>({
-    concepto: '',
+    importe: 0,
+    moneda: 'USD',
+    fecha: new Date().toISOString().split('T')[0],
     descripcion: '',
     categoria: '',
-    importe: 0,
-    estado: '',
-    fecha: '',
-    esRecurrente: false,
+    tipo: 'variable'
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof GastoFormData, string>>>({});
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof GastoFormData, string>> = {};
-
-    if (!formData.concepto.trim()) {
-      newErrors.concepto = 'El concepto es requerido';
-    }
-
-    if (!formData.categoria) {
-      newErrors.categoria = 'La categoría es requerida';
-    }
 
     if (formData.importe <= 0) {
       newErrors.importe = 'El importe debe ser mayor a 0';
     }
 
-    if (!formData.estado) {
-      newErrors.estado = 'El estado es requerido';
+    if (!formData.moneda) {
+      newErrors.moneda = 'La moneda es requerida';
     }
 
     if (!formData.fecha) {
       newErrors.fecha = 'La fecha es requerida';
     }
 
-    if (formData.esRecurrente) {
-      if (!formData.frecuencia) {
-        newErrors.frecuencia = 'La frecuencia es requerida para gastos recurrentes';
-      }
-      if (!formData.fechaFin) {
-        newErrors.fechaFin = 'La fecha de fin es requerida para gastos recurrentes';
-      }
+    if (!formData.categoria) {
+      newErrors.categoria = 'La categoría es requerida';
+    }
+
+    if (!formData.tipo) {
+      newErrors.tipo = 'El tipo de gasto es requerido';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (validateForm()) {
-      onSubmit(formData);
+    setError('');
+    setLoading(true);
+
+    console.log('Iniciando envío del formulario con datos:', {
+      importe: formData.importe,
+      moneda: formData.moneda,
+      fecha: formData.fecha,
+      descripcion: formData.descripcion,
+      categoria: formData.categoria,
+      tipo: formData.tipo
+    });
+
+    try {
+      const token = localStorage.getItem('token');
+      console.log('Token obtenido:', token ? 'Token presente' : 'Token no encontrado');
+      
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      // Crear el objeto de datos según la estructura esperada por el backend
+      const gastoData = {
+        importe: Number(formData.importe),  
+        moneda: formData.moneda,
+        fecha: formData.fecha,
+        descripcion: formData.descripcion,
+        categoria: formData.categoria,
+        tipo: formData.tipo
+      };
+
+      console.log('Datos preparados para enviar al backend:', gastoData);
+
+      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com//api/gastos', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(gastoData)
+      });
+
+      console.log('Respuesta del servidor - Status:', response.status);
+      
+      const responseData = await response.json();
+      console.log('Respuesta del servidor - Datos:', responseData);
+
+      if (!response.ok) {
+        console.error('Error en la respuesta del servidor:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: responseData
+        });
+        throw new Error(responseData.message || 'Error al crear el gasto');
+      }
+
+      console.log('Gasto creado exitosamente:', responseData);
+      
+      // Limpiar el formulario
+      setFormData({
+        importe: 0,
+        moneda: 'USD',
+        fecha: new Date().toISOString().split('T')[0],
+        descripcion: '',
+        categoria: '',
+        tipo: 'variable'
+      });
+
+      // Notificar éxito
+      if (onSubmit) {
+        console.log('Llamando a onSubmit con los datos:', gastoData);
+        onSubmit(gastoData);
+      }
+    } catch (err) {
+      console.error('Error detallado durante el proceso:', err);
+      setError(err instanceof Error ? err.message : 'Error al crear el gasto. Por favor, intente nuevamente.');
+    } finally {
+      setLoading(false);
+      console.log('Proceso de envío finalizado');
     }
   };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: name === 'importe' ? parseFloat(value) || 0 : value,
     }));
 
-    // Clear error when field is modified
     if (errors[name as keyof GastoFormData]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
@@ -98,206 +160,126 @@ const GastoForm: React.FC<GastoFormProps> = ({ onSubmit }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Concepto y Descripción */}
-      <div className="space-y-4">
+      {/* Importe y Moneda */}
+      <div className="grid grid-cols-2 gap-4">
         <div>
           <label className={labelClasses}>
-            <Tag size={16} />
-            Concepto
-          </label>
-          <input
-            type="text"
-            name="concepto"
-            value={formData.concepto}
-            onChange={handleChange}
-            className={inputClasses('concepto')}
-            placeholder="Ej: Material de oficina"
-          />
-          {errors.concepto && (
-            <p className="mt-1 text-sm text-red-500">{errors.concepto}</p>
-          )}
-        </div>
-
-        <div>
-          <label className={labelClasses}>
-            <FileText size={16} />
-            Descripción
-          </label>
-          <textarea
-            name="descripcion"
-            value={formData.descripcion}
-            onChange={handleChange}
-            className={inputClasses('descripcion')}
-            rows={3}
-            placeholder="Detalles adicionales del gasto..."
-          />
-        </div>
-      </div>
-
-      {/* Categoría e Importe */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className={labelClasses}>
-            <Tag size={16} />
-            Categoría
-          </label>
-          <select
-            name="categoria"
-            value={formData.categoria}
-            onChange={handleChange}
-            className={inputClasses('categoria')}
-          >
-            <option value="">Seleccionar categoría</option>
-            <option value="suministros">Suministros</option>
-            <option value="equipamiento">Equipamiento</option>
-            <option value="marketing">Marketing</option>
-            <option value="servicios">Servicios</option>
-            <option value="personal">Personal</option>
-            <option value="otros">Otros</option>
-          </select>
-          {errors.categoria && (
-            <p className="mt-1 text-sm text-red-500">{errors.categoria}</p>
-          )}
-        </div>
-
-        <div>
-          <label className={labelClasses}>
-            <DollarSign size={16} />
+            <DollarSign className="w-4 h-4" />
             Importe
           </label>
-          <div className="relative">
-            <input
-              type="number"
-              name="importe"
-              value={formData.importe}
-              onChange={handleChange}
-              className={inputClasses('importe')}
-              min="0"
-              step="0.01"
-              placeholder="0.00"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
-              €
-            </span>
-          </div>
-          {errors.importe && (
-            <p className="mt-1 text-sm text-red-500">{errors.importe}</p>
-          )}
+          <input
+            type="number"
+            name="importe"
+            value={formData.importe}
+            onChange={handleChange}
+            className={inputClasses('importe')}
+            step="0.01"
+            min="0"
+          />
+          {errors.importe && <p className="text-red-500 text-xs mt-1">{errors.importe}</p>}
         </div>
-      </div>
-
-      {/* Estado y Fecha */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className={labelClasses}>
-            <CheckCircle size={16} />
-            Estado
+            <Tag className="w-4 h-4" />
+            Moneda
           </label>
           <select
-            name="estado"
-            value={formData.estado}
+            name="moneda"
+            value={formData.moneda}
             onChange={handleChange}
-            className={inputClasses('estado')}
+            className={inputClasses('moneda')}
           >
-            <option value="">Seleccionar estado</option>
-            <option value="pendiente">Pendiente</option>
-            <option value="pagado">Pagado</option>
-            <option value="anulado">Anulado</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
           </select>
-          {errors.estado && (
-            <p className="mt-1 text-sm text-red-500">{errors.estado}</p>
-          )}
-        </div>
-
-        <div>
-          <label className={labelClasses}>
-            <Calendar size={16} />
-            Fecha
-          </label>
-          <input
-            type="date"
-            name="fecha"
-            value={formData.fecha}
-            onChange={handleChange}
-            className={inputClasses('fecha')}
-          />
-          {errors.fecha && (
-            <p className="mt-1 text-sm text-red-500">{errors.fecha}</p>
-          )}
+          {errors.moneda && <p className="text-red-500 text-xs mt-1">{errors.moneda}</p>}
         </div>
       </div>
 
-      {/* Gasto Recurrente */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="esRecurrente"
-            name="esRecurrente"
-            checked={formData.esRecurrente}
-            onChange={handleChange}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label htmlFor="esRecurrente" className="flex items-center gap-2 text-sm text-gray-700">
-            <Clock size={16} />
-            Gasto Recurrente
-          </label>
-        </div>
-
-        {formData.esRecurrente && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6 border-l-2 border-blue-200">
-            <div>
-              <label className={labelClasses}>
-                Frecuencia
-              </label>
-              <select
-                name="frecuencia"
-                value={formData.frecuencia}
-                onChange={handleChange}
-                className={inputClasses('frecuencia')}
-              >
-                <option value="">Seleccionar frecuencia</option>
-                <option value="semanal">Semanal</option>
-                <option value="mensual">Mensual</option>
-                <option value="trimestral">Trimestral</option>
-                <option value="anual">Anual</option>
-              </select>
-              {errors.frecuencia && (
-                <p className="mt-1 text-sm text-red-500">{errors.frecuencia}</p>
-              )}
-            </div>
-
-            <div>
-              <label className={labelClasses}>
-                Fecha de Fin
-              </label>
-              <input
-                type="date"
-                name="fechaFin"
-                value={formData.fechaFin}
-                onChange={handleChange}
-                className={inputClasses('fechaFin')}
-              />
-              {errors.fechaFin && (
-                <p className="mt-1 text-sm text-red-500">{errors.fechaFin}</p>
-              )}
-            </div>
-          </div>
-        )}
+      {/* Fecha */}
+      <div>
+        <label className={labelClasses}>
+          <Calendar className="w-4 h-4" />
+          Fecha
+        </label>
+        <input
+          type="date"
+          name="fecha"
+          value={formData.fecha}
+          onChange={handleChange}
+          className={inputClasses('fecha')}
+        />
+        {errors.fecha && <p className="text-red-500 text-xs mt-1">{errors.fecha}</p>}
       </div>
 
-      {/* Botón de Submit */}
-      <div className="pt-4">
-        <button
-          type="submit"
-          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-2 px-4 rounded-lg 
-                   hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                   focus:ring-offset-2 transition-all duration-200 flex items-center justify-center gap-2"
+      {/* Descripción */}
+      <div>
+        <label className={labelClasses}>
+          <FileText className="w-4 h-4" />
+          Descripción
+        </label>
+        <textarea
+          name="descripcion"
+          value={formData.descripcion}
+          onChange={handleChange}
+          className={inputClasses('descripcion')}
+          rows={3}
+        />
+        {errors.descripcion && <p className="text-red-500 text-xs mt-1">{errors.descripcion}</p>}
+      </div>
+
+      {/* Categoría */}
+      <div>
+        <label className={labelClasses}>
+          <Tag className="w-4 h-4" />
+          Categoría
+        </label>
+        <select
+          name="categoria"
+          value={formData.categoria}
+          onChange={handleChange}
+          className={inputClasses('categoria')}
         >
-          <DollarSign size={20} />
-          Registrar Gasto
-        </button>
+          <option value="">Seleccione una categoría</option>
+          <option value="Marketing">Marketing</option>
+          <option value="Equipamiento">Equipamiento</option>
+          <option value="Servicios">Servicios</option>
+          <option value="Mantenimiento">Mantenimiento</option>
+          <option value="Otros">Otros</option>
+        </select>
+        {errors.categoria && <p className="text-red-500 text-xs mt-1">{errors.categoria}</p>}
       </div>
+
+      {/* Tipo de Gasto */}
+      <div>
+        <label className={labelClasses}>
+          <Clock className="w-4 h-4" />
+          Tipo de Gasto
+        </label>
+        <select
+          name="tipo"
+          value={formData.tipo}
+          onChange={handleChange}
+          className={inputClasses('tipo')}
+        >
+          <option value="fijo">Fijo</option>
+          <option value="variable">Variable</option>
+        </select>
+        {errors.tipo && <p className="text-red-500 text-xs mt-1">{errors.tipo}</p>}
+      </div>
+
+      {error && (
+        <p className="text-red-500 text-sm text-center">{error}</p>
+      )}
+
+      <button
+        type="submit"
+        className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+        disabled={loading}
+      >
+        {loading ? 'Cargando...' : 'Crear Gasto'}
+      </button>
     </form>
   );
 };

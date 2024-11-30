@@ -63,7 +63,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
           return;
         }
 
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes', {
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com//api/clientes', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -170,7 +170,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
         formDataToSend.append('documentosAdicionales', file);
       });
 
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/invoice', {
+      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com//api/invoice', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

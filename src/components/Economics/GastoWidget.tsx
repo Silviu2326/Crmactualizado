@@ -95,7 +95,7 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({
           throw new Error('Token no encontrado. Por favor, inicia sesión nuevamente.');
         }
 
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com//api/gastos', {
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

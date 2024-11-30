@@ -23,7 +23,7 @@ import GenerateStoryModal from '../components/modals/GenerateStoryModal';
 import GeneratePostModal from '../components/modals/GeneratePostModal';
 import CreateGroupClassModal from '../components/modals/CreateGroupClassModal';
 
-const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com//api'; // Asegúrate de que coincida con tu backend
+const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api'; // Asegúrate de que coincida con tu backend
 
 const DashboardPage: React.FC = () => {
   const { theme } = useTheme();

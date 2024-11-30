@@ -373,7 +373,7 @@ export function LeadsTable() {
 
       console.log('Token obtenido:', token);
 
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com//api/leads/', {
+      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/leads/', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

@@ -37,7 +37,7 @@ const AddLicenciaModal: React.FC<AddLicenciaModalProps> = ({ isOpen, onClose, on
       };
 
       const response = await axios.post(
-        'https://fitoffice2-f70b52bef77e.herokuapp.com//api/licenses',
+        'https://fitoffice2-f70b52bef77e.herokuapp.com/api/licenses',
         dataToSend,
         {
           headers: {

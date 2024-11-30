@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import LicenciasWidget from './LicenciasWidget';
 import ContratosWidget from './ContratosWidget';
@@ -7,11 +7,60 @@ import AlertasLicenciasWidget from './AlertasLicenciasWidget';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { FileText, FileSignature, File, AlertTriangle } from 'lucide-react';
 
+interface Licencia {
+  id: number;
+  nombre: string;
+  fechaExpiracion: string;
+  estado: 'Activa' | 'Expirada' | 'Por renovar';
+}
+
 const DocumentosPage: React.FC = () => {
   const { theme } = useTheme();
+  const [licencias, setLicencias] = useState<Licencia[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchLicencias = async () => {
+      try {
+        // Obtener el token del localStorage
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          throw new Error('No se encontró el token de autenticación');
+        }
+
+        const response = await fetch('http://localhost:3000/api/licenses', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        const data = await response.json();
+        setLicencias(data);
+      } catch (err) {
+        console.error('Error al cargar las licencias:', err);
+        setError(err instanceof Error ? err.message : 'Error al cargar las licencias');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLicencias();
+  }, []);
+
+  const handleRemoveLicencia = (id: number) => {
+    // Implementar la lógica para eliminar una licencia
+    console.log('Eliminar licencia:', id);
+  };
 
   const stats = {
-    licencias: 15,
+    licencias: licencias.length,
     contratos: 23,
     otrosDocumentos: 42
   };
@@ -113,7 +162,12 @@ const DocumentosPage: React.FC = () => {
         className="grid grid-cols-1 md:grid-cols-2 gap-8"
       >
         <motion.div variants={itemVariants} className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg`}>
-          <LicenciasWidget />
+          <LicenciasWidget
+            licencias={licencias}
+            isLoading={isLoading}
+            error={error}
+            onRemove={handleRemoveLicencia}
+          />
         </motion.div>
         <motion.div variants={itemVariants} className={`p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg`}>
           <ContratosWidget />

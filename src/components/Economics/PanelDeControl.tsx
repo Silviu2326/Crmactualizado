@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Edit, Save, TrendingUp, DollarSign, FileText, Users, PieChart, UserPlus } from 'lucide-react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import GastoWidget from './GastoWidget';
@@ -52,6 +52,13 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
  }) => {
   const [isEditMode, setIsEditMode] = useState(editMode);
   const [layout, setLayout] = useState(generateInitialLayout());
+  const [gastoMensual, setGastoMensual] = useState(0);
+  const [ingresoMensual, setIngresoMensual] = useState(0);
+  const [proyeccionMensual, setProyeccionMensual] = useState(0);
+  const [documentos, setDocumentos] = useState([]);
+  const [facturas, setFacturas] = useState([]);
+  const [bonos, setBonos] = useState([]);
+  const [servicios, setServicios] = useState([]);
   const [isGastoPopupOpen, setIsGastoPopupOpen] = useState(false);
   const [isDocumentoPopupOpen, setIsDocumentoPopupOpen] = useState(false);
   const [isBonoPopupOpen, setIsBonoPopupOpen] = useState(false);
@@ -76,7 +83,6 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
     }));
   };
 
-
   const toggleEditMode = () => {
     setIsEditMode(!isEditMode);
   };
@@ -91,7 +97,137 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
     console.log('Nuevo layout:', newLayout);
   };
 
-  
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Obtener gastos mensuales
+        const gastosResponse = await fetch('http://localhost:3001/api/gastos/mensual');
+        if (!gastosResponse.ok) {
+          throw new Error('Error al obtener gastos');
+        }
+        const gastosData = await gastosResponse.json();
+        const totalGastos = gastosData.total || 0;
+        setGastoMensual(totalGastos);
+
+        // Obtener ingresos mensuales
+        const ingresosResponse = await fetch('http://localhost:3001/api/ingresos/mensual');
+        if (!ingresosResponse.ok) {
+          throw new Error('Error al obtener ingresos');
+        }
+        const ingresosData = await ingresosResponse.json();
+        const totalIngresos = ingresosData.total || 0;
+        setIngresoMensual(totalIngresos);
+
+        // Calcular proyección (Ingresos - Gastos)
+        setProyeccionMensual(totalIngresos - totalGastos);
+
+        // Obtener documentos
+        const documentosResponse = await fetch('http://localhost:3001/api/documentos');
+        if (!documentosResponse.ok) {
+          throw new Error('Error al obtener documentos');
+        }
+        const documentosData = await documentosResponse.json();
+        setDocumentos(documentosData);
+
+        // Obtener facturas
+        const facturasResponse = await fetch('http://localhost:3001/api/facturas');
+        if (!facturasResponse.ok) {
+          throw new Error('Error al obtener facturas');
+        }
+        const facturasData = await facturasResponse.json();
+        setFacturas(facturasData);
+
+        // Obtener bonos
+        const bonosResponse = await fetch('http://localhost:3001/api/bonos');
+        if (!bonosResponse.ok) {
+          throw new Error('Error al obtener bonos');
+        }
+        const bonosData = await bonosResponse.json();
+        setBonos(bonosData);
+
+        // Obtener servicios
+        const serviciosResponse = await fetch('http://localhost:3001/api/servicios');
+        if (!serviciosResponse.ok) {
+          throw new Error('Error al obtener servicios');
+        }
+        const serviciosData = await serviciosResponse.json();
+        setServicios(serviciosData);
+      } catch (error) {
+        console.error('Error al obtener datos:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleRemoveDocumento = async (id: number) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/documentos/${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error al eliminar documento');
+      }
+
+      // Actualizar la lista de documentos después de eliminar
+      setDocumentos(documentos.filter(doc => doc.id !== id));
+    } catch (error) {
+      console.error('Error al eliminar documento:', error);
+    }
+  };
+
+  const handleRemoveFactura = async (id: number) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/facturas/${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error al eliminar factura');
+      }
+
+      // Actualizar la lista de facturas después de eliminar
+      setFacturas(facturas.filter(factura => factura.id !== id));
+    } catch (error) {
+      console.error('Error al eliminar factura:', error);
+    }
+  };
+
+  const handleRemoveBono = async (id: number) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/bonos/${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error al eliminar bono');
+      }
+
+      // Actualizar la lista de bonos después de eliminar
+      setBonos(bonos.filter(bono => bono.id !== id));
+    } catch (error) {
+      console.error('Error al eliminar bono:', error);
+    }
+  };
+
+  const handleRemoveServicio = async (id: number) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/servicios/${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error al eliminar servicio');
+      }
+
+      // Actualizar la lista de servicios después de eliminar
+      setServicios(servicios.filter(servicio => servicio.id !== id));
+    } catch (error) {
+      console.error('Error al eliminar servicio:', error);
+    }
+  };
+
   function generateInitialLayout() {
     return [
       { i: 'proyeccionMes', x: 0, y: 0, w: 1, h: 1, minW: 1, minH: 1 },
@@ -175,19 +311,34 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
   useCSSTransforms={false} // Desactiva las transformaciones visuales
 >
         <div key="proyeccionMes">
-          <SmallWidget title="Proyección del Mes" value="$0.00" icon={TrendingUp} subtitle="Proyección del mes" />
+          <SmallWidget 
+            title="Proyección del Mes" 
+            value={`$${proyeccionMensual.toFixed(2)}`} 
+            icon={TrendingUp} 
+            subtitle={proyeccionMensual >= 0 ? "Balance positivo" : "Balance negativo"} 
+          />
+        </div>
+        <div key="ingresoMensual">
+          <SmallWidget 
+            title="Ingreso Mensual" 
+            value={`$${ingresoMensual.toFixed(2)}`} 
+            icon={DollarSign} 
+            subtitle="Ingreso mensual actual" 
+          />
         </div>
         <div key="gastoMensual">
-          <SmallWidget title="Gasto Mensual" value="$0.00" icon={DollarSign} subtitle="Gasto mensual" />
+          <SmallWidget 
+            title="Gasto Mensual" 
+            value={`$${gastoMensual.toFixed(2)}`} 
+            icon={DollarSign} 
+            subtitle="Gasto mensual" 
+          />
         </div>
         <div key="planesVendidos">
           <SmallWidget title="Planes Vendidos" value="0" icon={FileText} subtitle="Total planes vendidos" />
         </div>
         <div key="clientesActuales">
           <SmallWidget title="Clientes Actuales" value="0" icon={Users} subtitle="Total clientes actuales" />
-        </div>
-        <div key="ingresoMensual">
-          <SmallWidget title="Ingreso Mensual" value="$0.00" icon={DollarSign} subtitle="Ingreso mensual actual" />
         </div>
         <div key="ingresosTotales">
           <SmallWidget title="Ingreso Total" value="$0.00" icon={DollarSign} subtitle="Ingresos historico en la plataforma" />
@@ -236,46 +387,34 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
         </div>
         <div key="documentosWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
           <DocumentosWidget
-            documentos={[
-              { id: 1, nombre: "Informe Q1", fecha: "2023-03-31" },
-              { id: 2, nombre: "Presupuesto Anual", fecha: "2023-01-15" },
-            ]}
+            documentos={documentos}
             isEditMode={isEditMode}
-            onRemove={() => {}}
+            onRemove={handleRemoveDocumento}
             setIsDocumentoPopupOpen={setIsDocumentoPopupOpen}
           />
         </div>
         <div key="facturasWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
           <FacturasWidget
-            facturas={[
-              { id: 1, numero: "F-001", monto: 1500, estado: "Pagada" },
-              { id: 2, numero: "F-002", monto: 2000, estado: "Pendiente" },
-            ]}
+            facturas={facturas}
             isEditMode={isEditMode}
-            onRemove={() => {}}
+            onRemove={handleRemoveFactura}
             setIsEscanearFacturaPopupOpen={setIsEscanearFacturaPopupOpen}
           />
         </div>
         <div key="serviciosWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
           <ServiciosWidget
-            servicios={[
-              { id: 1, nombre: "Entrenamiento Personal", ingresos: 5000 },
-              { id: 2, nombre: "Clases Grupales", ingresos: 3000 },
-            ]}
+            servicios={servicios}
             isEditMode={isEditMode}
-            onRemove={() => {}}
-            setIsServicioPopupOpen={setIsServicioPopupOpen} 
+            onRemove={handleRemoveServicio}
+            setIsServicioPopupOpen={setIsServicioPopupOpen}
           />
         </div>
         <div key="bonosWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
           <BonosWidget
-            bonos={[
-              { id: 1, nombre: "Bono Navidad", valor: 1000, estado: "Activo" },
-              { id: 2, nombre: "Bono Rendimiento", valor: 1500, estado: "Inactivo" },
-            ]}
+            bonos={bonos}
             isEditMode={isEditMode}
-            onRemove={() => {}}
-            setIsBonoPopupOpen={setIsBonoPopupOpen} // Pasamos la función aquí
+            onRemove={handleRemoveBono}
+            setIsBonoPopupOpen={setIsBonoPopupOpen}
           />
         </div>
         <div key="incomeChart" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>

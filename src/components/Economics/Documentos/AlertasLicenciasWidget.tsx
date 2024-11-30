@@ -1,12 +1,12 @@
 import React from 'react';
-import { AlertTriangle, Calendar } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { motion } from 'framer-motion';
 
 interface Alerta {
   id: number;
-  mensaje: string;
   tipo: 'warning' | 'danger';
+  mensaje: string;
   fechaExpiracion: string;
 }
 
@@ -14,9 +14,18 @@ const AlertasLicenciasWidget: React.FC = () => {
   const { theme } = useTheme();
 
   const alertas: Alerta[] = [
-    { id: 1, mensaje: "Licencia de Software expira en 30 días", tipo: "warning", fechaExpiracion: "2023-10-15" },
-    { id: 2, mensaje: "Certificación de Seguridad expirada", tipo: "danger", fechaExpiracion: "2023-08-01" },
-    { id: 3, mensaje: "Licencia de Operación expira en 60 días", tipo: "warning", fechaExpiracion: "2024-12-31" },
+    {
+      id: 1,
+      tipo: 'warning',
+      mensaje: 'La licencia de Software expirará en 30 días',
+      fechaExpiracion: '2023-10-15'
+    },
+    {
+      id: 2,
+      tipo: 'danger',
+      mensaje: 'La Certificación de Seguridad ha expirado',
+      fechaExpiracion: '2023-08-01'
+    }
   ];
 
   const getAlertColor = (tipo: 'warning' | 'danger') => {
@@ -32,26 +41,24 @@ const AlertasLicenciasWidget: React.FC = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="space-y-4"
     >
-      {alertas.map((alerta) => (
-        <motion.div
-          key={alerta.id}
-          className={`p-4 rounded-lg border ${getAlertColor(alerta.tipo)} transition-all duration-300 hover:shadow-md`}
-          whileHover={{ scale: 1.02 }}
-        >
-          <div className="flex items-start">
-            <AlertTriangle className={`w-5 h-5 mr-3 ${alerta.tipo === 'warning' ? 'text-yellow-500' : 'text-red-500'}`} />
-            <div className="flex-grow">
-              <p className="font-semibold mb-1">{alerta.mensaje}</p>
-              <div className="flex items-center text-sm">
-                <Calendar className="w-4 h-4 mr-1" />
-                <span>Fecha de expiración: {alerta.fechaExpiracion}</span>
-              </div>
+      <h3 className={`text-lg font-semibold mb-4 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}`}>
+        Alertas de Licencias
+      </h3>
+      <div className="space-y-4">
+        {alertas.map((alerta) => (
+          <div
+            key={alerta.id}
+            className={`p-4 rounded-lg border ${getAlertColor(alerta.tipo)} flex items-start space-x-3`}
+          >
+            <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">{alerta.mensaje}</p>
+              <p className="text-sm opacity-75">Fecha: {alerta.fechaExpiracion}</p>
             </div>
           </div>
-        </motion.div>
-      ))}
+        ))}
+      </div>
     </motion.div>
   );
 };

@@ -34,6 +34,14 @@ const LicenciasWidget: React.FC = () => {
     console.log('Añadir nueva licencia');
   };
 
+  const getAlertColor = (tipo: 'warning' | 'danger') => {
+    if (theme === 'dark') {
+      return tipo === 'warning' ? 'bg-yellow-900 text-yellow-200 border-yellow-700' : 'bg-red-900 text-red-200 border-red-700';
+    } else {
+      return tipo === 'warning' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' : 'bg-red-100 text-red-800 border-red-300';
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

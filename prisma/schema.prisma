@@ -1,0 +1,18 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model EconomicAlert {
+  id        Int      @id @default(autoincrement())
+  mensaje   String
+  tipo      String   // 'warning' | 'error' | 'info' | 'success'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("economic_alerts")
+}

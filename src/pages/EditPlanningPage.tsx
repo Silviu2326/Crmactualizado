@@ -5,6 +5,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { Planning, WeekPlan, DayPlan, Session } from '../types/planning';
 import { defaultPlanning } from '../data/defaultWorkout';
+import { planningService } from '../services/planningService';
 import EditPlanningPageCalendario from '../components/Planning/EditPlanningPageCalendario';
 import VistaSimplificada from '../components/Planning/VistaSimplificada';
 import VistaCompleja from '../components/Planning/VistaCompleja';
@@ -113,100 +114,30 @@ const EditPlanningPage: React.FC = () => {
     }
   }, [semanaActual, planning]);
 
-  const handleAddWeek = () => {
+  const handleAddWeek = async () => {
     if (!planning) return;
 
-    const newWeekNumber = planning.semanas + 1;
-    const lastWeek = planning.plan[planning.plan.length - 1];
-    const lastStartDate = new Date(lastWeek.startDate);
-    const newStartDate = new Date(lastStartDate.getTime() + 7 * 24 * 60 * 60 * 1000); // Añadir 7 días
+    try {
+      const newWeek = await planningService.addWeekToPlan(planning._id);
+      
+      // Actualizar el estado local con la nueva semana
+      setPlanning(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          plan: [...prev.plan, newWeek]
+        };
+      });
 
-    const newWeek: WeekPlan = {
-      _id: uuidv4(),
-      weekNumber: newWeekNumber,
-      startDate: newStartDate.toISOString(),
-      days: {
-        Lunes: {
-          _id: uuidv4(),
-          day: 'Lunes',
-          fecha: newStartDate.toISOString(),
-          sessions: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          __v: 0,
-        },
-        Martes: {
-          _id: uuidv4(),
-          day: 'Martes',
-          fecha: new Date(newStartDate.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString(),
-          sessions: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          __v: 0,
-        },
-        Miércoles: {
-          _id: uuidv4(),
-          day: 'Miércoles',
-          fecha: new Date(newStartDate.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-          sessions: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          __v: 0,
-        },
-        Jueves: {
-          _id: uuidv4(),
-          day: 'Jueves',
-          fecha: new Date(newStartDate.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-          sessions: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          __v: 0,
-        },
-        Viernes: {
-          _id: uuidv4(),
-          day: 'Viernes',
-          fecha: new Date(newStartDate.getTime() + 4 * 24 * 60 * 60 * 1000).toISOString(),
-          sessions: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          __v: 0,
-        },
-        Sábado: {
-          _id: uuidv4(),
-          day: 'Sábado',
-          fecha: new Date(newStartDate.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-          sessions: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          __v: 0,
-        },
-        Domingo: {
-          _id: uuidv4(),
-          day: 'Domingo',
-          fecha: new Date(newStartDate.getTime() + 6 * 24 * 60 * 60 * 1000).toISOString(),
-          sessions: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          __v: 0,
-        },
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      __v: 0,
-    };
+      // Cambiar a la nueva semana
+      setSemanaActual(newWeek.weekNumber);
 
-    setPlanning((prev) => {
-      if (!prev) return prev;
-
-      return {
-        ...prev,
-        semanas: newWeekNumber,
-        plan: [...prev.plan, newWeek],
-        updatedAt: new Date().toISOString(),
-      };
-    });
-
-    setSemanaActual(newWeekNumber); // Cambiar a la nueva semana
+      // Mostrar mensaje de éxito si lo deseas
+      console.log('Semana añadida con éxito');
+    } catch (error) {
+      console.error('Error al añadir nueva semana:', error);
+      // Aquí podrías mostrar un mensaje de error al usuario
+    }
   };
 
   const updatePlan = (updatedDays: { [key: string]: DayPlan }) => {
@@ -457,10 +388,11 @@ const EditPlanningPage: React.FC = () => {
                 className="mb-12"
               >
                 <EditPlanningPageCalendario
-                  weeks={planning.plan}
+                  weeks={planning.plan || []}
                   semanaActual={semanaActual}
                   setSemanaActual={setSemanaActual}
                   onAddWeek={handleAddWeek}
+                  totalWeeks={planning.semanas}
                 />
               </motion.div>
 

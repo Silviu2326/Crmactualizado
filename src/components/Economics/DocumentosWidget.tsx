@@ -34,6 +34,12 @@ const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    tipo: '',
+    estado: '',
+    fechaDesde: '',
+    fechaHasta: '',
+  });
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -122,6 +128,14 @@ const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
     setIsFilterOpen(!isFilterOpen);
   };
 
+  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   const formatDate = (dateString: string | undefined): string => {
     if (!dateString) return 'Fecha no disponible';
     
@@ -136,6 +150,20 @@ const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
     
     return date.toLocaleDateString('es-ES', options);
   };
+
+  const filteredDocumentos = documentos.filter(doc => {
+    const matchesTipo = !filters.tipo || doc.tipo === filters.tipo;
+    const matchesEstado = !filters.estado || doc.estado === filters.estado;
+    
+    const docDate = new Date(doc.fecha || '');
+    const fechaDesde = filters.fechaDesde ? new Date(filters.fechaDesde) : null;
+    const fechaHasta = filters.fechaHasta ? new Date(filters.fechaHasta) : null;
+    
+    const matchesFechaDesde = !fechaDesde || docDate >= fechaDesde;
+    const matchesFechaHasta = !fechaHasta || docDate <= fechaHasta;
+
+    return matchesTipo && matchesEstado && matchesFechaDesde && matchesFechaHasta;
+  });
 
   if (loading) {
     return (
@@ -220,16 +248,90 @@ const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
             theme === 'dark'
               ? 'bg-gray-700 border-gray-600'
               : 'bg-white border-gray-200'
-          } border rounded-md shadow-sm`}
+          } border rounded-md shadow-sm space-y-3`}
         >
-          {/* Aquí puedes añadir opciones de filtro */}
-          <p>Opciones de filtro (por implementar)</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'} mb-1`}>
+                Tipo de Documento
+              </label>
+              <select
+                name="tipo"
+                value={filters.tipo}
+                onChange={handleFilterChange}
+                className={`w-full px-3 py-2 border rounded-md ${
+                  theme === 'dark'
+                    ? 'bg-gray-600 border-gray-500 text-white'
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
+              >
+                <option value="">Todos</option>
+                <option value="Contrato">Contrato</option>
+                <option value="Documento">Documento</option>
+                <option value="Licencia">Licencia</option>
+              </select>
+            </div>
+            <div>
+              <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'} mb-1`}>
+                Estado
+              </label>
+              <select
+                name="estado"
+                value={filters.estado}
+                onChange={handleFilterChange}
+                className={`w-full px-3 py-2 border rounded-md ${
+                  theme === 'dark'
+                    ? 'bg-gray-600 border-gray-500 text-white'
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
+              >
+                <option value="">Todos</option>
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+                <option value="Pendiente">Pendiente</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'} mb-1`}>
+                Fecha Desde
+              </label>
+              <input
+                type="date"
+                name="fechaDesde"
+                value={filters.fechaDesde}
+                onChange={handleFilterChange}
+                className={`w-full px-3 py-2 border rounded-md ${
+                  theme === 'dark'
+                    ? 'bg-gray-600 border-gray-500 text-white'
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
+              />
+            </div>
+            <div>
+              <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'} mb-1`}>
+                Fecha Hasta
+              </label>
+              <input
+                type="date"
+                name="fechaHasta"
+                value={filters.fechaHasta}
+                onChange={handleFilterChange}
+                className={`w-full px-3 py-2 border rounded-md ${
+                  theme === 'dark'
+                    ? 'bg-gray-600 border-gray-500 text-white'
+                    : 'bg-white border-gray-300 text-gray-800'
+                }`}
+              />
+            </div>
+          </div>
         </div>
       )}
       <div className="flex-grow overflow-auto custom-scrollbar">
         <Table
           headers={['Nombre', 'Fecha']}
-          data={documentos.map((doc) => ({
+          data={filteredDocumentos.map((doc) => ({
             Nombre: doc.nombre,
             Fecha: formatDate(doc.fecha),
           }))}
@@ -241,7 +343,7 @@ const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
           theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
         } mt-2`}
       >
-        {documentos.length} documentos
+        {filteredDocumentos.length} documentos
       </div>
     </div>
   );

@@ -5,32 +5,19 @@ import Button from '../Common/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Note {
-  id: string;
-  content: string;
-  date: string;
-  category: 'general' | 'training' | 'diet' | 'medical';
+  _id: string;
+  texto: string;
+  fechaCreacion: string;
+  version: number;
+  categoria: 'general' | 'training' | 'diet' | 'medical';
 }
 
-const initialNotes: Note[] = [
-  {
-    id: '1',
-    content: 'Cliente muestra gran progreso en ejercicios de fuerza. Aumentar peso en press de banca.',
-    date: '2024-03-10',
-    category: 'training'
-  },
-  {
-    id: '2',
-    content: 'Reporta molestias leves en rodilla derecha durante sentadillas. Modificar ejercicios.',
-    date: '2024-03-08',
-    category: 'medical'
-  },
-  {
-    id: '3',
-    content: 'Cumpliendo bien con la dieta. Aumentar ingesta de proteínas.',
-    date: '2024-03-05',
-    category: 'diet'
-  }
-];
+interface NotesProps {
+  notes: Note[];
+  onAddNote?: (note: Omit<Note, '_id'>) => void;
+  onEditNote?: (id: string, note: Partial<Note>) => void;
+  onDeleteNote?: (id: string) => void;
+}
 
 const categoryColors = {
   general: 'bg-gray-500',
@@ -46,41 +33,66 @@ const categoryLabels = {
   medical: 'Médico'
 };
 
-const Notes: React.FC = () => {
+const Notes: React.FC<NotesProps> = ({ notes = [], onAddNote, onEditNote, onDeleteNote }) => {
   const { theme } = useTheme();
-  const [notes, setNotes] = useState<Note[]>(initialNotes);
   const [newNote, setNewNote] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<Note['category']>('general');
+  const [selectedCategory, setSelectedCategory] = useState<Note['categoria']>('general');
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
 
   const handleAddNote = () => {
-    if (newNote.trim()) {
-      const note: Note = {
-        id: Date.now().toString(),
-        content: newNote,
-        date: new Date().toISOString().split('T')[0],
-        category: selectedCategory
-      };
-      setNotes([note, ...notes]);
+    if (newNote.trim() && onAddNote) {
+      onAddNote({
+        texto: newNote,
+        fechaCreacion: new Date().toISOString(),
+        version: 1,
+        categoria: selectedCategory
+      });
       setNewNote('');
     }
   };
 
   const handleDeleteNote = (id: string) => {
-    setNotes(notes.filter(note => note.id !== id));
+    if (onDeleteNote) {
+      onDeleteNote(id);
+    }
   };
 
   const handleEditNote = (note: Note) => {
-    setEditingNote(note.id);
-    setEditContent(note.content);
+    setEditingNote(note._id);
+    setEditContent(note.texto);
   };
 
   const handleSaveEdit = (id: string) => {
-    setNotes(notes.map(note => 
-      note.id === id ? { ...note, content: editContent } : note
-    ));
-    setEditingNote(null);
+    if (onEditNote) {
+      onEditNote(id, { texto: editContent });
+      setEditingNote(null);
+    }
+  };
+
+  // Función para formatear la fecha
+  const formatearFecha = (fecha: string) => {
+    try {
+      const date = new Date(fecha);
+      if (isNaN(date.getTime())) {
+        console.error('Fecha inválida:', fecha);
+        return 'Fecha inválida';
+      }
+
+      // Ajustar la fecha a la zona horaria local
+      const fechaLocal = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+      
+      return fechaLocal.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      console.error('Error al formatear fecha:', error);
+      return 'Fecha inválida';
+    }
   };
 
   return (
@@ -101,10 +113,12 @@ const Notes: React.FC = () => {
               variant="normal"
               onClick={() => setSelectedCategory(category)}
               className={`
-                px-3 py-1 text-xs rounded-full transition-all duration-200
+                px-3 py-1 rounded-full text-sm
                 ${selectedCategory === category
                   ? `${categoryColors[category]} text-white`
-                  : theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+                  : theme === 'dark'
+                    ? 'bg-gray-700 hover:bg-gray-600'
+                    : 'bg-gray-100 hover:bg-gray-200'
                 }
               `}
             >
@@ -114,116 +128,155 @@ const Notes: React.FC = () => {
         </div>
       </div>
 
-      <div className="mb-6">
+      {/* Input para nueva nota */}
+      <div className="mb-6 space-y-2">
         <div className="flex space-x-2">
-          <textarea
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value as Note['categoria'])}
+            className={`
+              px-3 py-2 rounded-lg
+              ${theme === 'dark'
+                ? 'bg-gray-700 text-white border-gray-600'
+                : 'bg-gray-100 text-gray-900 border-gray-200'
+              }
+              border focus:outline-none focus:ring-2 focus:ring-blue-500
+              transition-colors duration-200
+            `}
+          >
+            {Object.entries(categoryLabels).map(([value, label]) => (
+              <option key={value} value={value} className={
+                theme === 'dark' ? 'bg-gray-700' : 'bg-white'
+              }>
+                {label}
+              </option>
+            ))}
+          </select>
+          <input
+            type="text"
             value={newNote}
             onChange={(e) => setNewNote(e.target.value)}
             placeholder="Escribe una nueva nota..."
             className={`
-              flex-1 p-3 rounded-lg resize-none h-20
+              flex-1 p-2 rounded-lg
               ${theme === 'dark'
-                ? 'bg-gray-700 text-white'
-                : 'bg-gray-50 text-gray-900'}
-              border ${theme === 'dark' ? 'border-gray-600' : 'border-gray-200'}
-              focus:ring-2 focus:ring-blue-500 focus:border-transparent
-              transition-all duration-200
+                ? 'bg-gray-700 text-white placeholder-gray-400'
+                : 'bg-gray-100 text-gray-900 placeholder-gray-500'
+              }
+              focus:outline-none focus:ring-2 focus:ring-blue-500
             `}
           />
           <Button
-            variant="create"
+            variant="normal"
             onClick={handleAddNote}
-            className="self-stretch px-4 bg-blue-500 hover:bg-blue-600 text-white"
+            className="bg-blue-500 hover:bg-blue-600 text-white"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4" />
+            <span>Agregar</span>
           </Button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(categoryLabels).map(([category, label]) => (
+            <span
+              key={category}
+              onClick={() => setSelectedCategory(category as Note['categoria'])}
+              className={`
+                px-2 py-1 rounded-full text-xs cursor-pointer
+                transition-colors duration-200
+                ${selectedCategory === category
+                  ? `${categoryColors[category as keyof typeof categoryColors]} text-white`
+                  : theme === 'dark'
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }
+              `}
+            >
+              {label}
+            </span>
+          ))}
         </div>
       </div>
 
-      <div className="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar">
+      {/* Lista de notas */}
+      <div className="space-y-4">
         <AnimatePresence>
           {notes.map((note) => (
             <motion.div
-              key={note.id}
+              key={note._id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              exit={{ opacity: 0, x: -100 }}
               className={`
                 p-4 rounded-lg
-                ${theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-50'}
-                border-l-4 ${categoryColors[note.category]}
-                hover:shadow-md transition-all duration-200
+                ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}
               `}
             >
-              {editingNote === note.id ? (
-                <div className="space-y-2">
-                  <textarea
-                    value={editContent}
-                    onChange={(e) => setEditContent(e.target.value)}
-                    className={`
-                      w-full p-2 rounded
-                      ${theme === 'dark' ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'}
-                      border ${theme === 'dark' ? 'border-gray-500' : 'border-gray-200'}
-                    `}
-                  />
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      variant="normal"
-                      onClick={() => setEditingNote(null)}
-                      className="p-2"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="create"
-                      onClick={() => handleSaveEdit(note.id)}
-                      className="p-2 bg-blue-500 hover:bg-blue-600 text-white"
-                    >
-                      <Save className="w-4 h-4" />
-                    </Button>
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  {editingNote === note._id ? (
+                    <input
+                      type="text"
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      className={`
+                        w-full p-2 rounded
+                        ${theme === 'dark'
+                          ? 'bg-gray-600 text-white'
+                          : 'bg-white text-gray-900'
+                        }
+                      `}
+                    />
+                  ) : (
+                    <p className={theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}>
+                      {note.texto}
+                    </p>
+                  )}
+                  <div className="mt-2 flex items-center space-x-2 text-sm text-gray-500">
+                    <span>{formatearFecha(note.fechaCreacion)}</span>
+                    <span>•</span>
+                    <span className={`px-2 py-0.5 rounded ${categoryColors[note.categoria]} text-white`}>
+                      {categoryLabels[note.categoria]}
+                    </span>
                   </div>
                 </div>
-              ) : (
-                <>
-                  <div className="flex justify-between items-start mb-2">
-                    <span className={`
-                      text-xs px-2 py-1 rounded-full
-                      ${categoryColors[note.category]} text-white
-                    `}>
-                      {categoryLabels[note.category]}
-                    </span>
-                    <div className="flex space-x-2">
-                      <button
+                <div className="flex space-x-2 ml-4">
+                  {editingNote === note._id ? (
+                    <>
+                      <Button
+                        variant="normal"
+                        onClick={() => handleSaveEdit(note._id)}
+                        className="text-green-500 hover:text-green-600"
+                      >
+                        <Save className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="normal"
+                        onClick={() => setEditingNote(null)}
+                        className="text-gray-500 hover:text-gray-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="normal"
                         onClick={() => handleEditNote(note)}
-                        className={`
-                          p-1 rounded-full hover:bg-gray-600/20
-                          transition-colors duration-200
-                        `}
+                        className="text-blue-500 hover:text-blue-600"
                       >
                         <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteNote(note.id)}
-                        className={`
-                          p-1 rounded-full hover:bg-red-500/20
-                          transition-colors duration-200
-                        `}
+                      </Button>
+                      <Button
+                        variant="normal"
+                        onClick={() => handleDeleteNote(note._id)}
+                        className="text-red-500 hover:text-red-600"
                       >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </button>
-                    </div>
-                  </div>
-                  <p className={`
-                    text-sm mb-2
-                    ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}
-                  `}>
-                    {note.content}
-                  </p>
-                  <span className="text-xs text-gray-500">
-                    {new Date(note.date).toLocaleDateString()}
-                  </span>
-                </>
-              )}
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
             </motion.div>
           ))}
         </AnimatePresence>

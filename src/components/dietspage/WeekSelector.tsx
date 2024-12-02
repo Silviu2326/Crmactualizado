@@ -1,18 +1,76 @@
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, LayoutGrid, List, Clock, CalendarDays, Trophy } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Calendar, LayoutGrid, List, Clock, CalendarDays, Trophy, Plus } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
 
-export default function WeekSelector() {
-  const [selectedWeek, setSelectedWeek] = useState(1);
-  
-  const weeks = [
-    { number: 1, range: "1 - 7 Marzo 2024", meals: 32, completed: 28 },
-    { number: 2, range: "8 - 14 Marzo 2024", meals: 35, completed: 20 },
-    { number: 3, range: "15 - 21 Marzo 2024", meals: 35, completed: 15 },
-    { number: 4, range: "22 - 28 Marzo 2024", meals: 35, completed: 0 },
-  ];
+type ViewMode = 'grid' | 'list' | 'compact' | 'timeline';
 
-  const currentWeek = weeks.find(w => w.number === selectedWeek)!;
-  const completionRate = Math.round((currentWeek.completed / currentWeek.meals) * 100);
+interface Week {
+  idSemana: number;
+  fechaInicio: string;
+  dias: Array<any>;
+}
+
+interface WeekSelectorProps {
+  semanas: Week[];
+  onWeekChange: (weekNumber: number) => void;
+  onAddWeek: () => void;
+  onViewModeChange: (mode: ViewMode) => void;
+  viewMode: ViewMode;
+}
+
+export default function WeekSelector({ 
+  semanas, 
+  onWeekChange, 
+  onAddWeek, 
+  onViewModeChange,
+  viewMode 
+}: WeekSelectorProps) {
+  const [selectedWeek, setSelectedWeek] = useState<number>(1);
+
+  useEffect(() => {
+    if (semanas.length > 0 && !semanas.find(s => s.idSemana === selectedWeek)) {
+      setSelectedWeek(semanas[0].idSemana);
+    }
+  }, [semanas]);
+
+  const handleWeekChange = (weekId: number) => {
+    setSelectedWeek(weekId);
+    onWeekChange(weekId);
+  };
+
+  const handleAddWeek = async () => {
+    await onAddWeek();
+  };
+
+  const formatWeekRange = (week: Week) => {
+    const startDate = parseISO(week.fechaInicio);
+    const endDate = parseISO(week.dias[week.dias.length - 1].fecha);
+    return `${format(startDate, 'd MMM', { locale: es })} - ${format(endDate, 'd MMM', { locale: es })}`;
+  };
+
+  const weeks = semanas.map(semana => {
+    const firstDay = new Date(semana.fechaInicio);
+    const lastDay = new Date(semana.dias[semana.dias.length - 1].fecha);
+    
+    const totalMeals = semana.dias.reduce((total, dia) => total + dia.comidas.length, 0);
+    // Por ahora asumimos que todas las comidas están completadas
+    const completedMeals = totalMeals;
+
+    return {
+      number: semana.idSemana,
+      range: formatWeekRange(semana),
+      meals: totalMeals,
+      completed: completedMeals
+    };
+  });
+
+  const currentWeek = weeks.find(w => w.number === selectedWeek) || weeks[0];
+  const completionRate = currentWeek ? Math.round((currentWeek.completed / currentWeek.meals) * 100) : 0;
+
+  if (!weeks.length) {
+    return <div>No hay semanas disponibles</div>;
+  }
 
   return (
     <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -20,8 +78,8 @@ export default function WeekSelector() {
         <div className="flex items-center gap-4">
           <button 
             className="p-2.5 hover:bg-blue-50 rounded-xl transition-all duration-200 text-blue-600 disabled:opacity-50 disabled:hover:bg-transparent disabled:cursor-not-allowed group"
-            disabled={selectedWeek === 1}
-            onClick={() => setSelectedWeek(prev => Math.max(1, prev - 1))}
+            disabled={selectedWeek === Math.min(...weeks.map(w => w.number))}
+            onClick={() => handleWeekChange(selectedWeek - 1)}
           >
             <ChevronLeft className="w-5 h-5 group-hover:scale-110 transition-transform" />
           </button>
@@ -38,11 +96,21 @@ export default function WeekSelector() {
 
           <button 
             className="p-2.5 hover:bg-blue-50 rounded-xl transition-all duration-200 text-blue-600 disabled:opacity-50 disabled:hover:bg-transparent disabled:cursor-not-allowed group"
-            disabled={selectedWeek === weeks.length}
-            onClick={() => setSelectedWeek(prev => Math.min(weeks.length, prev + 1))}
+            disabled={selectedWeek === Math.max(...weeks.map(w => w.number))}
+            onClick={() => handleWeekChange(selectedWeek + 1)}
           >
             <ChevronRight className="w-5 h-5 group-hover:scale-110 transition-transform" />
           </button>
+
+          {onAddWeek && (
+            <button 
+              onClick={handleAddWeek}
+              className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl shadow-sm transition-all duration-200"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="font-medium">Añadir Semana</span>
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-8">
@@ -58,18 +126,51 @@ export default function WeekSelector() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 border-l border-gray-200 pl-6">
-            <button className="p-2.5 rounded-xl hover:bg-gray-100 transition-all duration-200 group">
-              <LayoutGrid className="w-5 h-5 text-gray-600 group-hover:text-blue-600 group-hover:scale-110 transition-all" />
+
+          <div className="flex items-center space-x-2 bg-white rounded-xl p-1 shadow-sm">
+            <button
+              onClick={() => onViewModeChange('grid')}
+              className={`p-2 rounded-lg transition-all duration-200 ${
+                viewMode === 'grid'
+                  ? 'bg-blue-100 text-blue-600'
+                  : 'text-gray-500 hover:bg-gray-100'
+              }`}
+              title="Vista Cuadrícula"
+            >
+              <LayoutGrid className="w-5 h-5" />
             </button>
-            <button className="p-2.5 rounded-xl hover:bg-gray-100 transition-all duration-200 group">
-              <List className="w-5 h-5 text-gray-600 group-hover:text-blue-600 group-hover:scale-110 transition-all" />
+            <button
+              onClick={() => onViewModeChange('list')}
+              className={`p-2 rounded-lg transition-all duration-200 ${
+                viewMode === 'list'
+                  ? 'bg-blue-100 text-blue-600'
+                  : 'text-gray-500 hover:bg-gray-100'
+              }`}
+              title="Vista Lista"
+            >
+              <List className="w-5 h-5" />
             </button>
-            <button className="p-2.5 rounded-xl hover:bg-gray-100 transition-all duration-200 group">
-              <CalendarDays className="w-5 h-5 text-gray-600 group-hover:text-blue-600 group-hover:scale-110 transition-all" />
+            <button
+              onClick={() => onViewModeChange('compact')}
+              className={`p-2 rounded-lg transition-all duration-200 ${
+                viewMode === 'compact'
+                  ? 'bg-blue-100 text-blue-600'
+                  : 'text-gray-500 hover:bg-gray-100'
+              }`}
+              title="Vista Compacta"
+            >
+              <Calendar className="w-5 h-5" />
             </button>
-            <button className="p-2.5 rounded-xl hover:bg-gray-100 transition-all duration-200 group">
-              <Clock className="w-5 h-5 text-gray-600 group-hover:text-blue-600 group-hover:scale-110 transition-all" />
+            <button
+              onClick={() => onViewModeChange('timeline')}
+              className={`p-2 rounded-lg transition-all duration-200 ${
+                viewMode === 'timeline'
+                  ? 'bg-blue-100 text-blue-600'
+                  : 'text-gray-500 hover:bg-gray-100'
+              }`}
+              title="Vista Línea de Tiempo"
+            >
+              <Clock className="w-5 h-5" />
             </button>
           </div>
         </div>

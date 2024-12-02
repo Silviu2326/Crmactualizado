@@ -2,69 +2,7 @@ import { Campaign, NewCampaignData, Template, AutomationRule } from '../types/ca
 import { addDays, format } from 'date-fns';
 
 class MockEmailService {
-  private campaigns: Campaign[] = [
-    {
-      id: '1',
-      name: 'Campaña de Verano 2024',
-      status: 'sending',
-      subject: '🏋️‍♂️ ¡Únete al Desafío de Verano!',
-      content: 'Prepárate para el verano con nuestro desafío de 30 días...',
-      scheduledDate: new Date(),
-      stats: {
-        openRate: 45.2,
-        clickRate: 12.8,
-        conversionRate: 8.5,
-        bounceRate: 1.2
-      },
-      segments: ['miembros_activos', 'entusiastas_fitness']
-    },
-    {
-      id: '2',
-      name: 'Programa Propósitos 2024',
-      status: 'scheduled',
-      subject: '🎯 Alcanza tus Metas Fitness en 2024',
-      content: 'Comienza tu viaje fitness con nuestros programas personalizados...',
-      scheduledDate: addDays(new Date(), 5),
-      stats: {
-        openRate: 52.1,
-        clickRate: 18.4,
-        conversionRate: 12.3,
-        bounceRate: 0.8
-      },
-      segments: ['nuevos_miembros', 'perdida_peso']
-    },
-    {
-      id: '3',
-      name: 'Newsletter Nutrición',
-      status: 'draft',
-      subject: '🥗 Tips de Nutrición Semanal',
-      content: 'Descubre los mejores consejos para una alimentación saludable...',
-      scheduledDate: addDays(new Date(), 2),
-      stats: {
-        openRate: 38.5,
-        clickRate: 15.2,
-        conversionRate: 7.8,
-        bounceRate: 1.5
-      },
-      segments: ['interesados_nutricion']
-    },
-    {
-      id: '4',
-      name: 'Promoción Especial',
-      status: 'sent',
-      subject: '🎉 Oferta Exclusiva de Primavera',
-      content: 'Aprovecha nuestras ofertas especiales...',
-      scheduledDate: addDays(new Date(), -1),
-      stats: {
-        openRate: 62.3,
-        clickRate: 25.1,
-        conversionRate: 15.4,
-        bounceRate: 0.9
-      },
-      segments: ['todos_miembros']
-    }
-  ];
-
+  private campaigns: Campaign[] = [];
   private templates: Template[] = [
     {
       id: 't1',
@@ -98,10 +36,48 @@ class MockEmailService {
     }
   ];
 
+  constructor() {
+    this.initializeCampaigns();
+  }
+
+  private async fetchCampaignsFromAPI(): Promise<Campaign[]> {
+    try {
+      const response = await fetch('/api/email-marketing');
+      const data = await response.json();
+      
+      return data.campaigns.map((campaign: any) => ({
+        id: campaign.id,
+        name: campaign.name,
+        status: campaign.status,
+        subject: campaign.subject,
+        content: campaign.content,
+        scheduledDate: new Date(campaign.scheduledDate),
+        stats: {
+          openRate: campaign.stats.openRate,
+          clickRate: campaign.stats.clickRate,
+          conversionRate: campaign.stats.conversionRate,
+          bounceRate: campaign.stats.bounceRate
+        },
+        segments: campaign.segments
+      }));
+    } catch (error) {
+      console.error('Error fetching campaigns:', error);
+      return [];
+    }
+  }
+
+  private async initializeCampaigns() {
+    this.campaigns = await this.fetchCampaignsFromAPI();
+  }
+
   async getCampaigns(): Promise<Campaign[]> {
-    return new Promise(resolve => {
-      setTimeout(() => resolve(this.campaigns), 500);
-    });
+    try {
+      this.campaigns = await this.fetchCampaignsFromAPI();
+      return this.campaigns;
+    } catch (error) {
+      console.error('Error getting campaigns:', error);
+      return [];
+    }
   }
 
   async getCampaign(id: string): Promise<Campaign | undefined> {
@@ -180,6 +156,39 @@ class MockEmailService {
       
       setTimeout(() => resolve(days), 400);
     });
+  }
+
+  getEmailMarketingStats() {
+    const totalCampaigns = this.campaigns.length;
+    
+    // Calculate average open rate
+    const openRate = this.campaigns.reduce((acc, campaign) => 
+      acc + campaign.stats.openRate, 0) / totalCampaigns;
+    
+    // Calculate trend based on most recent campaign
+    const sortedCampaigns = [...this.campaigns].sort((a, b) => 
+      new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime()
+    );
+    
+    const recentCampaign = sortedCampaigns[0];
+    const previousCampaign = sortedCampaigns[1];
+    
+    const openRateTrendDirection = recentCampaign.stats.openRate >= previousCampaign.stats.openRate ? 'up' : 'down';
+    const openRateTrend = `${Math.abs(recentCampaign.stats.openRate - previousCampaign.stats.openRate).toFixed(1)}%`;
+    
+    // Calculate overall trend
+    const sentCampaigns = this.campaigns.filter(c => c.status === 'sent').length;
+    const trendDirection = 'up'; // Assuming positive trend for mock data
+    const trend = `+${((sentCampaigns / totalCampaigns) * 100).toFixed(1)}%`;
+
+    return {
+      totalCampaigns,
+      openRate: openRate.toFixed(1),
+      openRateTrend: openRateTrendDirection === 'up' ? `+${openRateTrend}` : `-${openRateTrend}`,
+      openRateTrendDirection,
+      trend,
+      trendDirection
+    };
   }
 }
 

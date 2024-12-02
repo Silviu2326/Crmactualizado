@@ -1,178 +1,185 @@
-import React, { useState } from 'react';
-import MealCard from '../MealCard';
-import DayMacros from '../DayMacros';
-import { Calendar, Filter, ArrowUpDown, BarChart2, Plus } from 'lucide-react';
-import { DayViewProps } from './types';
+import React from 'react';
+import { Plus, Edit3, Coffee } from 'lucide-react';
+import MacroProgress from '../MacroProgress';
+import { MealTime } from './types';
 
-export default function GridDayView({ 
-  day, 
-  date, 
-  isToday, 
-  mealTimes, 
-  macros, 
-  handleAddMeal, 
+interface GridDayViewProps {
+  day: string;
+  date: string;
+  isToday: boolean;
+  mealTimes: MealTime[];
+  macros: {
+    calories: { current: number; target: number };
+    protein: { current: number; target: number };
+    carbs: { current: number; target: number };
+    fats: { current: number; target: number };
+  };
+  handleAddMeal: (mealTime: string) => void;
+  handleEditMeal: (meal: any) => void;
+  handleEditMacros: () => void;
+  getMealsForTime: (mealTime: string) => any[];
+}
+
+export default function GridDayView({
+  day,
+  date,
+  mealTimes,
+  macros,
+  handleAddMeal,
   handleEditMeal,
-  getMealsForTime 
-}: DayViewProps) {
-  const [sortBy, setSortBy] = useState<'time' | 'calories'>('time');
-  const [filterType, setFilterType] = useState<string>('all');
-  const [showStats, setShowStats] = useState(false);
+  handleEditMacros,
+  getMealsForTime
+}: GridDayViewProps) {
+  
+  const calculateMealTotals = (meals: any[]) => {
+    return meals.reduce((acc, meal) => {
+      let mealCalorias = 0;
+      let mealProteinas = 0;
+      let mealCarbohidratos = 0;
+      let mealGrasas = 0;
 
-  const stats = {
-    completedMeals: mealTimes.reduce((sum, time) => sum + getMealsForTime(time.title).length, 0),
-    totalProtein: macros.protein.current,
-    remainingCalories: macros.calories.target - macros.calories.current,
-    progress: (macros.calories.current / macros.calories.target) * 100
+      meal.ingredientes?.forEach((ingrediente: any) => {
+        mealCalorias += Number(ingrediente.calorias) || 0;
+        mealProteinas += Number(ingrediente.proteinas) || 0;
+        mealCarbohidratos += Number(ingrediente.carbohidratos) || 0;
+        mealGrasas += Number(ingrediente.grasas) || 0;
+      });
+
+      return {
+        calorias: acc.calorias + mealCalorias,
+        proteinas: acc.proteinas + mealProteinas,
+        carbohidratos: acc.carbohidratos + mealCarbohidratos,
+        grasas: acc.grasas + mealGrasas
+      };
+    }, {
+      calorias: 0,
+      proteinas: 0,
+      carbohidratos: 0,
+      grasas: 0
+    });
   };
 
-  const sortedMealTimes = [...mealTimes].sort((a, b) => {
-    if (sortBy === 'time') {
-      return a.time.localeCompare(b.time);
-    }
-    const aCalories = getMealsForTime(a.title).reduce((sum, m) => sum + m.calories, 0);
-    const bCalories = getMealsForTime(b.title).reduce((sum, m) => sum + m.calories, 0);
-    return bCalories - aCalories;
-  });
+  // Obtener todas las comidas del día
+  const allMeals = getMealsForTime();
 
-  const filteredMealTimes = sortedMealTimes.filter(time => {
-    const meals = getMealsForTime(time.title);
-    if (filterType === 'all') return true;
-    if (filterType === 'completed') return meals.length > 0;
-    return meals.length === 0;
-  });
 
   return (
-    <div className={`glass-card p-6 rounded-xl transform transition-all duration-300 hover:-translate-y-1 ${
-      isToday ? 'ring-2 ring-blue-500 ring-opacity-50 shadow-blue-100' : ''
-    }`}>
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center space-x-3">
-          <div className={`p-2 rounded-xl ${
-            isToday 
-              ? 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-100' 
-              : 'bg-blue-100'
-          }`}>
-            <Calendar className={`w-5 h-5 ${isToday ? 'text-white' : 'text-blue-700'}`} />
-          </div>
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      {/* Encabezado del día */}
+      <div className="p-4 bg-gray-50 border-b">
+        <div className="flex justify-between items-center">
           <div>
-            <h3 className="font-bold text-xl text-gray-800">{day}</h3>
-            <p className={`${isToday ? 'text-blue-600' : 'text-gray-500'} font-medium`}>{date}</p>
+            <h3 className="text-lg font-semibold capitalize">{day}</h3>
+            <p className="text-sm text-gray-500">{date}</p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => handleAddMeal("Comida")}
+              className="p-1 hover:bg-gray-100 rounded-full"
+            >
+              <Plus size={18} className="text-blue-600" />
+            </button>
+            <button
+              onClick={handleEditMacros}
+              className="text-blue-600 hover:text-blue-700"
+            >
+              <Edit3 size={18} />
+            </button>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setShowStats(!showStats)}
-            className={`p-2 rounded-lg transition-colors ${
-              showStats ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100 text-gray-600'
-            }`}
-          >
-            <BarChart2 className="w-5 h-5" />
-          </button>
-          <div className="relative group">
-            <button
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
-            >
-              <Filter className="w-5 h-5" />
-            </button>
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 hidden group-hover:block z-10">
-              <button
-                onClick={() => setFilterType('all')}
-                className={`w-full px-4 py-2 text-left hover:bg-gray-50 ${filterType === 'all' ? 'text-blue-600' : 'text-gray-700'}`}
-              >
-                Todas las comidas
-              </button>
-              <button
-                onClick={() => setFilterType('completed')}
-                className={`w-full px-4 py-2 text-left hover:bg-gray-50 ${filterType === 'completed' ? 'text-blue-600' : 'text-gray-700'}`}
-              >
-                Completadas
-              </button>
-              <button
-                onClick={() => setFilterType('pending')}
-                className={`w-full px-4 py-2 text-left hover:bg-gray-50 ${filterType === 'pending' ? 'text-blue-600' : 'text-gray-700'}`}
-              >
-                Pendientes
-              </button>
-            </div>
-          </div>
-          <div className="relative group">
-            <button
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
-            >
-              <ArrowUpDown className="w-5 h-5" />
-            </button>
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 hidden group-hover:block z-10">
-              <button
-                onClick={() => setSortBy('time')}
-                className={`w-full px-4 py-2 text-left hover:bg-gray-50 ${sortBy === 'time' ? 'text-blue-600' : 'text-gray-700'}`}
-              >
-                Por hora
-              </button>
-              <button
-                onClick={() => setSortBy('calories')}
-                className={`w-full px-4 py-2 text-left hover:bg-gray-50 ${sortBy === 'calories' ? 'text-blue-600' : 'text-gray-700'}`}
-              >
-                Por calorías
-              </button>
-            </div>
-          </div>
+
+        {/* Macros del día */}
+        <div className="grid grid-cols-2 gap-2 mt-4">
+          <MacroProgress
+            label="Calorías"
+            current={macros.calories.current}
+            target={macros.calories.target}
+            unit="kcal"
+          />
+          <MacroProgress
+            label="Proteínas"
+            current={macros.protein.current}
+            target={macros.protein.target}
+            unit="g"
+          />
+          <MacroProgress
+            label="Carbohidratos"
+            current={macros.carbs.current}
+            target={macros.carbs.target}
+            unit="g"
+          />
+          <MacroProgress
+            label="Grasas"
+            current={macros.fats.current}
+            target={macros.fats.target}
+            unit="g"
+          />
         </div>
       </div>
 
-      {showStats && (
-        <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-amber-50 p-4 rounded-xl">
-            <p className="text-amber-600 text-sm font-medium">Comidas Completadas</p>
-            <p className="text-2xl font-bold text-amber-700">{stats.completedMeals}/{mealTimes.length}</p>
-          </div>
-          <div className="bg-red-50 p-4 rounded-xl">
-            <p className="text-red-600 text-sm font-medium">Proteína Total</p>
-            <p className="text-2xl font-bold text-red-700">{stats.totalProtein}g</p>
-          </div>
-          <div className="bg-blue-50 p-4 rounded-xl">
-            <p className="text-blue-600 text-sm font-medium">Calorías Restantes</p>
-            <p className="text-2xl font-bold text-blue-700">{stats.remainingCalories}</p>
-          </div>
-          <div className="bg-emerald-50 p-4 rounded-xl">
-            <p className="text-emerald-600 text-sm font-medium">Progreso</p>
-            <p className="text-2xl font-bold text-emerald-700">{Math.round(stats.progress)}%</p>
-          </div>
-        </div>
-      )}
+      {/* Comidas del día */}
+      <div className="p-4">
+        {allMeals.length > 0 ? (
+          <div className="space-y-4">
+            {allMeals.map((meal: any) => {
+              const mealTotals = calculateMealTotals([meal]);
+              return (
+                <div
+                  key={meal.numero}
+                  className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer"
+                  onClick={() => handleEditMeal(meal)}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <Coffee className="w-5 h-5 text-gray-500" />
+                        <h4 className="font-medium text-gray-900">Comida #{meal.numero}</h4>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">Peso total: {meal.peso}g</p>
+                    </div>
+                    <Edit3 size={16} className="text-gray-400" />
+                  </div>
 
-      <DayMacros {...macros} />
+                  {/* Ingredientes */}
+                  <div className="space-y-2">
+                    <h5 className="text-sm font-medium text-gray-700">Ingredientes:</h5>
+                    <div className="pl-4 space-y-2">
+                      {meal.ingredientes?.map((ingrediente: any, index: number) => (
+                        <div key={index} className="text-sm">
+                          <p className="font-medium text-gray-700">{ingrediente.nombre}</p>
+                          <p className="text-gray-500">
+                            {ingrediente.calorias} kcal | {ingrediente.proteinas}g P | {ingrediente.carbohidratos}g C | {ingrediente.grasas}g G
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-      <div className="mt-6 space-y-6">
-        {filteredMealTimes.map((mealTime, index) => {
-          const meals = getMealsForTime(mealTime.title);
-          return (
-            <div key={`${day}-${mealTime.title}-${index}`} className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium text-gray-700">{mealTime.title}</h4>
-                <span className="text-sm text-gray-500">{mealTime.time}</span>
-              </div>
-              
-              {meals.map((meal, mealIndex) => (
-                <MealCard 
-                  key={`${day}-${mealTime.title}-meal-${mealIndex}`}
-                  meal={meal}
-                  onAdd={() => handleAddMeal(mealTime.title)}
-                  onEdit={handleEditMeal}
-                />
-              ))}
-              
-              <button
-                onClick={() => handleAddMeal(mealTime.title)}
-                className="w-full p-4 rounded-xl border-2 border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all flex items-center justify-center space-x-2 group"
-              >
-                <Plus className="w-5 h-5 text-gray-400 group-hover:text-blue-500" />
-                <span className="text-gray-500 group-hover:text-blue-600 font-medium">
-                  Añadir comida a {mealTime.title}
-                </span>
-              </button>
-            </div>
-          );
-        })}
+                  {/* Totales de la comida */}
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm font-medium text-gray-700">Totales de la comida:</p>
+                      <p className="text-sm text-gray-600">
+                        {mealTotals.calorias} kcal | {mealTotals.proteinas}g P | {mealTotals.carbohidratos}g C | {mealTotals.grasas}g G
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-500 mb-4">No hay comidas agregadas para este día</p>
+            <button
+              onClick={() => handleAddMeal("Comida")}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus size={20} className="mr-2" />
+              Agregar comida
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

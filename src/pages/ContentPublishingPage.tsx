@@ -4,20 +4,24 @@ import { useTheme } from '../contexts/ThemeContext';
 import { 
   Sparkles, Image as ImageIcon, MessageSquare, X, Mic, Share2, 
   TrendingUp, Target, Users, Globe, Instagram, Facebook,
-  Video, Wand2, Zap, Brain, Rocket
+  Video, Wand2, Zap, Brain, Rocket, BarChart, Mail, Search
 } from 'lucide-react';
 import Button from '../components/Common/Button';
 import AIChat from '../components/ContentPublishing/AIChat';
 import ToolCard from '../components/ContentPublishing/ToolCard';
+import { chatService } from '../services/chatService';
 
 const ContentPublishingPage: React.FC = () => {
+  const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { theme } = useTheme();
   const [showChat, setShowChat] = useState(false);
-  const [chatTool, setChatTool] = useState('');
+  const [selectedChat, setSelectedChat] = useState<number>(0);
 
   const mainTools = [
     { 
       id: 'posts', 
+      chatId: 1,
       name: 'Crear Posts con IA', 
       icon: Sparkles,
       description: 'Genera posts virales para tus redes sociales con IA avanzada',
@@ -26,6 +30,7 @@ const ContentPublishingPage: React.FC = () => {
     },
     { 
       id: 'stories', 
+      chatId: 2,
       name: 'Crear Historias con IA', 
       icon: ImageIcon,
       description: 'Diseña historias cautivadoras que conecten con tu audiencia',
@@ -34,6 +39,7 @@ const ContentPublishingPage: React.FC = () => {
     },
     { 
       id: 'image-gen', 
+      chatId: 3,
       name: 'Image Creator', 
       icon: Wand2,
       description: 'Genera imágenes únicas y profesionales con IA',
@@ -45,6 +51,7 @@ const ContentPublishingPage: React.FC = () => {
   const marketingTools = [
     { 
       id: 'audience', 
+      chatId: 4,
       name: 'Audience Analyzer', 
       icon: Users,
       description: 'Comprende y segmenta tu audiencia ideal',
@@ -53,6 +60,7 @@ const ContentPublishingPage: React.FC = () => {
     },
     { 
       id: 'trends', 
+      chatId: 5,
       name: 'Trend Detector', 
       icon: TrendingUp,
       description: 'Detecta y aprovecha tendencias en tiempo real',
@@ -60,66 +68,76 @@ const ContentPublishingPage: React.FC = () => {
       features: ['Monitoreo 24/7', 'Predicciones', 'Alertas personalizadas']
     },
     { 
-      id: 'competitor', 
-      name: 'Competitor Analysis', 
-      icon: Target,
-      description: 'Analiza y supera a tu competencia',
+      id: 'content-strategy', 
+      chatId: 6,
+      name: 'Content Strategy', 
+      icon: Brain,
+      description: 'Desarrolla estrategias efectivas de contenido',
       gradient: 'from-violet-500 to-purple-500',
-      features: ['Benchmarking', 'Estrategias', 'Oportunidades']
+      features: ['Planificación', 'Calendario editorial', 'Optimización']
     }
   ];
 
-  const socialTools = [
+  const optimizationTools = [
     { 
-      id: 'instagram', 
-      name: 'Instagram Manager', 
-      icon: Instagram,
-      description: 'Optimiza tu presencia en Instagram',
+      id: 'seo', 
+      chatId: 7,
+      name: 'SEO Optimizer', 
+      icon: Search,
+      description: 'Optimiza tu contenido para motores de búsqueda',
       gradient: 'from-fuchsia-500 to-pink-500',
-      features: ['Programación de posts', 'Análisis de hashtags', 'Engagement']
+      features: ['Keywords', 'Meta tags', 'Estructura']
     },
     { 
-      id: 'facebook', 
-      name: 'Facebook Manager', 
-      icon: Facebook,
-      description: 'Maximiza tu impacto en Facebook',
+      id: 'email', 
+      chatId: 8,
+      name: 'Email Marketing', 
+      icon: Mail,
+      description: 'Crea campañas efectivas de correo electrónico',
       gradient: 'from-blue-600 to-indigo-500',
-      features: ['Gestión de páginas', 'Análisis de alcance', 'Interacción']
+      features: ['Templates', 'Segmentación', 'A/B Testing']
     },
     { 
-      id: 'global', 
-      name: 'Global Publisher', 
-      icon: Globe,
-      description: 'Publica en todas tus redes desde un solo lugar',
+      id: 'analytics', 
+      chatId: 9,
+      name: 'Analytics Expert', 
+      icon: BarChart,
+      description: 'Analiza e interpreta métricas digitales',
       gradient: 'from-teal-500 to-emerald-500',
-      features: ['Multi-plataforma', 'Calendario unificado', 'Analytics']
+      features: ['KPIs', 'Reportes', 'Insights']
     }
   ];
 
-  const comingSoonTools = [
-    { 
-      id: 'elevenlabs', 
-      name: 'Eleven Labs', 
-      icon: Mic,
-      description: 'Síntesis de voz con IA de última generación',
-      gradient: 'from-gray-500 to-gray-600',
-      features: ['Voces naturales', 'Múltiples idiomas', 'Personalización'],
-      comingSoon: true
-    },
-    { 
-      id: 'videoeditor', 
-      name: 'Editor de Video IA', 
-      icon: Video,
-      description: 'Edición de video automatizada e inteligente',
-      gradient: 'from-gray-500 to-gray-600',
-      features: ['Cortes automáticos', 'Efectos IA', 'Subtítulos'],
-      comingSoon: true
-    }
-  ];
+  const handleToolClick = (tool: Tool) => {
+    console.log('ContentPublishingPage - handleToolClick llamado con tool:', tool);
+    console.log('ContentPublishingPage - chatId del tool:', tool.chatId);
+    setSelectedTool(tool);
+    setIsModalOpen(true);
+  };
 
-  const handleToolClick = (toolId: string) => {
-    setChatTool(toolId);
-    setShowChat(true);
+  const handleCloseModal = () => {
+    console.log('ContentPublishingPage - Cerrando modal');
+    setIsModalOpen(false);
+    setSelectedTool(null);
+  };
+
+  const handleSendMessage = async (message: string) => {
+    console.log('ContentPublishingPage - handleSendMessage llamado con mensaje:', message);
+    console.log('ContentPublishingPage - selectedTool actual:', selectedTool);
+    
+    if (!selectedTool) {
+      console.error('ContentPublishingPage - No hay herramienta seleccionada');
+      return;
+    }
+
+    try {
+      const response = await chatService.sendMessage(selectedTool.chatId, message);
+      console.log('ContentPublishingPage - Respuesta del servidor:', response);
+      return response;
+    } catch (error) {
+      console.error('ContentPublishingPage - Error al enviar mensaje:', error);
+      throw error;
+    }
   };
 
   return (
@@ -150,13 +168,13 @@ const ContentPublishingPage: React.FC = () => {
               Creación de Contenido
             </span>
           </motion.h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {mainTools.map((tool, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {mainTools.map((tool) => (
               <ToolCard 
-                key={tool.id} 
-                tool={tool} 
-                index={index}
-                onToolClick={handleToolClick}
+                key={tool.id}
+                tool={tool}
+                onClick={() => handleToolClick(tool)}
+                theme={theme}
               />
             ))}
           </div>
@@ -169,48 +187,24 @@ const ContentPublishingPage: React.FC = () => {
             animate={{ opacity: 1, x: 0 }}
             className="text-3xl font-bold mb-8 flex items-center"
           >
-            <Brain className="w-8 h-8 mr-3 text-green-500" />
-            <span className="bg-gradient-to-r from-green-400 to-emerald-600 bg-clip-text text-transparent">
-              Análisis de Marketing
+            <Target className="w-8 h-8 mr-3 text-pink-500" />
+            <span className="bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-transparent">
+              Análisis y Estrategia
             </span>
           </motion.h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {marketingTools.map((tool, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {marketingTools.map((tool) => (
               <ToolCard 
-                key={tool.id} 
-                tool={tool} 
-                index={index}
-                onToolClick={handleToolClick}
+                key={tool.id}
+                tool={tool}
+                onClick={() => handleToolClick(tool)}
+                theme={theme}
               />
             ))}
           </div>
         </div>
 
-        {/* Herramientas Sociales */}
-        <div className="mb-16">
-          <motion.h2 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="text-3xl font-bold mb-8 flex items-center"
-          >
-            <Share2 className="w-8 h-8 mr-3 text-orange-500" />
-            <span className="bg-gradient-to-r from-orange-400 to-red-600 bg-clip-text text-transparent">
-              Gestión de Redes Sociales
-            </span>
-          </motion.h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {socialTools.map((tool, index) => (
-              <ToolCard 
-                key={tool.id} 
-                tool={tool} 
-                index={index}
-                onToolClick={handleToolClick}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Próximamente */}
+        {/* Herramientas de Optimización */}
         <div className="mb-16">
           <motion.h2 
             initial={{ opacity: 0, x: -20 }}
@@ -219,16 +213,16 @@ const ContentPublishingPage: React.FC = () => {
           >
             <Zap className="w-8 h-8 mr-3 text-yellow-500" />
             <span className="bg-gradient-to-r from-yellow-400 to-orange-600 bg-clip-text text-transparent">
-              Próximamente
+              Optimización y Análisis
             </span>
           </motion.h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {comingSoonTools.map((tool, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {optimizationTools.map((tool) => (
               <ToolCard 
-                key={tool.id} 
-                tool={tool} 
-                index={index}
-                onToolClick={handleToolClick}
+                key={tool.id}
+                tool={tool}
+                onClick={() => handleToolClick(tool)}
+                theme={theme}
               />
             ))}
           </div>
@@ -236,30 +230,26 @@ const ContentPublishingPage: React.FC = () => {
 
         {/* Chat Modal */}
         <AnimatePresence>
-          {showChat && (
+          {isModalOpen && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
             >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className={`relative w-full max-w-4xl h-[80vh] ${
-                  theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-                } rounded-2xl shadow-2xl overflow-hidden`}
-              >
-                <Button
-                  variant="danger"
-                  onClick={() => setShowChat(false)}
-                  className="absolute top-4 right-4 z-10"
+              <div className={`relative w-full max-w-4xl h-[80vh] rounded-2xl shadow-xl ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+                <button
+                  onClick={handleCloseModal}
+                  className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <X className="w-5 h-5" />
-                </Button>
-                <AIChat toolId={chatTool} />
-              </motion.div>
+                  <X className="w-6 h-6" />
+                </button>
+                <AIChat
+                  onSendMessage={handleSendMessage}
+                  chatDescription={chatService.getChatDescription(selectedTool?.chatId)}
+                  theme={theme}
+                />
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

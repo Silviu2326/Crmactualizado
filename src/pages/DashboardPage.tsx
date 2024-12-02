@@ -32,8 +32,8 @@ const DashboardPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [classSearchTerm, setClassSearchTerm] = useState('');
 
-  // Estado para el tipo de vista del gráfico de Cash Flow
-  const [viewType, setViewType] = useState<'weekly' | 'monthly' | 'annual'>('monthly');
+  // Estado para el tipo de vista del gráfico (diario, mensual, anual)
+  const [viewType, setViewType] = useState<'daily' | 'monthly' | 'annual'>('monthly');
 
   // Estado para manejar la fecha actual en los gráficos
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -45,6 +45,8 @@ const DashboardPage: React.FC = () => {
 
   // Estados para almacenar datos de la API
   const [clientesData, setClientesData] = useState<any[]>([]);
+  const [ingresos, setIngresos] = useState<any[]>([]);
+  const [gastos, setGastos] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,29 +55,54 @@ const DashboardPage: React.FC = () => {
       setLoading(true);
       console.log('🚀 Iniciando la carga de datos del Dashboard...');
 
-      // Función para manejar la petición de clientes
-      const fetchClientes = async () => {
-        try {
-          console.log('🔄 Realizando petición GET a /api/clientes...');
-          const response = await axios.get(`${API_URL}/clientes`, {
-            withCredentials: true, // Enviar cookies con la solicitud
-          });
-          setClientesData(response.data);
-          console.log('🎉 Datos de Clientes obtenidos exitosamente:', response.data);
-        } catch (err: any) {
-          console.error('❗️ Error al obtener Clientes:', err);
-          if (err.response) {
-            console.error('Detalles del error:', err.response.data);
-          }
-          setError('Error al obtener Clientes');
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No se encontró el token de autenticación');
         }
-      };
 
-      // Llamada a la función de fetchClientes
-      await fetchClientes();
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        };
 
-      setLoading(false);
-      console.log('✅ Finalizó la carga de datos del Dashboard.');
+        // Función para manejar la petición de clientes
+        const fetchClientes = async () => {
+          try {
+            console.log('🔄 Realizando petición GET a /api/clientes...');
+            const response = await axios.get(`${API_URL}/clientes`, {
+              withCredentials: true, // Enviar cookies con la solicitud
+            });
+            setClientesData(response.data);
+            console.log('🎉 Datos de Clientes obtenidos exitosamente:', response.data);
+          } catch (err: any) {
+            console.error('❗️ Error al obtener Clientes:', err);
+            if (err.response) {
+              console.error('Detalles del error:', err.response.data);
+            }
+            setError('Error al obtener Clientes');
+          }
+        };
+
+        // Llamada a la función de fetchClientes
+        await fetchClientes();
+
+        // Fetch ingresos
+        const ingresosResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos', { headers });
+        const ingresosData = await ingresosResponse.json();
+        setIngresos(ingresosData);
+
+        // Fetch gastos
+        const gastosResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos', { headers });
+        const gastosData = await gastosResponse.json();
+        setGastos(gastosData);
+
+        setLoading(false);
+        console.log('✅ Finalizó la carga de datos del Dashboard.');
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setLoading(false);
+      }
     };
 
     fetchData();
@@ -83,17 +110,14 @@ const DashboardPage: React.FC = () => {
 
   // Datos estáticos para tablas como fallback si la API no ha cargado datos
   const clientData = clientesData.length > 0 ? clientesData : [
-    { nombre: 'Juan Pérez', email: 'juan@example.com', ultimaClase: '2023-05-15', estado: 'Activo' },
-    { nombre: 'María García', email: 'maria@example.com', ultimaClase: '2023-05-16', estado: 'Inactivo' },
-    { nombre: 'Carlos López', email: 'carlos@example.com', ultimaClase: '2023-05-17', estado: 'Activo' },
   ];
 
   // Función para manejar la navegación a la fecha anterior
   const handlePrevious = () => {
     const newDate = new Date(currentDate);
     switch (viewType) {
-      case 'weekly':
-        newDate.setDate(newDate.getDate() - 7);
+      case 'daily':
+        newDate.setDate(newDate.getDate() - 1);
         break;
       case 'monthly':
         newDate.setMonth(newDate.getMonth() - 1);
@@ -110,8 +134,8 @@ const DashboardPage: React.FC = () => {
   const handleNext = () => {
     const newDate = new Date(currentDate);
     switch (viewType) {
-      case 'weekly':
-        newDate.setDate(newDate.getDate() + 7);
+      case 'daily':
+        newDate.setDate(newDate.getDate() + 1);
         break;
       case 'monthly':
         newDate.setMonth(newDate.getMonth() + 1);
@@ -128,10 +152,8 @@ const DashboardPage: React.FC = () => {
   const formatDateRange = () => {
     const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
     switch (viewType) {
-      case 'weekly':
-        const endOfWeek = new Date(currentDate);
-        endOfWeek.setDate(endOfWeek.getDate() + 6);
-        return `${currentDate.toLocaleDateString('es-ES', options)} - ${endOfWeek.toLocaleDateString('es-ES', options)}`;
+      case 'daily':
+        return currentDate.toLocaleDateString('es-ES', options);
       case 'monthly':
         return currentDate.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
       case 'annual':
@@ -258,19 +280,20 @@ const DashboardPage: React.FC = () => {
                   Cash Flow
                 </h2>
                 <div className="flex items-center space-x-2">
-                  {/* Dropdown para seleccionar el tipo de vista */}
-                  <Dropdown
-                    options={[
-                      { value: 'weekly', label: 'Semanal' },
-                      { value: 'monthly', label: 'Mensual' },
-                      { value: 'annual', label: 'Anual' },
-                    ]}
+                  {/* Selector de tipo de vista */}
+                  <select
                     value={viewType}
-                    onChange={(value) => {
-                      console.log(`🔄 Cambió el tipo de vista a: ${value}`);
-                      setViewType(value as 'weekly' | 'monthly' | 'annual');
-                    }}
-                  />
+                    onChange={(e) => setViewType(e.target.value as 'daily' | 'monthly' | 'annual')}
+                    className={`px-3 py-1 rounded ${
+                      theme === 'dark'
+                        ? 'bg-gray-700 text-white border-gray-600'
+                        : 'bg-white text-gray-800 border-gray-300'
+                    }`}
+                  >
+                    <option value="daily">Diario</option>
+                    <option value="monthly">Mensual</option>
+                    <option value="annual">Anual</option>
+                  </select>
                   {/* Botón para navegar a la fecha anterior */}
                   <button
                     onClick={handlePrevious}
@@ -290,7 +313,13 @@ const DashboardPage: React.FC = () => {
                 </div>
               </div>
               {/* Componente del gráfico de Cash Flow */}
-              <CashFlowChart viewType={viewType} currentDate={currentDate} />
+              <CashFlowChart 
+                viewType={viewType} 
+                currentDate={currentDate} 
+                ingresos={ingresos}
+                gastos={gastos}
+              />
+
             </div>
           </div>
 

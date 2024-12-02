@@ -8,33 +8,102 @@ import {
   Clipboard, CalendarCheck, Ruler, Brain,
   Wallet, Receipt, TrendingUp, FileText,
   LayoutDashboard, Users, BarChart,
-  Apple, Coffee, Utensils, Salad
+  Apple, Coffee, Utensils, Salad, Plus, Edit2, Pencil, X, Eye
 } from 'lucide-react';
 import Button from '../Common/Button';
 import InfoCard from './InfoCard';
 import Notes from './Notes';
 import ClientCalendar from './Calendar';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 type Section = 'dashboard' | 'plan' | 'checkins' | 'personal' | 'finances';
 
+interface Nota {
+  texto: string;
+  fechaCreacion: string;
+  version: number;
+  categoria: string;
+  _id: string;
+}
+
+interface Direccion {
+  calle: string;
+  numero?: string;
+  piso?: string;
+  codigoPostal?: string;
+  ciudad: string;
+  provincia: string;
+}
+
+interface PlanActivo {
+  _id: string;
+  nombre: string;
+  descripcion: string;
+  fechaInicio: string;
+  meta: string;
+  semanas: number;
+}
+
+interface DietaActiva {
+  _id: string;
+  nombre: string;
+  objetivo: string;
+  restricciones: string;
+  estado: string;
+  fechaInicio: string;
+  fechaComienzo: string;
+  semanas: Array<{
+    idSemana: number;
+    fechaInicio: string;
+    dias: Array<{
+      restricciones: {
+        calorias: number;
+        proteinas: number;
+        carbohidratos: number;
+        grasas: number;
+      };
+      fecha: string;
+      comidas: Array<{
+        numero: number;
+        peso: number;
+        ingredientes: Array<{
+          nombre: string;
+          calorias: number;
+          proteinas: number;
+          carbohidratos: number;
+          grasas: number;
+        }>;
+      }>;
+    }>;
+  }>;
+}
+
 interface Cliente {
-  id: string;
+  _id: string;
   nombre: string;
   email: string;
   telefono: string;
-  estado: string;
-  direccion: string;
+  estado: 'Activo' | 'Inactivo' | 'Pendiente' | 'Suspendido';
+  direccion: Direccion;
   fechaInicio: string;
   objetivo: string;
-  peso: string;
-  altura: string;
-  imc: number;
   ultimaVisita: string;
   proximaCita: string;
   planActual: string;
   progreso: number;
   pagosAlDia: boolean;
+  notas: Nota[];
+  planesDePago: any[];
+  transacciones: any[];
+  trainer: string;
+  fechaRegistro: string;
+  servicios: string[];
+  altura?: number;
+  peso?: number;
+  nivelActividad?: 'Bajo' | 'Moderado' | 'Alto';
+  planningActivo?: PlanActivo;
+  dietaActiva?: DietaActiva;
 }
 
 interface PanelClienteProps {
@@ -50,14 +119,57 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [editandoDireccion, setEditandoDireccion] = useState(false);
+  const [direccionForm, setDireccionForm] = useState<Direccion>({
+    calle: cliente?.direccion?.calle || '',
+    numero: cliente?.direccion?.numero || '',
+    piso: cliente?.direccion?.piso || '',
+    codigoPostal: cliente?.direccion?.codigoPostal || '',
+    ciudad: cliente?.direccion?.ciudad || '',
+    provincia: cliente?.direccion?.provincia || ''
+  });
+  const [editandoEstado, setEditandoEstado] = useState(false);
+  const estadosPosibles: ('Activo' | 'Inactivo' | 'Pendiente' | 'Suspendido')[] = ['Activo', 'Inactivo', 'Pendiente', 'Suspendido'];
+  const [editandoFisica, setEditandoFisica] = useState(false);
+  const [datosForm, setDatosForm] = useState({
+    altura: cliente?.altura || '',
+    peso: cliente?.peso || '',
+    nivelActividad: cliente?.nivelActividad || 'Moderado'
+  });
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCliente = async () => {
+      console.log('Iniciando fetchCliente con clienteId:', clienteId);
       try {
-        const response = await axios.get(`${API_URL}/clientes/${clienteId}`);
+        // Obtener el token del localStorage
+        const token = localStorage.getItem('token');
+        console.log('Token obtenido:', token ? 'Token presente' : 'Token no encontrado');
+
+        if (!clienteId) {
+          console.error('ClienteId es undefined');
+          setError('ID de cliente no válido');
+          return;
+        }
+
+        const config = {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        };
+
+        console.log('Realizando petición a:', `${API_URL}/clientes/${clienteId}`);
+        const response = await axios.get(`${API_URL}/clientes/${clienteId}`, config);
+        console.log('Respuesta recibida:', response.data);
         setCliente(response.data);
-      } catch (error) {
-        console.error('Error al obtener el cliente:', error);
+      } catch (error: any) {
+        console.error('Error detallado al obtener el cliente:', {
+          mensaje: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+          config: error.config
+        });
         setError('Error al obtener el cliente');
       } finally {
         setLoading(false);
@@ -68,7 +180,9 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
   }, [clienteId]);
 
   const handleViewPlan = () => {
-    console.log('Ver plan de entrenamiento');
+    if (cliente?.planningActivo?._id) {
+      navigate(`/edit-planning/${cliente.planningActivo._id}`);
+    }
   };
 
   const handleNewCheckin = () => {
@@ -83,6 +197,101 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
     console.log('Ver plan nutricional');
   };
 
+  const handleCreatePlan = () => {
+    // Aquí implementaremos la lógica para crear un nuevo plan
+    console.log('Crear nuevo plan para el cliente:', cliente?._id);
+  };
+
+  const handleUpdateFisica = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No token found');
+
+      const response = await fetch(`${API_URL}/clientes/${cliente?._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          altura: Number(datosForm.altura),
+          peso: Number(datosForm.peso),
+          nivelActividad: datosForm.nivelActividad
+        })
+      });
+
+      if (!response.ok) throw new Error('Error al actualizar los datos físicos');
+
+      setCliente(cliente => cliente ? {
+        ...cliente,
+        altura: Number(datosForm.altura),
+        peso: Number(datosForm.peso),
+        nivelActividad: datosForm.nivelActividad
+      } : null);
+      
+      setEditandoFisica(false);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const handleUpdateDireccion = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No token found');
+
+      const response = await fetch(`${API_URL}/clientes/${cliente?._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ direccion: direccionForm })
+      });
+
+      if (!response.ok) throw new Error('Error al actualizar la dirección');
+
+      setCliente(cliente => cliente ? { ...cliente, direccion: direccionForm } : null);
+      setEditandoDireccion(false);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const handleUpdateEstado = async (nuevoEstado: 'Activo' | 'Inactivo' | 'Pendiente' | 'Suspendido') => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No token found');
+
+      const response = await fetch(`${API_URL}/clientes/${cliente?._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ estado: nuevoEstado })
+      });
+
+      if (!response.ok) throw new Error('Error al actualizar el estado');
+
+      setCliente(cliente => cliente ? { ...cliente, estado: nuevoEstado } : null);
+      setEditandoEstado(false);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const handleViewDiet = () => {
+    if (cliente?.dietaActiva?._id) {
+      navigate(`/edit-diet/${cliente.dietaActiva._id}`);
+    }
+  };
+
+  const handleCreateDiet = () => {
+    // Aquí implementaremos la lógica para crear una nueva dieta
+    console.log('Crear nueva dieta para el cliente:', cliente?._id);
+  };
+
   const navigationButtons = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'plan', icon: Dumbbell, label: 'Plan' },
@@ -90,6 +299,85 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
     { id: 'personal', icon: Users, label: 'Personal' },
     { id: 'finances', icon: Wallet, label: 'Finanzas' },
   ];
+
+  // Función para formatear la fecha en español
+  const formatearFecha = (fecha: string) => {
+    try {
+      const date = new Date(fecha);
+      if (isNaN(date.getTime())) {
+        console.error('Fecha inválida:', fecha);
+        return 'Fecha inválida';
+      }
+      return date.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('Error al formatear fecha:', error);
+      return 'Fecha inválida';
+    }
+  };
+
+  const handleAddNote = async (note: Omit<Nota, '_id'>) => {
+    try {
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+
+      const response = await axios.post(`${API_URL}/clientes/${clienteId}/notas`, note, config);
+      // Usar directamente la nota del backend
+      const nuevaNota = response.data.data;
+      
+      setCliente(prevCliente => ({
+        ...prevCliente!,
+        notas: [nuevaNota, ...prevCliente!.notas]
+      }));
+    } catch (error) {
+      console.error('Error al agregar nota:', error);
+    }
+  };
+
+  const handleEditNote = async (id: string, note: Partial<Nota>) => {
+    try {
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+
+      await axios.put(`${API_URL}/clientes/${clienteId}/notas/${id}`, note, config);
+      setCliente(prevCliente => ({
+        ...prevCliente!,
+        notas: prevCliente!.notas.map(n => n._id === id ? { ...n, ...note } : n)
+      }));
+    } catch (error) {
+      console.error('Error al editar nota:', error);
+    }
+  };
+
+  const handleDeleteNote = async (id: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+
+      await axios.delete(`${API_URL}/clientes/${clienteId}/notas/${id}`, config);
+      setCliente(prevCliente => ({
+        ...prevCliente!,
+        notas: prevCliente!.notas.filter(n => n._id !== id)
+      }));
+    } catch (error) {
+      console.error('Error al eliminar nota:', error);
+    }
+  };
 
   if (loading) {
     return <div>Cargando datos del cliente...</div>;
@@ -204,52 +492,108 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
             {/* Planificación Deportiva */}
             <InfoCard
               title="Planificación Deportiva"
-              delay={0.6}
-              items={[
-                { icon: Dumbbell, text: `Plan: ${cliente.planActual}` },
-                { icon: Target, text: `Objetivo: ${cliente.objetivo}` },
-                { icon: CalendarIcon, text: `Próxima sesión: ${cliente.proximaCita}` },
-                { icon: Activity, text: `Progreso semanal: ${cliente.progreso}%` }
-              ]}
-              actionButton={{
-                icon: Dumbbell,
-                label: "Ver Plan Completo",
-                onClick: handleViewPlan
+              delay={0.8}
+              titleButton={!cliente.planningActivo ? {
+                icon: Plus,
+                label: "Añadir planificación",
+                onClick: handleCreatePlan,
+                className: "btn-success btn-sm"
+              } : {
+                icon: Eye,
+                label: "Ver planificación",
+                onClick: handleViewPlan,
+                className: "btn-primary btn-sm"
               }}
+              items={[
+                { 
+                  icon: Target,
+                  text: cliente.planningActivo ? (
+                    <div className="flex flex-col gap-1">
+                      <div className="flex gap-2">
+                        <span className="font-semibold">Plan actual:</span>
+                        <span>{cliente.planningActivo.nombre}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <span className="font-semibold">Meta:</span>
+                        <span>{cliente.planningActivo.meta}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <span className="font-semibold">Duración:</span>
+                        <span>{cliente.planningActivo.semanas} {cliente.planningActivo.semanas === 1 ? 'semana' : 'semanas'}</span>
+                      </div>
+                    </div>
+                  ) : 'Sin plan activo'
+                }
+              ]}
             />
 
             {/* Check-ins */}
             <InfoCard
               title="Check-ins Recientes"
               delay={0.7}
-              items={[
-                { icon: CalendarCheck, text: `Último check-in: ${cliente.ultimaVisita}` },
-                { icon: Scale, text: `Peso actual: ${cliente.peso}` },
-                { icon: TrendingUp, text: `Progreso mensual: ${cliente.progreso}%` },
-                { icon: Brain, text: "Estado anímico: Excelente" }
-              ]}
-              actionButton={{
+              items={
+                cliente.planActual ? [
+                  { icon: CalendarCheck, text: `Último check-in: ${cliente.ultimaVisita}` },
+                  { icon: Scale, text: `Peso actual: ${cliente.peso}` },
+                  { icon: TrendingUp, text: `Progreso mensual: ${cliente.progreso}%` },
+                  { icon: Brain, text: "Estado anímico: Excelente" }
+                ] : [
+                  { icon: Dumbbell, text: "Antes de registrar check-ins," },
+                  { icon: Target, text: "necesitas crear una planificación" },
+                  { icon: Activity, text: "deportiva para este cliente." }
+                ]
+              }
+              actionButton={cliente.planActual ? {
                 icon: Clipboard,
                 label: "Nuevo Check-in",
                 onClick: handleNewCheckin
-              }}
+              } : undefined}
             />
 
             {/* Plan Nutricional */}
             <InfoCard
               title="Plan Nutricional"
-              delay={0.8}
-              items={[
-                { icon: Apple, text: "Calorías diarias: 2200 kcal" },
-                { icon: Utensils, text: "Comidas: 5 al día" },
-                { icon: Coffee, text: "Último registro: Desayuno" },
-                { icon: Salad, text: "Adherencia: 90%" }
-              ]}
-              actionButton={{
-                icon: FileText,
-                label: "Ver Plan Nutricional",
-                onClick: handleDietPlan
+              delay={0.7}
+              titleButton={cliente.dietaActiva ? {
+                icon: Eye,
+                label: "Ver dieta",
+                onClick: handleViewDiet,
+                className: "btn-primary btn-sm"
+              } : {
+                icon: Plus,
+                label: "Añadir plan nutricional",
+                onClick: handleCreateDiet,
+                className: "btn-success btn-sm"
               }}
+              items={[
+                { 
+                  icon: Apple,
+                  text: cliente.dietaActiva ? (
+                    <div className="flex flex-col gap-1">
+                      <div className="flex gap-2">
+                        <span className="font-semibold">Plan actual:</span>
+                        <span>{cliente.dietaActiva.nombre}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <span className="font-semibold">Objetivo:</span>
+                        <span>{cliente.dietaActiva.objetivo}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <span className="font-semibold">Restricciones:</span>
+                        <span>{cliente.dietaActiva.restricciones}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <span className="font-semibold">Semana actual:</span>
+                        <span>{cliente.dietaActiva.semanas[0].idSemana}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-gray-500">Añade una dieta primero</span>
+                    </div>
+                  )
+                }
+              ]}
             />
 
             {/* Información Personal */}
@@ -257,10 +601,134 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
               title="Información Personal"
               delay={0.9}
               items={[
-                { icon: MapPin, text: cliente.direccion },
-                { icon: CalendarIcon, text: `Cliente desde: ${cliente.fechaInicio}` },
-                { icon: Clock, text: `Última visita: ${cliente.ultimaVisita}` },
-                { icon: Heart, text: `Estado: ${cliente.estado}` }
+                { 
+                  icon: MapPin, 
+                  text: editandoDireccion ? (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        placeholder="Calle *"
+                        className="input input-bordered w-full"
+                        value={direccionForm.calle}
+                        onChange={(e) => setDireccionForm({...direccionForm, calle: e.target.value})}
+                        required
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          placeholder="Número"
+                          className="input input-bordered"
+                          value={direccionForm.numero}
+                          onChange={(e) => setDireccionForm({...direccionForm, numero: e.target.value})}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Piso"
+                          className="input input-bordered"
+                          value={direccionForm.piso}
+                          onChange={(e) => setDireccionForm({...direccionForm, piso: e.target.value})}
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Código Postal"
+                        className="input input-bordered w-full"
+                        value={direccionForm.codigoPostal}
+                        onChange={(e) => setDireccionForm({...direccionForm, codigoPostal: e.target.value})}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Ciudad *"
+                        className="input input-bordered w-full"
+                        value={direccionForm.ciudad}
+                        onChange={(e) => setDireccionForm({...direccionForm, ciudad: e.target.value})}
+                        required
+                      />
+                      <input
+                        type="text"
+                        placeholder="Provincia *"
+                        className="input input-bordered w-full"
+                        value={direccionForm.provincia}
+                        onChange={(e) => setDireccionForm({...direccionForm, provincia: e.target.value})}
+                        required
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={handleUpdateDireccion}
+                          disabled={!direccionForm.calle || !direccionForm.ciudad || !direccionForm.provincia}
+                        >
+                          Guardar
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => setEditandoDireccion(false)}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center w-full">
+                      <div className="flex gap-2">
+                        <span className="font-semibold">Dirección:</span>
+                        <span>
+                          {cliente.direccion ? 
+                            `${cliente.direccion.calle}${cliente.direccion.numero ? ` ${cliente.direccion.numero}` : ''}${cliente.direccion.piso ? `, ${cliente.direccion.piso}` : ''}, 
+                             ${cliente.direccion.ciudad}, ${cliente.direccion.provincia}${cliente.direccion.codigoPostal ? ` (${cliente.direccion.codigoPostal})` : ''}` 
+                            : 'No especificada'}
+                        </span>
+                      </div>
+                      <button
+                        className="btn btn-ghost btn-xs"
+                        onClick={() => setEditandoDireccion(true)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )
+                },
+                { 
+                  icon: Activity, 
+                  text: editandoEstado ? (
+                    <div className="flex gap-2 items-center">
+                      <select
+                        className="select select-bordered select-sm"
+                        value={cliente?.estado}
+                        onChange={(e) => handleUpdateEstado(e.target.value as 'Activo' | 'Inactivo' | 'Pendiente' | 'Suspendido')}
+                      >
+                        {estadosPosibles.map(estado => (
+                          <option key={estado} value={estado}>{estado}</option>
+                        ))}
+                      </select>
+                      <button
+                        className="btn btn-ghost btn-xs"
+                        onClick={() => setEditandoEstado(false)}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">Estado:</span>
+                      <span className={`badge ${
+                        cliente?.estado === 'Activo' ? 'badge-success' :
+                        cliente?.estado === 'Inactivo' ? 'badge-error' :
+                        cliente?.estado === 'Pendiente' ? 'badge-warning' :
+                        cliente?.estado === 'Suspendido' ? 'badge-ghost' : ''
+                      }`}>
+                        {cliente?.estado || 'No especificado'}
+                      </span>
+                      <button
+                        className="btn btn-ghost btn-xs"
+                        onClick={() => setEditandoEstado(true)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )
+                },
+                { icon: CalendarIcon, text: `Cliente desde: ${formatearFecha(cliente.fechaRegistro)}` },
               ]}
             />
 
@@ -269,11 +737,94 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
               title="Información Física"
               delay={1.0}
               items={[
-                { icon: Ruler, text: `Altura: ${cliente.altura}` },
-                { icon: Scale, text: `Peso actual: ${cliente.peso}` },
-                { icon: Target, text: `IMC: ${cliente.imc}` },
-                { icon: Activity, text: "Nivel de actividad: Alto" }
+                { 
+                  icon: Ruler,
+                  text: editandoFisica ? (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          placeholder="Altura (cm)"
+                          className="input input-bordered w-full"
+                          value={datosForm.altura}
+                          onChange={(e) => setDatosForm({...datosForm, altura: e.target.value})}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          placeholder="Peso (kg)"
+                          className="input input-bordered w-full"
+                          value={datosForm.peso}
+                          onChange={(e) => setDatosForm({...datosForm, peso: e.target.value})}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <select
+                          className="select select-bordered w-full"
+                          value={datosForm.nivelActividad}
+                          onChange={(e) => setDatosForm({...datosForm, nivelActividad: e.target.value})}
+                        >
+                          <option value="Bajo">Bajo</option>
+                          <option value="Moderado">Moderado</option>
+                          <option value="Alto">Alto</option>
+                        </select>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={handleUpdateFisica}
+                        >
+                          Guardar
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => setEditandoFisica(false)}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center w-full">
+                      <span>Altura: {cliente.altura ? `${cliente.altura} cm` : 'No especificada'}</span>
+                      <button
+                        className="btn btn-ghost btn-xs"
+                        onClick={() => {
+                          setDatosForm({
+                            altura: cliente.altura || '',
+                            peso: cliente.peso || '',
+                            nivelActividad: cliente.nivelActividad || 'Moderado'
+                          });
+                          setEditandoFisica(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )
+                },
+                { 
+                  icon: Scale,
+                  text: editandoFisica ? null : (
+                    <span>Peso: {cliente.peso ? `${cliente.peso} kg` : 'No especificado'}</span>
+                  )
+                },
+                { 
+                  icon: Activity,
+                  text: editandoFisica ? null : (
+                    <span>Nivel de actividad: {cliente.nivelActividad || 'No especificado'}</span>
+                  )
+                }
               ]}
+            />
+
+            {/* Notas */}
+            <Notes
+              notes={cliente.notas}
+              onAddNote={handleAddNote}
+              onEditNote={handleEditNote}
+              onDeleteNote={handleDeleteNote}
             />
 
             {/* Finanzas y Pagos */}

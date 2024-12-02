@@ -29,6 +29,7 @@ import CommandAssister from './components/CommandAssister/CommandAssister';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useTheme } from './contexts/ThemeContext';
+import Reportesweb from './pages/Reportesweb';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -210,6 +211,14 @@ function AppContent() {
                 element={
                   <PrivateRoute>
                     <PageEdicionDieta />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/reportesweb"
+                element={
+                  <PrivateRoute>
+                    <Reportesweb />
                   </PrivateRoute>
                 }
               />

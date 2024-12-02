@@ -114,7 +114,11 @@ const DietList: React.FC = () => {
 
       const data = await response.json();
 
+      // Guardamos los datos completos de las dietas
+      const dietasCompletas = data;
+
       const filteredData = data.map((diet: any) => ({
+        _id: diet._id, // Aseguramos que el ID esté disponible
         nombre: diet.nombre,
         cliente: diet.cliente.nombre,
         fechaInicio: new Date(diet.fechaInicio).toLocaleDateString('es-ES'),
@@ -122,7 +126,10 @@ const DietList: React.FC = () => {
         restricciones: diet.restricciones,
         estado: diet.estado,
         acciones: (
-          <Link to={`/edit-diet/${diet._id}`}>
+          <Link 
+            to={`/edit-diet/${diet._id}`}
+            state={{ dietData: diet }} // Pasamos la dieta completa como state
+          >
             <button className="text-blue-500 hover:underline">Editar</button>
           </Link>
         ),

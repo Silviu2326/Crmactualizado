@@ -38,10 +38,17 @@ interface InfoCardProps {
     icon: LucideIcon;
     label: string;
     onClick: () => void;
+    className?: string;
+  };
+  titleButton?: {
+    icon: LucideIcon;
+    label: string;
+    onClick: () => void;
+    className?: string;
   };
 }
 
-const InfoCard: React.FC<InfoCardProps> = ({ title, items, delay = 0, actionButton }) => {
+const InfoCard: React.FC<InfoCardProps> = ({ title, items, delay = 0, actionButton, titleButton }) => {
   const { theme } = useTheme();
 
   return (
@@ -56,12 +63,24 @@ const InfoCard: React.FC<InfoCardProps> = ({ title, items, delay = 0, actionButt
         border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-100'}
       `}
     >
-      <h4 className={`
-        text-lg font-semibold mb-4 pb-2
+      <div className={`
+        flex justify-between items-center mb-4 pb-2
         border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}
       `}>
-        {title}
-      </h4>
+        <h4 className="text-lg font-semibold">
+          {title}
+        </h4>
+        {titleButton && (
+          <Button
+            variant="create"
+            onClick={titleButton.onClick}
+            className={`px-3 py-1.5 text-sm ${titleButton.className || 'bg-green-500 hover:bg-green-600 text-white'}`}
+          >
+            <titleButton.icon className="w-4 h-4 mr-2" />
+            <span>{titleButton.label}</span>
+          </Button>
+        )}
+      </div>
       <div className="space-y-4 mb-4">
         {items.map((item, index) => (
           <InfoItem key={index} icon={item.icon} text={item.text} />

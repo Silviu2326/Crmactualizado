@@ -21,6 +21,7 @@ import ProfilePage from './pages/ProfilePage';
 import AjustesPage from './pages/AjustesPage';
 import Publications from './pages/Publications';
 import EditPlanningPage from './pages/EditPlanningPage';
+import PlantillaPage from './components/Routines/PlantillaPage';
 import ClassesPage from './pages/ClassesPage';
 import PageEdicionDieta from './pages/PageEdicionDieta';
 import LoginPage from './pages/LoginPage';
@@ -203,6 +204,14 @@ function AppContent() {
                 element={
                   <PrivateRoute>
                     <EditPlanningPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/plantilla/:id"
+                element={
+                  <PrivateRoute>
+                    <PlantillaPage />
                   </PrivateRoute>
                 }
               />

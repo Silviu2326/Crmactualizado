@@ -47,6 +47,7 @@ const DashboardPage: React.FC = () => {
   const [clientesData, setClientesData] = useState<any[]>([]);
   const [ingresos, setIngresos] = useState<any[]>([]);
   const [gastos, setGastos] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,6 +65,30 @@ const DashboardPage: React.FC = () => {
         const headers = {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
+        };
+
+        // Función para obtener las alertas
+        const fetchAlerts = async () => {
+          try {
+            const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/economic-alerts', {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (!response.ok) {
+              throw new Error('Error en la petición de alertas');
+            }
+
+            const data = await response.json();
+            if (data.status === 'success') {
+              setAlerts(data.data.alerts);
+              console.log('✅ Alertas obtenidas exitosamente:', data.data.alerts);
+            }
+          } catch (error) {
+            console.error('❗️ Error al obtener las alertas:', error);
+          }
         };
 
         // Función para manejar la petición de clientes
@@ -96,6 +121,9 @@ const DashboardPage: React.FC = () => {
         const gastosResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos', { headers });
         const gastosData = await gastosResponse.json();
         setGastos(gastosData);
+
+        // Fetch alerts
+        await fetchAlerts();
 
         setLoading(false);
         console.log('✅ Finalizó la carga de datos del Dashboard.');
@@ -237,10 +265,9 @@ const DashboardPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <MetricCard
               title="Alertas"
-              value="3"
-              description="Alertas pendientes de revisión"
+              value={alerts.length.toString()}
+              description={`${alerts.length === 1 ? 'Alerta pendiente' : 'Alertas pendientes'} de revisión`}
               icon="AlertTriangle"
-              trend={-2.5}
             />
             <MetricCard
               title="Próximas Actividades"

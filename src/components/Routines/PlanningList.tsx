@@ -18,7 +18,7 @@ import {
 import Button from '../Common/Button';
 import Table from '../Common/Table';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import PopupCrearPlanificacion from './PopupCrearPlanificacion';
@@ -32,6 +32,7 @@ interface PlanningSchema {
   fechaInicio: string;
   meta: string;
   semanas: number;
+  tipo: 'Planificacion' | 'Plantilla';
   cliente: {
     _id: string;
     nombre: string;
@@ -44,12 +45,20 @@ interface PlanningSchema {
 
 const PlanningList: React.FC = () => {
   const { theme } = useTheme();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
   const [isFormulasModalOpen, setIsFormulasModalOpen] = useState(false);
   const [isEsqueletoModalOpen, setIsEsqueletoModalOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('todos');
+  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({
+    tipo: 'todos',
+    estado: 'todos',
+    meta: 'todos',
+    duracion: 'todos'
+  });
 
   // Estados para planificaciones, carga y errores
   const [planningData, setPlanningData] = useState<any[]>([]);
@@ -85,8 +94,20 @@ const PlanningList: React.FC = () => {
   ];
 
   // Función para renderizar las celdas de la tabla
-  const renderCell = (key: string, value: any, item?: any) => {
+  const renderCell = (key: string, value: any, item: any) => {
     switch (key) {
+      case 'tipo':
+        return (
+          <span
+            className={`px-3 py-1 rounded-full text-sm font-medium ${
+              value === 'Planificacion'
+                ? 'bg-emerald-100 text-emerald-800'
+                : 'bg-indigo-100 text-indigo-800'
+            }`}
+          >
+            {value}
+          </span>
+        );
       case 'meta':
         return (
           <span
@@ -149,12 +170,22 @@ const PlanningList: React.FC = () => {
         );
       case 'acciones':
         return (
-          <Link to={`/edit-planning/${item?._id}`}>
-            <Button variant="normal" className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => {
+                if (item.tipo === 'Plantilla') {
+                  navigate(`/plantilla/${item._id}`);
+                } else {
+                  navigate(`/edit-planning/${item._id}`);
+                }
+              }}
+              className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                theme === 'dark' ? 'text-white' : 'text-gray-600'
+              }`}
+            >
               <Edit className="w-4 h-4" />
-              <span>Editar</span>
-            </Button>
-          </Link>
+            </button>
+          </div>
         );
       default:
         return value;
@@ -191,16 +222,17 @@ const PlanningList: React.FC = () => {
       // Procesa los datos según necesites
       const filteredData = data.map((planning) => {
         return {
+          _id: planning._id,
           nombre: planning.nombre,
           descripcion: planning.descripcion,
-          duracion: `${planning.semanas} semana${planning.semanas > 1 ? 's' : ''}`,
-          fechaInicio: new Date(planning.fechaInicio).toLocaleDateString('es-ES'),
+          duracion: `${planning.semanas} semanas`,
+          fechaInicio: new Date(planning.fechaInicio).toLocaleDateString(),
           meta: planning.meta,
+          tipo: planning.tipo || 'Planificacion', // Valor por defecto
           clientesAsociados: 1, // Ajusta según tus datos
           estado: 'En progreso', // Ajusta según tus datos
           completado: '65%', // Ajusta según tus datos
-          acciones: 'Editar',
-          _id: planning._id,
+          acciones: 'Editar'
         };
       });
 
@@ -322,10 +354,201 @@ const PlanningList: React.FC = () => {
           />
           <Search className="absolute right-3 top-3 text-gray-400" />
         </div>
-        <Button variant="filter">
-          <Filter className="w-5 h-5 mr-2" />
-          Filtros
-        </Button>
+        <div className="relative">
+          <Button 
+            variant="filter" 
+            onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
+            className="relative"
+          >
+            <Filter className="w-5 h-5 mr-2" />
+            Filtros
+            {activeFilters.tipo !== 'todos' || activeFilters.estado !== 'todos' || activeFilters.meta !== 'todos' || activeFilters.duracion !== 'todos' ? (
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full" />
+            ) : null}
+          </Button>
+          
+          {isFilterDropdownOpen && (
+            <div className={`absolute right-0 mt-2 w-64 rounded-md shadow-lg ${
+              theme === 'dark' ? 'bg-gray-700' : 'bg-white'
+            } ring-1 ring-black ring-opacity-5 z-50`}>
+              <div className="py-1" role="menu" aria-orientation="vertical">
+                {/* Filtro por Tipo */}
+                <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                  Tipo de Planificación
+                </div>
+                <button
+                  className={`${
+                    theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
+                  } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.tipo === 'todos' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
+                  onClick={() => {
+                    setActiveFilters(prev => ({ ...prev, tipo: 'todos' }));
+                  }}
+                >
+                  Todos
+                </button>
+                <button
+                  className={`${
+                    theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
+                  } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.tipo === 'planificacion' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
+                  onClick={() => {
+                    setActiveFilters(prev => ({ ...prev, tipo: 'planificacion' }));
+                  }}
+                >
+                  Planificación
+                </button>
+                <button
+                  className={`${
+                    theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
+                  } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.tipo === 'plantilla' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
+                  onClick={() => {
+                    setActiveFilters(prev => ({ ...prev, tipo: 'plantilla' }));
+                  }}
+                >
+                  Plantilla
+                </button>
+
+                {/* Filtro por Estado */}
+                <div className="border-t border-gray-200 dark:border-gray-600 mt-2">
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    Estado
+                  </div>
+                  <button
+                    className={`${
+                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
+                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.estado === 'todos' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
+                    onClick={() => {
+                      setActiveFilters(prev => ({ ...prev, estado: 'todos' }));
+                    }}
+                  >
+                    Todos
+                  </button>
+                  <button
+                    className={`${
+                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
+                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.estado === 'activo' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
+                    onClick={() => {
+                      setActiveFilters(prev => ({ ...prev, estado: 'activo' }));
+                    }}
+                  >
+                    Activo
+                  </button>
+                  <button
+                    className={`${
+                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
+                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.estado === 'completado' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
+                    onClick={() => {
+                      setActiveFilters(prev => ({ ...prev, estado: 'completado' }));
+                    }}
+                  >
+                    Completado
+                  </button>
+                </div>
+
+                {/* Filtro por Meta */}
+                <div className="border-t border-gray-200 dark:border-gray-600 mt-2">
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    Meta
+                  </div>
+                  <button
+                    className={`${
+                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
+                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.meta === 'todos' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
+                    onClick={() => {
+                      setActiveFilters(prev => ({ ...prev, meta: 'todos' }));
+                    }}
+                  >
+                    Todas
+                  </button>
+                  <button
+                    className={`${
+                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
+                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.meta === 'fuerza' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
+                    onClick={() => {
+                      setActiveFilters(prev => ({ ...prev, meta: 'fuerza' }));
+                    }}
+                  >
+                    Aumentar Fuerza
+                  </button>
+                  <button
+                    className={`${
+                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
+                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.meta === 'peso' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
+                    onClick={() => {
+                      setActiveFilters(prev => ({ ...prev, meta: 'peso' }));
+                    }}
+                  >
+                    Pérdida de Peso
+                  </button>
+                </div>
+
+                {/* Filtro por Duración */}
+                <div className="border-t border-gray-200 dark:border-gray-600 mt-2">
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    Duración
+                  </div>
+                  <button
+                    className={`${
+                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
+                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.duracion === 'todos' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
+                    onClick={() => {
+                      setActiveFilters(prev => ({ ...prev, duracion: 'todos' }));
+                    }}
+                  >
+                    Todas
+                  </button>
+                  <button
+                    className={`${
+                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
+                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.duracion === 'corta' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
+                    onClick={() => {
+                      setActiveFilters(prev => ({ ...prev, duracion: 'corta' }));
+                    }}
+                  >
+                    1-4 Semanas
+                  </button>
+                  <button
+                    className={`${
+                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
+                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.duracion === 'media' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
+                    onClick={() => {
+                      setActiveFilters(prev => ({ ...prev, duracion: 'media' }));
+                    }}
+                  >
+                    5-12 Semanas
+                  </button>
+                  <button
+                    className={`${
+                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
+                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.duracion === 'larga' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
+                    onClick={() => {
+                      setActiveFilters(prev => ({ ...prev, duracion: 'larga' }));
+                    }}
+                  >
+                    +12 Semanas
+                  </button>
+                </div>
+
+                {/* Botón para limpiar filtros */}
+                <div className="border-t border-gray-200 dark:border-gray-600 mt-2 p-2">
+                  <button
+                    className="w-full px-4 py-2 text-sm text-center text-white bg-blue-500 hover:bg-blue-600 rounded-md"
+                    onClick={() => {
+                      setActiveFilters({
+                        tipo: 'todos',
+                        estado: 'todos',
+                        meta: 'todos',
+                        duracion: 'todos'
+                      });
+                      setIsFilterDropdownOpen(false);
+                    }}
+                  >
+                    Limpiar Filtros
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </motion.div>
 
       {/* Manejo de estados de carga y error */}
@@ -352,6 +575,7 @@ const PlanningList: React.FC = () => {
               'Duración',
               'Fecha de Inicio',
               'Meta',
+              'Tipo',
               'Clientes',
               'Estado',
               'Completado',
@@ -359,23 +583,44 @@ const PlanningList: React.FC = () => {
             ]}
             data={planningData
               .filter((item) => {
-                if (searchTerm === '') return true;
-                // Filtrar por los campos relevantes
-                return (
+                // Aplicar filtro de búsqueda
+                const matchesSearch = searchTerm === '' || 
                   item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
                   item.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
                   item.meta.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  item.estado.toLowerCase().includes(searchTerm.toLowerCase())
-                );
+                  item.estado.toLowerCase().includes(searchTerm.toLowerCase());
+
+                // Aplicar filtros múltiples
+                const matchesTipo = activeFilters.tipo === 'todos' || 
+                  (activeFilters.tipo === 'planificacion' && item.tipo === 'Planificacion') ||
+                  (activeFilters.tipo === 'plantilla' && item.tipo === 'Plantilla');
+
+                const matchesEstado = activeFilters.estado === 'todos' || 
+                  item.estado.toLowerCase() === activeFilters.estado;
+
+                const matchesMeta = activeFilters.meta === 'todos' || 
+                  (activeFilters.meta === 'fuerza' && item.meta.toLowerCase().includes('fuerza')) ||
+                  (activeFilters.meta === 'peso' && item.meta.toLowerCase().includes('peso'));
+
+                const semanas = parseInt(item.duracion);
+                const matchesDuracion = activeFilters.duracion === 'todos' || 
+                  (activeFilters.duracion === 'corta' && semanas <= 4) ||
+                  (activeFilters.duracion === 'media' && semanas > 4 && semanas <= 12) ||
+                  (activeFilters.duracion === 'larga' && semanas > 12);
+
+                return matchesSearch && matchesTipo && matchesEstado && matchesMeta && matchesDuracion;
               })
               .map((item) => ({
-                ...item,
-                ...Object.fromEntries(
-                  Object.entries(item).map(([key, value]) => [
-                    key,
-                    renderCell(key, value, item),
-                  ])
-                ),
+                nombre: item.nombre,
+                descripcion: item.descripcion,
+                duracion: item.duracion,
+                fechaInicio: item.fechaInicio,
+                meta: item.meta,
+                tipo: renderCell('tipo', item.tipo, item),
+                clientesAsociados: renderCell('clientesAsociados', item.clientesAsociados, item),
+                estado: renderCell('estado', item.estado, item),
+                completado: renderCell('completado', item.completado, item),
+                acciones: renderCell('acciones', item.acciones, { ...item, _id: item._id }),
               }))}
             variant={theme === 'dark' ? 'dark' : 'white'}
           />

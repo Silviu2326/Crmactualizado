@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Plus, Calendar, AlertCircle, XCircle, Search } from 'lucide-react';
+import { Plus, Calendar, AlertCircle, XCircle, Search, Trash2 } from 'lucide-react';
 import Button from '../Common/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 import ExerciseSelector from './ExerciseSelector';
@@ -26,14 +26,16 @@ const trainingStatus = {
 
 // Definición de interfaces
 interface Exercise {
-  id: string;
+  _id: string;
   name: string;
   sets: Set[];
 }
 
 interface Session {
-  id: string;
+  _id?: string;
   name: string;
+  tipo: 'Normal' | 'Superset';
+  rondas?: number;
   exercises: Exercise[];
 }
 
@@ -50,22 +52,32 @@ interface VistaComplejaProps {
   semanaActual: number;
   planSemanal: WeekPlan;
   updatePlan: (plan: WeekPlan) => void;
+  onReload?: () => void;
+  planningId: string; // Añadiendo planningId como prop
 }
 
 const VistaCompleja: React.FC<VistaComplejaProps> = ({
   semanaActual,
   planSemanal,
   updatePlan,
+  onReload,
+  planningId, // Recibiendo planningId
 }) => {
   const { theme } = useTheme();
   const [diaSeleccionado, setDiaSeleccionado] = useState('Lunes');
   const [filtro, setFiltro] = useState('');
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
-  const [selectedSessionInfo, setSelectedSessionInfo] = useState<{
-    dia: string;
-    sessionId: string;
-  } | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<0 | 1 | 2 | 3>(0);
+
+  const [showSessionPopup, setShowSessionPopup] = useState(false);
+  const [sessionName, setSessionName] = useState('');
+  const [sessionType, setSessionType] = useState<'Normal' | 'Superset'>('Normal');
+  const [sessionRounds, setSessionRounds] = useState<number | undefined>(undefined);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
 
   const dias = [
     'Lunes',
@@ -234,87 +246,108 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
     }
   };
 
-  // Función para manejar la adición de una nueva sesión
-  const handleAddSession = (dia: string) => {
-    const newSession: Session = {
-      id: `session-${Date.now()}`,
-      name: 'Nueva Sesión',
-      exercises: [],
-    };
-    const updatedPlan: WeekPlan = {
-      ...planSemanal,
-      [dia]: {
-        ...planSemanal[dia],
-        sessions: [...planSemanal[dia].sessions, newSession],
-      },
-    };
-    updatePlan(updatedPlan);
+  const handleAddSession = async (dia: string) => {
+    console.log('🚀 Iniciando creación de sesión para el día:', dia);
+    setShowSessionPopup(true);
   };
 
-  // Función para manejar la eliminación de una sesión
-  const handleDeleteSession = (dia: string, sessionId: string) => {
-    const updatedPlan: WeekPlan = {
-      ...planSemanal,
-      [dia]: {
-        ...planSemanal[dia],
-        sessions: planSemanal[dia].sessions.filter(
-          (session) => session.id !== sessionId
-        ),
-      },
-    };
-    updatePlan(updatedPlan);
+  const handleCreateSession = async () => {
+    try {
+      if (!sessionName.trim()) {
+        console.error('El nombre de la sesión es requerido');
+        return;
+      }
+
+      console.log('Creando nueva sesión:', {
+        name: sessionName,
+        tipo: sessionType,
+        rondas: sessionType === 'Superset' ? sessionRounds : undefined
+      });
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const sessionData = {
+        planningId: planningId,
+        weekNumber: semanaActual,
+        day: diaSeleccionado,
+        sessionData: {
+          name: sessionName.trim(),
+          tipo: sessionType,
+          rondas: sessionType === 'Superset' ? sessionRounds : undefined
+        }
+      };
+
+      console.log('Creando sesión:', sessionData);
+
+      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(sessionData),
+      });
+
+      console.log('Respuesta del servidor:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.mensaje || 'Error al crear la sesión');
+      }
+
+      const data = await response.json();
+      console.log('Sesión creada:', data);
+
+      // Limpiar el formulario
+      setSessionName('');
+      setSessionType('Normal');
+      setSessionRounds(undefined);
+      setShowSessionPopup(false);
+
+      // Recargar los datos
+      if (onReload) {
+        onReload();
+      }
+
+    } catch (error) {
+      console.error('Error al crear la sesión:', error);
+    } finally {
+      setIsCreatingSession(false);
+    }
   };
 
   // Función para manejar la adición de un ejercicio
   const handleAddExercise = (dia: string, sessionId: string) => {
-    setSelectedSessionInfo({ dia, sessionId });
+    console.log('Añadiendo ejercicio a la sesión:', sessionId);
     setShowExerciseSelector(true);
+    setSelectedSessionId(sessionId);
   };
 
   // Función para manejar la selección de un ejercicio desde el selector
-  const handleSelectExercise = (exerciseTemplate: PredefinedExercise) => {
-    if (!selectedSessionInfo) return;
-
-    const { dia, sessionId } = selectedSessionInfo;
-    const currentVariant = selectedVariant;
-
-    const variantInfo = trainingVariants[currentVariant];
-    const requiredSetCount = variantInfo.setCount;
-
-    // Copiar las series por defecto del ejercicio
-    let initialSets = [...exerciseTemplate.defaultSets];
-
-    // Si el número de sets por defecto es menor que el requerido, añadir sets adicionales
-    while (initialSets.length < requiredSetCount) {
-      initialSets.push({ reps: 0, weight: 0, rest: 60 }); // Valores por defecto para series adicionales
+  const handleSelectExercise = (exercise: PredefinedExercise) => {
+    console.log('Ejercicio seleccionado:', exercise);
+    if (!selectedSessionId) {
+      console.error('No hay sesión seleccionada');
+      return;
     }
 
-    // Aplicar el setModifier de la variante
-    const modifiedSets = variantInfo.setModifier(
-      initialSets,
-      exerciseTemplate.name
-    );
-
-    // Asegurarse de que solo se incluyen las series requeridas
-    const finalSets = modifiedSets.slice(0, requiredSetCount);
-
     const newExercise: Exercise = {
-      id: `exercise-${Date.now()}`,
-      name: exerciseTemplate.name,
-      sets: finalSets.map((set) => ({
-        id: `set-${Date.now()}-${Math.random()}`,
-        reps: set.reps,
-        weight: set.weight,
-        rest: set.rest,
-      })),
+      _id: exercise._id || Math.random().toString(),
+      name: exercise.name,
+      sets: []
     };
+
+    console.log('Actualizando sesión:', selectedSessionId, 'con ejercicio:', newExercise);
 
     const updatedPlan: WeekPlan = {
       ...planSemanal,
-      [dia]: {
-        ...planSemanal[dia],
-        sessions: planSemanal[dia].sessions.map((session) =>
-          session.id === sessionId
+      [diaSeleccionado]: {
+        ...planSemanal[diaSeleccionado],
+        sessions: planSemanal[diaSeleccionado].sessions.map((session) =>
+          session._id === selectedSessionId
             ? { ...session, exercises: [...session.exercises, newExercise] }
             : session
         ),
@@ -322,6 +355,7 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
     };
 
     updatePlan(updatedPlan);
+    setShowExerciseSelector(false);
   };
 
   // Función para filtrar las sesiones según el criterio
@@ -334,6 +368,67 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
           exercise.name.toLowerCase().includes(filtro.toLowerCase())
         )
     );
+  };
+
+  const handleDeleteSession = async (sessionId: string) => {
+    console.log('Iniciando eliminación de sesión:', sessionId);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('No se encontró token de autenticación');
+        throw new Error('No se encontró el token de autenticación');
+      }
+      console.log('Token encontrado, procediendo con la eliminación');
+
+      const url = `https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/session/${sessionId}`;
+      console.log('URL de eliminación:', url);
+
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      console.log('Respuesta del servidor:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.log('Error del servidor:', errorData);
+        throw new Error(errorData.mensaje || 'Error al eliminar la sesión');
+      }
+
+      const data = await response.json();
+      console.log('Datos de la sesión eliminada:', data);
+      
+      // Cerrar el modal
+      setIsDeleteModalOpen(false);
+      setSessionToDelete(null);
+      console.log('Modal cerrado y estado limpiado');
+      
+      // Recargar los datos
+      if (onReload) {
+        console.log('Iniciando recarga de datos');
+        onReload();
+      } else {
+        console.log('No hay función onReload disponible');
+      }
+      
+    } catch (error) {
+      console.error('Error detallado al eliminar la sesión:', error);
+      console.error('Tipo de error:', error instanceof Error ? 'Error nativo' : typeof error);
+      if (error instanceof Error) {
+        console.error('Mensaje de error:', error.message);
+        console.error('Stack trace:', error.stack);
+      }
+    }
+  };
+
+  const openDeleteModal = (sessionId: string) => {
+    console.log('Abriendo modal de eliminación para sesión:', sessionId);
+    setSessionToDelete(sessionId);
+    setIsDeleteModalOpen(true);
   };
 
   return (
@@ -462,14 +557,14 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
             <div className="space-y-4">
               {filteredSessions(diaSeleccionado).map((session) => (
                 <SesionEntrenamiento
-                  key={session.id}
+                  key={session._id}
                   session={session}
                   diaSeleccionado={diaSeleccionado}
                   onDeleteSession={() =>
-                    handleDeleteSession(diaSeleccionado, session.id)
+                    openDeleteModal(session._id)
                   }
                   onAddExercise={() =>
-                    handleAddExercise(diaSeleccionado, session.id)
+                    handleAddExercise(diaSeleccionado, session._id)
                   }
                   planSemanal={planSemanal}
                   updatePlan={updatePlan}
@@ -487,6 +582,100 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* Popup para crear nueva sesión */}
+      {showSessionPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} p-6 rounded-lg shadow-lg max-w-md w-full`}>
+            <h3 className="text-lg font-semibold mb-4">Crear Nueva Sesión</h3>
+            
+            {/* Nombre de la sesión */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">Nombre de la sesión</label>
+              <input
+                type="text"
+                value={sessionName}
+                onChange={(e) => setSessionName(e.target.value)}
+                className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'} focus:ring-2 focus:ring-blue-500`}
+                placeholder="Nombre de la sesión"
+              />
+            </div>
+
+            {/* Tipo de sesión */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">Tipo de sesión</label>
+              <select
+                value={sessionType}
+                onChange={(e) => setSessionType(e.target.value as 'Normal' | 'Superset')}
+                className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'} focus:ring-2 focus:ring-blue-500`}
+              >
+                <option value="Normal">Normal</option>
+                <option value="Superset">Superset</option>
+              </select>
+            </div>
+
+            {/* Número de rondas (opcional) */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">
+                Número de rondas (opcional)
+              </label>
+              <input
+                type="number"
+                value={sessionRounds || ''}
+                onChange={(e) => {
+                  const value = e.target.value ? parseInt(e.target.value) : undefined;
+                  if (value === undefined || value >= 1) {
+                    setSessionRounds(value);
+                  }
+                }}
+                min="1"
+                className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'} focus:ring-2 focus:ring-blue-500`}
+                placeholder="Número de rondas"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowSessionPopup(false)}
+                className={`px-4 py-2 rounded ${theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}`}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCreateSession}
+                disabled={isCreatingSession || !sessionName.trim()}
+                className={`px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {isCreatingSession ? 'Creando...' : 'Crear'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación para eliminar */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} p-6 rounded-lg shadow-lg`}>
+            <h3 className="text-lg font-semibold mb-4">¿Estás seguro de que deseas eliminar esta sesión?</h3>
+            <p className="mb-4">Esta acción no se puede deshacer.</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className={`px-4 py-2 rounded ${theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}`}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => sessionToDelete && handleDeleteSession(sessionToDelete)}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

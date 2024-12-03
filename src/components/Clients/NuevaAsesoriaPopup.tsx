@@ -10,12 +10,21 @@ interface NuevaAsesoriaPopupProps {
   isDarkMode: boolean;
 }
 
+interface FormData {
+  nombre: string;
+  descripcion: string;
+  duracion: string;
+  precio: string;
+  serviciosAdicionales: string[];
+}
+
 const NuevaAsesoriaPopup: React.FC<NuevaAsesoriaPopupProps> = ({ isOpen, onClose, onAdd, isDarkMode }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     nombre: '',
     descripcion: '',
     duracion: '',
     precio: '',
+    serviciosAdicionales: []
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -24,6 +33,15 @@ const NuevaAsesoriaPopup: React.FC<NuevaAsesoriaPopupProps> = ({ isOpen, onClose
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleServicioAdicionalChange = (servicio: string) => {
+    setFormData(prev => {
+      const servicios = prev.serviciosAdicionales.includes(servicio)
+        ? prev.serviciosAdicionales.filter(s => s !== servicio)
+        : [...prev.serviciosAdicionales, servicio];
+      return { ...prev, serviciosAdicionales: servicios };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -159,6 +177,32 @@ const NuevaAsesoriaPopup: React.FC<NuevaAsesoriaPopupProps> = ({ isOpen, onClose
                     isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
                   } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
                 />
+              </div>
+
+              {/* Servicios Adicionales */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Servicios Adicionales
+                </label>
+                <div className="mt-2 space-y-2">
+                  {['Pack de Citas', 'Planificacion', 'Dietas'].map((servicio) => (
+                    <div key={servicio} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={servicio}
+                        checked={formData.serviciosAdicionales.includes(servicio)}
+                        onChange={() => handleServicioAdicionalChange(servicio)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label
+                        htmlFor={servicio}
+                        className="ml-2 block text-sm text-gray-900 dark:text-gray-200"
+                      >
+                        {servicio}
+                      </label>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="flex justify-end space-x-2">

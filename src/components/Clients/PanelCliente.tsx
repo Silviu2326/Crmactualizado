@@ -8,7 +8,8 @@ import {
   Clipboard, CalendarCheck, Ruler, Brain,
   Wallet, Receipt, TrendingUp, FileText,
   LayoutDashboard, Users, BarChart,
-  Apple, Coffee, Utensils, Salad, Plus, Edit2, Pencil, X, Eye
+  Apple, Coffee, Utensils, Salad, Plus, Edit2, Pencil, X, Eye,
+  AlertCircle
 } from 'lucide-react';
 import Button from '../Common/Button';
 import InfoCard from './InfoCard';
@@ -16,8 +17,12 @@ import Notes from './Notes';
 import ClientCalendar from './Calendar';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import PanelPlan from './PanelPlan';
+import PanelCheckins from './PanelCheckins';
+import PanelFinanzas from './PanelFinanzas';
+import PanelDietas from './PanelDietas';
 
-type Section = 'dashboard' | 'plan' | 'checkins' | 'personal' | 'finances';
+type Section = 'dashboard' | 'plan' | 'checkins' | 'dietas' | 'finances';
 
 interface Nota {
   texto: string;
@@ -179,27 +184,95 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
     fetchCliente();
   }, [clienteId]);
 
-  const handleViewPlan = () => {
-    if (cliente?.planningActivo?._id) {
-      navigate(`/edit-planning/${cliente.planningActivo._id}`);
-    }
-  };
-
-  const handleNewCheckin = () => {
-    console.log('Nuevo check-in');
-  };
-
-  const handlePayment = () => {
-    console.log('Procesar pago');
-  };
-
-  const handleDietPlan = () => {
-    console.log('Ver plan nutricional');
-  };
-
+  // Handlers
   const handleCreatePlan = () => {
     // Aquí implementaremos la lógica para crear un nuevo plan
     console.log('Crear nuevo plan para el cliente:', cliente?._id);
+  };
+
+  const handleViewPlan = () => {
+    // Aquí implementaremos la lógica para ver un plan
+    console.log('Ver plan para el cliente:', cliente?._id);
+  };
+
+  const handleNewCheckin = () => {
+    // Aquí implementaremos la lógica para un nuevo check-in
+    console.log('Nuevo check-in para el cliente:', cliente?._id);
+  };
+
+  const handleCreateDiet = () => {
+    // Aquí implementaremos la lógica para crear una nueva dieta
+    console.log('Crear nueva dieta para el cliente:', cliente?._id);
+  };
+
+  const handleViewDiet = () => {
+    // Aquí implementaremos la lógica para ver una dieta
+    console.log('Ver dieta para el cliente:', cliente?._id);
+  };
+
+  const handleNewPayment = () => {
+    // Aquí implementaremos la lógica para un nuevo pago
+    console.log('Nuevo pago para el cliente:', cliente?._id);
+  };
+
+  const handleAddNote = async (note: Omit<Nota, '_id'>) => {
+    try {
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+
+      const response = await axios.post(`${API_URL}/clientes/${clienteId}/notas`, note, config);
+      // Usar directamente la nota del backend
+      const nuevaNota = response.data.data;
+      
+      setCliente(prevCliente => ({
+        ...prevCliente!,
+        notas: [nuevaNota, ...prevCliente!.notas]
+      }));
+    } catch (error) {
+      console.error('Error al agregar nota:', error);
+    }
+  };
+
+  const handleEditNote = async (id: string, note: Partial<Nota>) => {
+    try {
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+
+      await axios.put(`${API_URL}/clientes/${clienteId}/notas/${id}`, note, config);
+      setCliente(prevCliente => ({
+        ...prevCliente!,
+        notas: prevCliente!.notas.map(n => n._id === id ? { ...n, ...note } : n)
+      }));
+    } catch (error) {
+      console.error('Error al editar nota:', error);
+    }
+  };
+
+  const handleDeleteNote = async (id: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+
+      await axios.delete(`${API_URL}/clientes/${clienteId}/notas/${id}`, config);
+      setCliente(prevCliente => ({
+        ...prevCliente!,
+        notas: prevCliente!.notas.filter(n => n._id !== id)
+      }));
+    } catch (error) {
+      console.error('Error al eliminar nota:', error);
+    }
   };
 
   const handleUpdateFisica = async () => {
@@ -281,22 +354,11 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
     }
   };
 
-  const handleViewDiet = () => {
-    if (cliente?.dietaActiva?._id) {
-      navigate(`/edit-diet/${cliente.dietaActiva._id}`);
-    }
-  };
-
-  const handleCreateDiet = () => {
-    // Aquí implementaremos la lógica para crear una nueva dieta
-    console.log('Crear nueva dieta para el cliente:', cliente?._id);
-  };
-
   const navigationButtons = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'plan', icon: Dumbbell, label: 'Plan' },
     { id: 'checkins', icon: BarChart, label: 'Check-ins' },
-    { id: 'personal', icon: Users, label: 'Personal' },
+    { id: 'dietas', icon: Utensils, label: 'Dietas' },
     { id: 'finances', icon: Wallet, label: 'Finanzas' },
   ];
 
@@ -316,66 +378,6 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
     } catch (error) {
       console.error('Error al formatear fecha:', error);
       return 'Fecha inválida';
-    }
-  };
-
-  const handleAddNote = async (note: Omit<Nota, '_id'>) => {
-    try {
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      };
-
-      const response = await axios.post(`${API_URL}/clientes/${clienteId}/notas`, note, config);
-      // Usar directamente la nota del backend
-      const nuevaNota = response.data.data;
-      
-      setCliente(prevCliente => ({
-        ...prevCliente!,
-        notas: [nuevaNota, ...prevCliente!.notas]
-      }));
-    } catch (error) {
-      console.error('Error al agregar nota:', error);
-    }
-  };
-
-  const handleEditNote = async (id: string, note: Partial<Nota>) => {
-    try {
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      };
-
-      await axios.put(`${API_URL}/clientes/${clienteId}/notas/${id}`, note, config);
-      setCliente(prevCliente => ({
-        ...prevCliente!,
-        notas: prevCliente!.notas.map(n => n._id === id ? { ...n, ...note } : n)
-      }));
-    } catch (error) {
-      console.error('Error al editar nota:', error);
-    }
-  };
-
-  const handleDeleteNote = async (id: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      };
-
-      await axios.delete(`${API_URL}/clientes/${clienteId}/notas/${id}`, config);
-      setCliente(prevCliente => ({
-        ...prevCliente!,
-        notas: prevCliente!.notas.filter(n => n._id !== id)
-      }));
-    } catch (error) {
-      console.error('Error al eliminar nota:', error);
     }
   };
 
@@ -489,369 +491,148 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
 
           {/* Contenido Principal */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Planificación Deportiva */}
-            <InfoCard
-              title="Planificación Deportiva"
-              delay={0.8}
-              titleButton={!cliente.planningActivo ? {
-                icon: Plus,
-                label: "Añadir planificación",
-                onClick: handleCreatePlan,
-                className: "btn-success btn-sm"
-              } : {
-                icon: Eye,
-                label: "Ver planificación",
-                onClick: handleViewPlan,
-                className: "btn-primary btn-sm"
-              }}
-              items={[
-                { 
-                  icon: Target,
-                  text: cliente.planningActivo ? (
-                    <div className="flex flex-col gap-1">
-                      <div className="flex gap-2">
-                        <span className="font-semibold">Plan actual:</span>
-                        <span>{cliente.planningActivo.nombre}</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <span className="font-semibold">Meta:</span>
-                        <span>{cliente.planningActivo.meta}</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <span className="font-semibold">Duración:</span>
-                        <span>{cliente.planningActivo.semanas} {cliente.planningActivo.semanas === 1 ? 'semana' : 'semanas'}</span>
-                      </div>
-                    </div>
-                  ) : 'Sin plan activo'
-                }
-              ]}
-            />
+            {activeSection === 'dashboard' ? (
+              <>
+                {/* Planificación Deportiva */}
+                <InfoCard
+                  title="Planificación Deportiva"
+                  delay={0.8}
+                  titleButton={!cliente.planningActivo ? {
+                    icon: Plus,
+                    label: "Añadir planificación",
+                    onClick: handleCreatePlan,
+                    className: "btn-success btn-sm"
+                  } : {
+                    icon: Eye,
+                    label: "Ver planificación",
+                    onClick: handleViewPlan,
+                    className: "btn-primary btn-sm"
+                  }}
+                  items={[
+                    { 
+                      icon: Target,
+                      text: cliente.planningActivo ? (
+                        <div className="flex flex-col gap-1">
+                          <div className="flex gap-2">
+                            <span className="font-semibold">Plan actual:</span>
+                            <span>{cliente.planningActivo.nombre}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="font-semibold">Meta:</span>
+                            <span>{cliente.planningActivo.meta}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="font-semibold">Duración:</span>
+                            <span>{cliente.planningActivo.semanas} {cliente.planningActivo.semanas === 1 ? 'semana' : 'semanas'}</span>
+                          </div>
+                        </div>
+                      ) : 'Sin plan activo'
+                    }
+                  ]}
+                />
 
-            {/* Check-ins */}
-            <InfoCard
-              title="Check-ins Recientes"
-              delay={0.7}
-              items={
-                cliente.planActual ? [
-                  { icon: CalendarCheck, text: `Último check-in: ${cliente.ultimaVisita}` },
-                  { icon: Scale, text: `Peso actual: ${cliente.peso}` },
-                  { icon: TrendingUp, text: `Progreso mensual: ${cliente.progreso}%` },
-                  { icon: Brain, text: "Estado anímico: Excelente" }
-                ] : [
-                  { icon: Dumbbell, text: "Antes de registrar check-ins," },
-                  { icon: Target, text: "necesitas crear una planificación" },
-                  { icon: Activity, text: "deportiva para este cliente." }
-                ]
-              }
-              actionButton={cliente.planActual ? {
-                icon: Clipboard,
-                label: "Nuevo Check-in",
-                onClick: handleNewCheckin
-              } : undefined}
-            />
+                {/* Check-ins */}
+                <InfoCard
+                  title="Check-ins Recientes"
+                  delay={0.7}
+                  items={
+                    cliente.planActual ? [
+                      { icon: CalendarCheck, text: `Último check-in: ${cliente.ultimaVisita}` },
+                      { icon: Scale, text: `Peso actual: ${cliente.peso}` },
+                      { icon: TrendingUp, text: `Progreso mensual: ${cliente.progreso}%` },
+                      { icon: Brain, text: "Estado anímico: Excelente" }
+                    ] : [
+                      { icon: Dumbbell, text: "Antes de registrar check-ins," },
+                      { icon: Target, text: "necesitas crear una planificación" },
+                      { icon: Activity, text: "deportiva para este cliente." }
+                    ]
+                  }
+                  actionButton={cliente.planActual ? {
+                    icon: Clipboard,
+                    label: "Nuevo Check-in",
+                    onClick: handleNewCheckin
+                  } : undefined}
+                />
 
-            {/* Plan Nutricional */}
-            <InfoCard
-              title="Plan Nutricional"
-              delay={0.7}
-              titleButton={cliente.dietaActiva ? {
-                icon: Eye,
-                label: "Ver dieta",
-                onClick: handleViewDiet,
-                className: "btn-primary btn-sm"
-              } : {
-                icon: Plus,
-                label: "Añadir plan nutricional",
-                onClick: handleCreateDiet,
-                className: "btn-success btn-sm"
-              }}
-              items={[
-                { 
-                  icon: Apple,
-                  text: cliente.dietaActiva ? (
-                    <div className="flex flex-col gap-1">
-                      <div className="flex gap-2">
-                        <span className="font-semibold">Plan actual:</span>
-                        <span>{cliente.dietaActiva.nombre}</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <span className="font-semibold">Objetivo:</span>
-                        <span>{cliente.dietaActiva.objetivo}</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <span className="font-semibold">Restricciones:</span>
-                        <span>{cliente.dietaActiva.restricciones}</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <span className="font-semibold">Semana actual:</span>
-                        <span>{cliente.dietaActiva.semanas[0].idSemana}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-2">
-                      <span className="text-gray-500">Añade una dieta primero</span>
-                    </div>
-                  )
-                }
-              ]}
-            />
+                {/* Plan Nutricional */}
+                <InfoCard
+                  title="Plan Nutricional"
+                  delay={0.6}
+                  items={
+                    cliente.dietaActiva ? [
+                      { icon: Apple, text: `Objetivo: ${cliente.dietaActiva.objetivo}` },
+                      { icon: Coffee, text: `Restricciones: ${cliente.dietaActiva.restricciones}` },
+                      { icon: Utensils, text: `Estado: ${cliente.dietaActiva.estado}` },
+                      { icon: Salad, text: `Inicio: ${formatearFecha(cliente.dietaActiva.fechaInicio)}` }
+                    ] : [
+                      { icon: Apple, text: "No hay plan nutricional activo." },
+                      { icon: Utensils, text: "Crea uno nuevo para comenzar" },
+                      { icon: Salad, text: "el seguimiento nutricional." }
+                    ]
+                  }
+                  titleButton={!cliente.dietaActiva ? {
+                    icon: Plus,
+                    label: "Añadir plan",
+                    onClick: handleCreateDiet,
+                    className: "btn-success btn-sm"
+                  } : {
+                    icon: Eye,
+                    label: "Ver plan",
+                    onClick: handleViewDiet,
+                    className: "btn-primary btn-sm"
+                  }}
+                />
 
-            {/* Información Personal */}
-            <InfoCard
-              title="Información Personal"
-              delay={0.9}
-              items={[
-                { 
-                  icon: MapPin, 
-                  text: editandoDireccion ? (
-                    <div className="space-y-2">
-                      <input
-                        type="text"
-                        placeholder="Calle *"
-                        className="input input-bordered w-full"
-                        value={direccionForm.calle}
-                        onChange={(e) => setDireccionForm({...direccionForm, calle: e.target.value})}
-                        required
-                      />
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="text"
-                          placeholder="Número"
-                          className="input input-bordered"
-                          value={direccionForm.numero}
-                          onChange={(e) => setDireccionForm({...direccionForm, numero: e.target.value})}
-                        />
-                        <input
-                          type="text"
-                          placeholder="Piso"
-                          className="input input-bordered"
-                          value={direccionForm.piso}
-                          onChange={(e) => setDireccionForm({...direccionForm, piso: e.target.value})}
-                        />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Código Postal"
-                        className="input input-bordered w-full"
-                        value={direccionForm.codigoPostal}
-                        onChange={(e) => setDireccionForm({...direccionForm, codigoPostal: e.target.value})}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Ciudad *"
-                        className="input input-bordered w-full"
-                        value={direccionForm.ciudad}
-                        onChange={(e) => setDireccionForm({...direccionForm, ciudad: e.target.value})}
-                        required
-                      />
-                      <input
-                        type="text"
-                        placeholder="Provincia *"
-                        className="input input-bordered w-full"
-                        value={direccionForm.provincia}
-                        onChange={(e) => setDireccionForm({...direccionForm, provincia: e.target.value})}
-                        required
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={handleUpdateDireccion}
-                          disabled={!direccionForm.calle || !direccionForm.ciudad || !direccionForm.provincia}
-                        >
-                          Guardar
-                        </button>
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => setEditandoDireccion(false)}
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex justify-between items-center w-full">
-                      <div className="flex gap-2">
-                        <span className="font-semibold">Dirección:</span>
-                        <span>
-                          {cliente.direccion ? 
-                            `${cliente.direccion.calle}${cliente.direccion.numero ? ` ${cliente.direccion.numero}` : ''}${cliente.direccion.piso ? `, ${cliente.direccion.piso}` : ''}, 
-                             ${cliente.direccion.ciudad}, ${cliente.direccion.provincia}${cliente.direccion.codigoPostal ? ` (${cliente.direccion.codigoPostal})` : ''}` 
-                            : 'No especificada'}
-                        </span>
-                      </div>
-                      <button
-                        className="btn btn-ghost btn-xs"
-                        onClick={() => setEditandoDireccion(true)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )
-                },
-                { 
-                  icon: Activity, 
-                  text: editandoEstado ? (
-                    <div className="flex gap-2 items-center">
-                      <select
-                        className="select select-bordered select-sm"
-                        value={cliente?.estado}
-                        onChange={(e) => handleUpdateEstado(e.target.value as 'Activo' | 'Inactivo' | 'Pendiente' | 'Suspendido')}
-                      >
-                        {estadosPosibles.map(estado => (
-                          <option key={estado} value={estado}>{estado}</option>
-                        ))}
-                      </select>
-                      <button
-                        className="btn btn-ghost btn-xs"
-                        onClick={() => setEditandoEstado(false)}
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">Estado:</span>
-                      <span className={`badge ${
-                        cliente?.estado === 'Activo' ? 'badge-success' :
-                        cliente?.estado === 'Inactivo' ? 'badge-error' :
-                        cliente?.estado === 'Pendiente' ? 'badge-warning' :
-                        cliente?.estado === 'Suspendido' ? 'badge-ghost' : ''
-                      }`}>
-                        {cliente?.estado || 'No especificado'}
-                      </span>
-                      <button
-                        className="btn btn-ghost btn-xs"
-                        onClick={() => setEditandoEstado(true)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )
-                },
-                { icon: CalendarIcon, text: `Cliente desde: ${formatearFecha(cliente.fechaRegistro)}` },
-              ]}
-            />
+                {/* Pagos */}
+                <InfoCard
+                  title="Estado de Pagos"
+                  delay={0.5}
+                  items={[
+                    { icon: Receipt, text: `Último pago: ${cliente.ultimoPago || 'No hay pagos registrados'}` },
+                    { icon: CreditCard, text: `Plan actual: ${cliente.planActual || 'Sin plan'}` },
+                    { icon: Clock, text: `Próximo pago: ${cliente.proximoPago || 'No programado'}` },
+                    { icon: AlertCircle, text: cliente.pagosAlDia ? 'Pagos al día' : 'Pagos pendientes' }
+                  ]}
+                  actionButton={{
+                    icon: DollarSign,
+                    label: "Registrar Pago",
+                    onClick: handleNewPayment
+                  }}
+                />
+              </>
+            ) : activeSection === 'plan' ? (
+              <div className="col-span-2">
+                <PanelPlan clienteId={clienteId} />
+              </div>
+            ) : activeSection === 'checkins' ? (
+              <div className="col-span-2">
+                <PanelCheckins clienteId={clienteId} />
+              </div>
+            ) : activeSection === 'finances' ? (
+              <div className="col-span-2">
+                <PanelFinanzas clienteId={clienteId} />
+              </div>
+            ) : activeSection === 'dietas' ? (
+              <div className="col-span-2">
+                <PanelDietas clienteId={clienteId} />
+              </div>
+            ) : null}
+          </div>
 
-            {/* Información Física */}
-            <InfoCard
-              title="Información Física"
-              delay={1.0}
-              items={[
-                { 
-                  icon: Ruler,
-                  text: editandoFisica ? (
-                    <div className="space-y-2">
-                      <div className="flex gap-2">
-                        <input
-                          type="number"
-                          placeholder="Altura (cm)"
-                          className="input input-bordered w-full"
-                          value={datosForm.altura}
-                          onChange={(e) => setDatosForm({...datosForm, altura: e.target.value})}
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <input
-                          type="number"
-                          placeholder="Peso (kg)"
-                          className="input input-bordered w-full"
-                          value={datosForm.peso}
-                          onChange={(e) => setDatosForm({...datosForm, peso: e.target.value})}
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <select
-                          className="select select-bordered w-full"
-                          value={datosForm.nivelActividad}
-                          onChange={(e) => setDatosForm({...datosForm, nivelActividad: e.target.value})}
-                        >
-                          <option value="Bajo">Bajo</option>
-                          <option value="Moderado">Moderado</option>
-                          <option value="Alto">Alto</option>
-                        </select>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={handleUpdateFisica}
-                        >
-                          Guardar
-                        </button>
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => setEditandoFisica(false)}
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex justify-between items-center w-full">
-                      <span>Altura: {cliente.altura ? `${cliente.altura} cm` : 'No especificada'}</span>
-                      <button
-                        className="btn btn-ghost btn-xs"
-                        onClick={() => {
-                          setDatosForm({
-                            altura: cliente.altura || '',
-                            peso: cliente.peso || '',
-                            nivelActividad: cliente.nivelActividad || 'Moderado'
-                          });
-                          setEditandoFisica(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )
-                },
-                { 
-                  icon: Scale,
-                  text: editandoFisica ? null : (
-                    <span>Peso: {cliente.peso ? `${cliente.peso} kg` : 'No especificado'}</span>
-                  )
-                },
-                { 
-                  icon: Activity,
-                  text: editandoFisica ? null : (
-                    <span>Nivel de actividad: {cliente.nivelActividad || 'No especificado'}</span>
-                  )
-                }
-              ]}
-            />
-
-            {/* Notas */}
+          {/* Notas */}
+          {activeSection === 'dashboard' && (
             <Notes
-              notes={cliente.notas}
+              notas={cliente.notas}
               onAddNote={handleAddNote}
-              onEditNote={handleEditNote}
+              onUpdateNote={handleEditNote}
               onDeleteNote={handleDeleteNote}
             />
+          )}
 
-            {/* Finanzas y Pagos */}
-            <InfoCard
-              title="Finanzas y Pagos"
-              delay={1.1}
-              items={[
-                { icon: Wallet, text: `Estado: ${cliente.pagosAlDia ? 'Al día' : 'Pendiente'}` },
-                { icon: Receipt, text: "Último pago: 01/03/2024" },
-                { icon: CreditCard, text: "Plan: Mensual Premium" },
-                { icon: DollarSign, text: "Próximo pago: 01/04/2024" }
-              ]}
-              actionButton={{
-                icon: CreditCard,
-                label: "Realizar Pago",
-                onClick: handlePayment
-              }}
-            />
-          </div>
-
-          {/* Sección de Calendario y Notas */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-            <div className="lg:col-span-2">
-              <ClientCalendar />
-            </div>
-            <Notes />
-          </div>
+          {/* Calendario */}
+          {activeSection === 'dashboard' && (
+            <ClientCalendar clientId={clienteId} />
+          )}
         </div>
       </div>
     </motion.div>

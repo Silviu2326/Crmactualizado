@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Search, X, Plus, Filter, Download, Dumbbell, Target, Clock, Users, Calendar, TrendingUp } from 'lucide-react';
+import { Search, X, Plus, Filter, Download, Dumbbell, Target, Clock, Users, Calendar, TrendingUp, Pencil, Trash2, BarChart } from 'lucide-react';
 import Button from '../Common/Button';
 import Table from '../Common/Table';
+import CreateRoutineModal from './CreateRoutineModal';
 import { useTheme } from '../../contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -11,35 +12,32 @@ const WorkoutList: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreateAIModalOpen, setIsCreateAIModalOpen] = useState(false);
 
+  const handleCreateRoutine = (routineData: any) => {
+    // Aquí implementaremos la lógica para guardar la nueva rutina
+    console.log('Nueva rutina:', routineData);
+    // TODO: Agregar la rutina a la lista y enviar al backend
+  };
+
   const routinesData = [
     { 
       nombre: 'Rutina de Fuerza', 
-      tipo: 'Fuerza', 
-      nivel: 'Intermedio', 
-      duracion: '60 min', 
-      frecuencia: '3x/semana',
-      estado: 'Activa',
-      progreso: '75%',
+      descripcion: 'Esta es una rutina de fuerza', 
+      tags: ['Fuerza', 'Intermedio'], 
+      notas: 'Esta rutina es para principiantes', 
       acciones: 'Editar' 
     },
     { 
       nombre: 'Cardio HIIT', 
-      tipo: 'Cardio', 
-      nivel: 'Avanzado', 
-      duracion: '30 min', 
-      frecuencia: '4x/semana',
-      estado: 'Pendiente',
-      progreso: '30%',
+      descripcion: 'Esta es una rutina de cardio', 
+      tags: ['Cardio', 'Avanzado'], 
+      notas: 'Esta rutina es para avanzados', 
       acciones: 'Editar' 
     },
     { 
       nombre: 'Yoga para principiantes', 
-      tipo: 'Flexibilidad', 
-      nivel: 'Principiante', 
-      duracion: '45 min', 
-      frecuencia: '2x/semana',
-      estado: 'Completada',
-      progreso: '100%',
+      descripcion: 'Esta es una rutina de yoga', 
+      tags: ['Yoga', 'Principiante'], 
+      notas: 'Esta rutina es para principiantes', 
       acciones: 'Editar' 
     },
   ];
@@ -73,50 +71,18 @@ const WorkoutList: React.FC = () => {
 
   const renderCell = (key: string, value: any) => {
     switch (key) {
-      case 'tipo':
+      case 'tags':
         return (
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-            value === 'Fuerza' ? 'bg-purple-100 text-purple-800' :
-            value === 'Cardio' ? 'bg-red-100 text-red-800' :
-            'bg-blue-100 text-blue-800'
-          }`}>
-            {value}
-          </span>
-        );
-      case 'nivel':
-        return (
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-            value === 'Principiante' ? 'bg-green-100 text-green-800' :
-            value === 'Intermedio' ? 'bg-yellow-100 text-yellow-800' :
-            'bg-red-100 text-red-800'
-          }`}>
-            {value}
-          </span>
-        );
-      case 'estado':
-        return (
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-            value === 'Activa' ? 'bg-emerald-100 text-emerald-800' :
-            value === 'Pendiente' ? 'bg-amber-100 text-amber-800' :
-            'bg-blue-100 text-blue-800'
-          }`}>
-            {value}
-          </span>
-        );
-      case 'progreso':
-        return (
-          <div className="flex items-center space-x-2">
-            <div className="flex-grow bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-              <div 
-                className={`h-2.5 rounded-full ${
-                  parseInt(value) === 100 ? 'bg-green-600' :
-                  parseInt(value) > 50 ? 'bg-blue-600' :
-                  'bg-amber-600'
-                }`}
-                style={{ width: value }}
-              ></div>
-            </div>
-            <span className="text-sm font-medium">{value}</span>
+          <div className="flex flex-wrap gap-1">
+            {value?.map((tag, index) => (
+              <span key={index} className={`px-3 py-1 rounded-full text-sm font-medium ${
+                tag === 'Fuerza' ? 'bg-purple-100 text-purple-800' :
+                tag === 'Cardio' ? 'bg-red-100 text-red-800' :
+                'bg-blue-100 text-blue-800'
+              }`}>
+                {tag}
+              </span>
+            ))}
           </div>
         );
       default:
@@ -214,17 +180,64 @@ const WorkoutList: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden"
       >
-        <Table
-          headers={['Nombre', 'Tipo', 'Nivel', 'Duración', 'Frecuencia', 'Estado', 'Progreso', 'Acciones']}
-          data={routinesData.map(item => ({
-            ...item,
-            ...Object.fromEntries(
-              Object.entries(item).map(([key, value]) => [key, renderCell(key, value)])
-            )
-          }))}
-          variant={theme === 'dark' ? 'dark' : 'white'}
-        />
+        <div className="overflow-x-auto">
+          <table className="table w-full">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Tags/Categorías</th>
+                <th>Notas Adicionales</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {routinesData.map((rutina) => (
+                <tr key={rutina.nombre}>
+                  <td>{rutina.nombre}</td>
+                  <td>{rutina.descripcion}</td>
+                  <td>
+                    <div className="flex flex-wrap gap-1">
+                      {rutina.tags?.map((tag, index) => (
+                        <span key={index} className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          tag === 'Fuerza' ? 'bg-purple-100 text-purple-800' :
+                          tag === 'Cardio' ? 'bg-red-100 text-red-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td>{rutina.notas}</td>
+                  <td>
+                    <div className="flex gap-2">
+                      <button
+                        className="btn btn-sm btn-ghost"
+                        onClick={() => console.log('Editar rutina')}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        className="btn btn-sm btn-ghost text-error"
+                        onClick={() => console.log('Eliminar rutina')}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </motion.div>
+
+      <CreateRoutineModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={handleCreateRoutine}
+      />
     </div>
   );
 };

@@ -11,12 +11,21 @@ import {
   ChevronDown,
   ChevronUp,
   Save,
+  XCircle,
 } from 'lucide-react';
 import Button from '../Common/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 import EditSessionPopup from './EditSessionPopup';
 import { trainingVariants } from './trainingVariants';
 import type { Set } from './trainingVariants';
+
+interface Session {
+  _id: string;
+  name: string;
+  tipo: 'Normal' | 'Superset';
+  rondas?: number;
+  exercises: Exercise[];
+}
 
 interface SesionEntrenamientoProps {
   session: Session;
@@ -44,8 +53,10 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
     new Set()
   );
   const [showEditPopup, setShowEditPopup] = useState(false);
+  const [isEditingRounds, setIsEditingRounds] = useState(false);
+  const [editedRounds, setEditedRounds] = useState(session.rondas || 0);
 
-  // Eliminar el useEffect que actualiza el plan basado en variant
+  console.log('Session data:', session);
 
   const handleSaveSession = (updatedSession: Session) => {
     const updatedPlan: WeekPlan = {
@@ -53,11 +64,53 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
       [diaSeleccionado]: {
         ...planSemanal[diaSeleccionado],
         sessions: planSemanal[diaSeleccionado].sessions.map((s) =>
-          s.id === session.id ? { ...s, name: updatedSession.name } : s
+          s._id === session._id ? { ...s, name: updatedSession.name } : s
         ),
       },
     };
     updatePlan(updatedPlan);
+  };
+
+  const handleUpdateRounds = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      console.log('Actualizando rondas para sesión:', session._id, 'Nuevas rondas:', editedRounds);
+
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/session/${session._id}/rounds`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ rondas: editedRounds }),
+      });
+
+      console.log('Respuesta del servidor:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.mensaje || 'Error al actualizar las rondas');
+      }
+
+      // Actualizar el estado local
+      const updatedPlan = {
+        ...planSemanal,
+        [diaSeleccionado]: {
+          ...planSemanal[diaSeleccionado],
+          sessions: planSemanal[diaSeleccionado].sessions.map(s =>
+            s._id === session._id ? { ...s, rondas: editedRounds } : s
+          ),
+        },
+      };
+      updatePlan(updatedPlan);
+      setIsEditingRounds(false);
+    } catch (error) {
+      console.error('Error al actualizar las rondas:', error);
+    }
   };
 
   const toggleEjercicio = (ejercicioId: string) => {
@@ -78,7 +131,7 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
       [diaSeleccionado]: {
         ...planSemanal[diaSeleccionado],
         sessions: planSemanal[diaSeleccionado].sessions.map((s) =>
-          s.id === session.id
+          s._id === session._id
             ? {
                 ...s,
                 exercises: s.exercises.filter((e) => e.id !== exerciseId),
@@ -108,7 +161,7 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
       [diaSeleccionado]: {
         ...planSemanal[diaSeleccionado],
         sessions: planSemanal[diaSeleccionado].sessions.map((s) =>
-          s.id === session.id
+          s._id === session._id
             ? {
                 ...s,
                 exercises: s.exercises.map((exercise) =>
@@ -130,7 +183,7 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
       [diaSeleccionado]: {
         ...planSemanal[diaSeleccionado],
         sessions: planSemanal[diaSeleccionado].sessions.map((s) =>
-          s.id === session.id
+          s._id === session._id
             ? {
                 ...s,
                 exercises: s.exercises.map((exercise) =>
@@ -159,7 +212,7 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
       [diaSeleccionado]: {
         ...planSemanal[diaSeleccionado],
         sessions: planSemanal[diaSeleccionado].sessions.map((s) =>
-          s.id === session.id
+          s._id === session._id
             ? {
                 ...s,
                 exercises: s.exercises.map((exercise) =>
@@ -181,42 +234,73 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
   };
 
   return (
-    <>
-      <EditSessionPopup
-        isOpen={showEditPopup}
-        onClose={() => setShowEditPopup(false)}
-        session={session}
-        onSave={handleSaveSession}
-      />
-
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        className={`p-4 rounded-lg border
-          ${
-            theme === 'dark'
-              ? 'border-gray-700 bg-gray-750'
-              : 'border-gray-200 bg-gray-50'
-          }`}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <Dumbbell className="w-5 h-5 text-purple-500" />
-            <h3 className="text-lg font-semibold">{session.name}</h3>
-            <span
-              className={`px-2 py-1 rounded text-sm ${
-                variant === 0
-                  ? 'bg-gray-300 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                  : variant === 1
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                  : variant === 2
-                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                  : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-              }`}
-            >
-              Variante {variant}
-            </span>
+    <div
+      className={`p-4 rounded-lg shadow-md mb-4 ${
+        theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+      }`}
+    >
+      <div className="flex flex-col space-y-2">
+        {/* Encabezado de la sesión */}
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center space-x-4">
+              <h3 className="text-lg font-semibold">{session.name}</h3>
+              <span className={`px-2 py-1 rounded text-sm ${
+                theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+              }`}>
+                {session.tipo}
+              </span>
+              {session.tipo === 'Superset' && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm">Rondas:</span>
+                  {isEditingRounds ? (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="number"
+                        value={editedRounds}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          if (value >= 1) {
+                            setEditedRounds(value);
+                          }
+                        }}
+                        min="1"
+                        className={`w-16 px-2 py-1 rounded border ${
+                          theme === 'dark'
+                            ? 'bg-gray-700 border-gray-600'
+                            : 'bg-white border-gray-300'
+                        }`}
+                      />
+                      <button
+                        onClick={handleUpdateRounds}
+                        className="text-green-500 hover:text-green-600"
+                      >
+                        <Save size={16} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsEditingRounds(false);
+                          setEditedRounds(session.rondas || 0);
+                        }}
+                        className="text-red-500 hover:text-red-600"
+                      >
+                        <XCircle size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setIsEditingRounds(true)}
+                      className="flex items-center space-x-1 text-sm hover:text-blue-500"
+                    >
+                      <span>{session.rondas || 0}</span>
+                      <Edit2 size={14} />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
+          {/* Controles de la sesión */}
           <div className="flex items-center space-x-2">
             <Button variant="normal" onClick={onAddExercise} className="p-2">
               <Plus className="w-4 h-4" />
@@ -238,8 +322,9 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
           {session.exercises.map((exercise) => (
             <motion.div
               key={exercise.id}
-              className={`rounded-lg transition-all duration-200
-                ${theme === 'dark' ? 'bg-gray-700' : 'bg-white'}`}
+              className={`rounded-lg transition-all duration-200 ${
+                theme === 'dark' ? 'bg-gray-700' : 'bg-white'
+              }`}
             >
               <div
                 className="p-3 flex items-center justify-between cursor-pointer hover:bg-opacity-90"
@@ -313,12 +398,11 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
                                       reps: parseInt(e.target.value),
                                     })
                                   }
-                                  className={`w-full p-2 rounded-md border
-                                    ${
-                                      theme === 'dark'
-                                        ? 'bg-gray-700 border-gray-500'
-                                        : 'bg-white border-gray-300'
-                                    }`}
+                                  className={`w-full p-2 rounded-md border ${
+                                    theme === 'dark'
+                                      ? 'bg-gray-700 border-gray-500'
+                                      : 'bg-white border-gray-300'
+                                  }`}
                                 />
                               </div>
                               <div>
@@ -333,12 +417,11 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
                                       weight: parseInt(e.target.value),
                                     })
                                   }
-                                  className={`w-full p-2 rounded-md border
-                                    ${
-                                      theme === 'dark'
-                                        ? 'bg-gray-700 border-gray-500'
-                                        : 'bg-white border-gray-300'
-                                    }`}
+                                  className={`w-full p-2 rounded-md border ${
+                                    theme === 'dark'
+                                      ? 'bg-gray-700 border-gray-500'
+                                      : 'bg-white border-gray-300'
+                                  }`}
                                 />
                               </div>
                               <div>
@@ -353,12 +436,11 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
                                       rest: parseInt(e.target.value),
                                     })
                                   }
-                                  className={`w-full p-2 rounded-md border
-                                    ${
-                                      theme === 'dark'
-                                        ? 'bg-gray-700 border-gray-500'
-                                        : 'bg-white border-gray-300'
-                                    }`}
+                                  className={`w-full p-2 rounded-md border ${
+                                    theme === 'dark'
+                                      ? 'bg-gray-700 border-gray-500'
+                                      : 'bg-white border-gray-300'
+                                  }`}
                                 />
                               </div>
                             </div>
@@ -396,8 +478,8 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
             No hay ejercicios en esta sesión
           </div>
         )}
-      </motion.div>
-    </>
+      </div>
+    </div>
   );
 };
 

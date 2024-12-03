@@ -19,11 +19,27 @@ interface Filters {
 interface Cliente {
   _id: string;
   nombre: string;
+  apellido: string;
   email: string;
+  telefono: string;
+  estado: string;
+  tag: string;
   fechaRegistro: string;
   trainer: string;
-  planesDePago: any[];
-  servicios: any[];
+  planesDePago: {
+    nombre: string;
+    estado: string;
+  }[];
+  servicios: {
+    nombre: string;
+    estado: string;
+  }[];
+  ultimoCheckin: string;
+  alertas: {
+    tipo: string;
+    mensaje: string;
+    fecha: string;
+  }[];
   transacciones: any[];
   __v: number;
 }
@@ -60,7 +76,16 @@ const ClientList: React.FC = () => {
     setLoading(true);
     console.log('🚀 Realizando petición GET a la API para obtener clientes...');
     try {
-      const response = await axios.get(`${API_URL}/clientes`);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const response = await axios.get(`${API_URL}/clientes`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       setClientesData(response.data);
       console.log('🎉 Clientes obtenidos exitosamente:', response.data);
     } catch (error) {
@@ -70,6 +95,17 @@ const ClientList: React.FC = () => {
       setLoading(false);
       console.log('⏳ Finalizó la carga de clientes.');
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const handleRowClick = (clientId: string) => {
@@ -137,14 +173,45 @@ const ClientList: React.FC = () => {
     );
   }, [searchTerm, filters, clientesData]);
 
-  const renderCell = (key: string, value: any) => {
+  const renderCell = (key: string, value: any, client: Cliente) => {
     switch (key) {
       case 'nombre':
-        return value;
+        return `${client.nombre} ${client.apellido}`;
       case 'email':
         return value;
-      case 'fecharegistro':
-        return new Date(value).toLocaleDateString();
+      case 'telefono':
+        return value || '-';
+      case 'estado':
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs ${
+            value === 'Activo' ? 'bg-green-500 text-white' :
+            value === 'Inactivo' ? 'bg-red-500 text-white' :
+            'bg-yellow-500 text-white'
+          }`}>
+            {value || 'Sin estado'}
+          </span>
+        );
+      case 'tag':
+        return (
+          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+            {value || 'Sin etiqueta'}
+          </span>
+        );
+      case 'planDePago':
+        return client.planesDePago[0]?.nombre || '-';
+      case 'servicio':
+        return client.servicios[0]?.nombre || '-';
+      case 'ultimoCheckin':
+        return formatDate(client.ultimoCheckin);
+      case 'alertas':
+        return client.alertas && client.alertas.length > 0 ? (
+          <div className="flex items-center text-yellow-500">
+            <AlertTriangle size={16} className="mr-1" />
+            {client.alertas.length}
+          </div>
+        ) : '-';
+      case 'fechaRegistro':
+        return formatDate(value);
       default:
         return value || '-';
     }
@@ -153,6 +220,13 @@ const ClientList: React.FC = () => {
   const columns = [
     'Nombre',
     'Email',
+    'Teléfono',
+    'Estado',
+    'Tag',
+    'Plan de Pago',
+    'Servicio',
+    'Último Checkin',
+    'Alertas',
     'Fecha Registro'
   ];
 
@@ -177,10 +251,9 @@ const ClientList: React.FC = () => {
         onCreateClient={() => {
           console.log('🆕 Abriendo formulario para crear un nuevo cliente.');
           setShowCreateClient(true);
-        }} // Pasamos la función para abrir el formulario
+        }}
       />
 
-      {/* Mostrar CreateClient si showCreateClient es true */}
       {showCreateClient && (
         <div className="mt-6">
           <CreateClient
@@ -191,84 +264,105 @@ const ClientList: React.FC = () => {
             onClientCreated={() => {
               console.log('🎉 Cliente creado exitosamente.');
               setShowCreateClient(false);
-              fetchClientes(); // Actualizamos la lista de clientes
+              fetchClientes();
             }}
           />
         </div>
       )}
 
       {loading ? (
-        <div>⏳ Cargando...</div>
+        <div className="flex items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
       ) : error ? (
-        <div className="text-red-500">❗️ {error}</div>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          {viewMode === 'table' ? (
-            <div className={`min-h-screen p-4 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-50'}`}>
+        <div className="text-red-500 p-4">{error}</div>
+      ) : viewMode === 'table' ? (
+        <div className="mt-6 overflow-x-auto">
+          <div className="inline-block min-w-full align-middle">
+            <div className={`overflow-hidden border border-opacity-20 ${
+              theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+            } rounded-lg shadow-sm`}>
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className={`${
+                  theme === 'dark' ? 'bg-gray-800' : 'bg-gray-50'
+                }`}>
                   <tr>
                     <th scope="col" className="relative px-6 py-3">
                       <input
                         type="checkbox"
-                        className="absolute h-4 w-4 left-4 top-1/2 transform -translate-y-1/2"
-                        onChange={toggleSelectAll}
+                        className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         checked={selectedClients.length === clientesData.length}
+                        onChange={toggleSelectAll}
                       />
                     </th>
                     {columns.map((column) => (
                       <th
                         key={column}
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                        className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`}
                       >
                         {column}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className={`divide-y ${
+                  theme === 'dark' ? 'divide-gray-700' : 'divide-gray-200'
+                }`}>
                   {filteredClients.map((cliente) => (
                     <React.Fragment key={cliente._id}>
                       <motion.tr
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
+                        whileHover={{ scale: 1.01 }}
                         onClick={() => handleRowClick(cliente._id)}
-                        className={`${
-                          openPanels.includes(cliente._id)
+                        className={`cursor-pointer transition-colors duration-150 ${
+                          theme === 'dark'
+                            ? 'hover:bg-gray-700/50'
+                            : 'hover:bg-gray-50'
+                        } ${
+                          selectedClients.includes(cliente._id)
                             ? theme === 'dark'
-                              ? 'bg-gray-700'
+                              ? 'bg-gray-700/30'
                               : 'bg-blue-50'
-                            : theme === 'dark'
-                            ? 'bg-gray-800'
-                            : 'bg-white'
-                        } cursor-pointer hover:${
-                          theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
+                            : ''
                         }`}
                       >
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="relative px-6 py-4">
                           <input
                             type="checkbox"
+                            className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             checked={selectedClients.includes(cliente._id)}
-                            onChange={(e) => toggleClientSelection(cliente._id, e)}
+                            onChange={(e) =>
+                              toggleClientSelection(cliente._id, e)
+                            }
                             onClick={(e) => e.stopPropagation()}
-                            className="h-4 w-4"
                           />
                         </td>
                         {Object.entries({
                           nombre: cliente.nombre,
                           email: cliente.email,
+                          telefono: cliente.telefono,
+                          estado: cliente.estado,
+                          tag: cliente.tag,
+                          planDePago: cliente.planesDePago[0]?.nombre,
+                          servicio: cliente.servicios[0]?.nombre,
+                          ultimoCheckin: cliente.ultimoCheckin,
+                          alertas: cliente.alertas,
                           fechaRegistro: cliente.fechaRegistro
                         }).map(([key, value]) => (
                           <td
                             key={key}
-                            className="px-6 py-4 whitespace-nowrap text-sm"
+                            className={`px-6 py-4 whitespace-nowrap ${
+                              theme === 'dark' ? 'text-gray-300' : 'text-gray-900'
+                            } ${
+                              key === 'nombre' ? 'font-medium' : 'text-sm'
+                            }`}
                           >
-                            {renderCell(key, value)}
+                            {renderCell(key, value, cliente)}
                           </td>
                         ))}
                       </motion.tr>
@@ -276,43 +370,17 @@ const ClientList: React.FC = () => {
                         {openPanels.includes(cliente._id) && (
                           <motion.tr
                             initial={{ opacity: 0, height: 0 }}
-                            animate={{ 
-                              opacity: 1, 
-                              height: "auto",
-                              transition: {
-                                height: {
-                                  duration: 0.3
-                                },
-                                opacity: {
-                                  duration: 0.3,
-                                  delay: 0.1
-                                }
-                              }
-                            }}
-                            exit={{ 
-                              opacity: 0, 
-                              height: 0,
-                              transition: {
-                                height: {
-                                  duration: 0.3
-                                },
-                                opacity: {
-                                  duration: 0.2
-                                }
-                              }
-                            }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className={`${
+                              theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+                            }`}
                           >
-                            <td colSpan={columns.length + 1} className="p-0">
-                              <div className="overflow-hidden">
-                                <div className={`p-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} border-t ${
-                                  theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-                                }`}>
-                                  <PanelCliente
-                                    clienteId={cliente._id}
-                                    onClose={() => handlePanelClose(cliente._id)}
-                                  />
-                                </div>
-                              </div>
+                            <td colSpan={columns.length + 1}>
+                              <PanelCliente
+                                clienteId={cliente._id}
+                                onClose={() => handlePanelClose(cliente._id)}
+                              />
                             </td>
                           </motion.tr>
                         )}
@@ -322,18 +390,14 @@ const ClientList: React.FC = () => {
                 </tbody>
               </table>
             </div>
-          ) : (
-            <ClientListViewSimple
-              clients={filteredClients}
-              onClientSelect={(id) => {
-                console.log(`👆 Seleccionando cliente con ID ${id}.`);
-                handleRowClick(id);
-              }}
-              selectedClients={selectedClients}
-              onClientCheckboxToggle={toggleClientSelection}
-            />
-          )}
-        </motion.div>
+          </div>
+        </div>
+      ) : (
+        <ClientListViewSimple
+          clientes={filteredClients}
+          selectedClients={selectedClients}
+          toggleClientSelection={toggleClientSelection}
+        />
       )}
     </div>
   );

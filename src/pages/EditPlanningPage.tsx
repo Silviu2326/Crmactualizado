@@ -66,45 +66,42 @@ const EditPlanningPage: React.FC = () => {
 
   const isHomeRoute = location.pathname === '/';
 
-  useEffect(() => {
+  const fetchPlanning = async () => {
     if (!id) return;
-
-    const fetchPlanning = async () => {
-      try {
-        // Obtener el token JWT
-        const token = localStorage.getItem('token'); // O usa tu método para obtener el token
-
-        if (!token) {
-          throw new Error('No se encontró el token de autenticación');
-        }
-
-        const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${id}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`, // Incluir el token en los headers
-          },
-        });
-
-        if (!response.ok) {
-          // Manejar errores HTTP
-          const errorData = await response.json();
-          throw new Error(errorData.mensaje || 'Error al obtener la planificación');
-        }
-
-        const data: Planning = await response.json();
-        console.log('Datos recibidos del backend:', data); // <-- Log de datos recibidos
-
-        setPlanning(data);
-        setPlanSemanal(data.plan[semanaActual - 1].days); // Pasar solo 'days'
-      } catch (err: any) {
-        console.error('Error al obtener la planificación:', err); // <-- Log de errores
-        setError(err.message);
-      } finally {
-        setLoading(false);
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
       }
-    };
 
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.mensaje || 'Error al obtener la planificación');
+      }
+
+      const data: Planning = await response.json();
+      console.log('Datos recibidos del backend:', data);
+
+      setPlanning(data);
+      setPlanSemanal(data.plan[semanaActual - 1].days);
+    } catch (err: any) {
+      console.error('Error al obtener la planificación:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchPlanning();
   }, [id, semanaActual]);
 
@@ -206,7 +203,15 @@ const EditPlanningPage: React.FC = () => {
       case 'simplificada':
         return <VistaSimplificada {...props} />;
       case 'compleja':
-        return <VistaCompleja {...props} />;
+        return (
+          <VistaCompleja
+            semanaActual={semanaActual}
+            planSemanal={planSemanal}
+            updatePlan={updatePlan}
+            onReload={fetchPlanning}
+            planningId={id || ''}
+          />
+        );
       case 'excel':
         return <VistaExcel {...props} />;
       case 'resumen':

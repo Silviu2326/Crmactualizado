@@ -10,12 +10,21 @@ interface NuevaSuscripcionPopupProps {
   isDarkMode: boolean;
 }
 
+interface FormData {
+  nombre: string;
+  descripcion: string;
+  precio: string;
+  periodo: string;
+  serviciosAdicionales: string[];
+}
+
 const NuevaSuscripcionPopup: React.FC<NuevaSuscripcionPopupProps> = ({ isOpen, onClose, onAdd, isDarkMode }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     nombre: '',
     descripcion: '',
     precio: '',
-    periodo: 'Mensual', // Opciones: Mensual, Anual
+    periodo: 'Mensual',
+    serviciosAdicionales: []
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -26,40 +35,20 @@ const NuevaSuscripcionPopup: React.FC<NuevaSuscripcionPopupProps> = ({ isOpen, o
     }));
   };
 
+  const handleServicioAdicionalChange = (servicio: string) => {
+    setFormData(prev => {
+      const servicios = prev.serviciosAdicionales.includes(servicio)
+        ? prev.serviciosAdicionales.filter(s => s !== servicio)
+        : [...prev.serviciosAdicionales, servicio];
+      return { ...prev, serviciosAdicionales: servicios };
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Implementar la lógica para enviar los datos al backend
-    console.log('Creando nueva Suscripción:', formData);
-
-    // Simular una llamada a la API
-    try {
-      // Ejemplo de llamada a la API
-      /*
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/suscripciones', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`, // Si es necesario
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al crear la suscripción');
-      }
-
-      const data = await response.json();
-      */
-
-      // Simulación exitosa
-      setTimeout(() => {
-        onAdd(); // Actualizar la lista de servicios
-        onClose(); // Cerrar el popup
-      }, 1000);
-    } catch (error) {
-      console.error(error);
-      // Manejar el error (mostrar un mensaje al usuario, etc.)
-    }
+    console.log('Creando nueva suscripción:', formData);
+    onAdd();
+    onClose();
   };
 
   return (
@@ -160,6 +149,32 @@ const NuevaSuscripcionPopup: React.FC<NuevaSuscripcionPopupProps> = ({ isOpen, o
                   <option value="Mensual">Mensual</option>
                   <option value="Anual">Anual</option>
                 </select>
+              </div>
+
+              {/* Servicios Adicionales */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Servicios Adicionales
+                </label>
+                <div className="mt-2 space-y-2">
+                  {['Pack de Citas', 'Planificacion', 'Dietas'].map((servicio) => (
+                    <div key={servicio} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={servicio}
+                        checked={formData.serviciosAdicionales.includes(servicio)}
+                        onChange={() => handleServicioAdicionalChange(servicio)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                      />
+                      <label
+                        htmlFor={servicio}
+                        className="ml-2 block text-sm text-gray-900 dark:text-gray-200 cursor-pointer"
+                      >
+                        {servicio}
+                      </label>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="flex justify-end space-x-2">

@@ -1,306 +1,320 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
-import { motion } from 'framer-motion';
 import {
-  Apple,
-  Utensils,
-  Calendar as CalendarIcon,
-  Plus,
-  FileText,
-  TrendingUp,
-  Scale,
-  Heart,
-  AlertCircle,
+  Calendar,
+  Target,
   Clock,
-  Salad,
-  Coffee,
+  FileText,
+  ChevronRight,
+  Plus,
+  Edit2
 } from 'lucide-react';
 import Button from '../Common/Button';
+
+interface Comida {
+  nombre: string;
+  horario: string;
+  alimentos: {
+    nombre: string;
+    cantidad: string;
+    calorias: number;
+    proteinas: number;
+    carbohidratos: number;
+    grasas: number;
+  }[];
+}
+
+interface DietaHoy {
+  fecha: string;
+  comidas: Comida[];
+  totalCalorias: number;
+  totalProteinas: number;
+  totalCarbohidratos: number;
+  totalGrasas: number;
+}
+
+interface PlanDieta {
+  nombre: string;
+  meta: string;
+  fechaInicio: string;
+  fechaFin: string;
+  duracionSemanas: number;
+  semanasCompletadas: number;
+  dietaHoy: DietaHoy;
+  notas: string[];
+}
 
 interface PanelDietasProps {
   clienteId: string;
 }
 
-interface Comida {
-  nombre: string;
-  calorias: number;
-  proteinas: number;
-  carbohidratos: number;
-  grasas: number;
-  horario: string;
-}
-
-interface DiaComidas {
-  fecha: string;
-  comidas: Comida[];
-  totales: {
-    calorias: number;
-    proteinas: number;
-    carbohidratos: number;
-    grasas: number;
-  };
-}
-
 const PanelDietas: React.FC<PanelDietasProps> = ({ clienteId }) => {
   const { theme } = useTheme();
-  const [showNewMealForm, setShowNewMealForm] = useState(false);
+  const isDark = theme === 'dark';
   
   // Datos de ejemplo
-  const [planActual] = useState({
-    nombre: 'Plan de Definición',
-    objetivo: 'Pérdida de grasa',
-    caloriasDiarias: 2200,
-    distribucion: {
-      proteinas: 30,
-      carbohidratos: 40,
-      grasas: 30
+  const planDieta: PlanDieta = {
+    nombre: "Plan de Nutrición Personalizado",
+    meta: "Pérdida de grasa y mantenimiento de masa muscular",
+    fechaInicio: "2024-01-01",
+    fechaFin: "2024-03-31",
+    duracionSemanas: 12,
+    semanasCompletadas: 6,
+    dietaHoy: {
+      fecha: new Date().toISOString(),
+      comidas: [
+        {
+          nombre: "Desayuno",
+          horario: "08:00",
+          alimentos: [
+            {
+              nombre: "Avena",
+              cantidad: "50g",
+              calorias: 180,
+              proteinas: 6,
+              carbohidratos: 30,
+              grasas: 3
+            },
+            {
+              nombre: "Plátano",
+              cantidad: "1 unidad",
+              calorias: 105,
+              proteinas: 1,
+              carbohidratos: 27,
+              grasas: 0
+            }
+          ]
+        },
+        {
+          nombre: "Almuerzo",
+          horario: "13:00",
+          alimentos: [
+            {
+              nombre: "Pechuga de pollo",
+              cantidad: "150g",
+              calorias: 165,
+              proteinas: 31,
+              carbohidratos: 0,
+              grasas: 3.6
+            },
+            {
+              nombre: "Arroz integral",
+              cantidad: "100g",
+              calorias: 111,
+              proteinas: 2.6,
+              carbohidratos: 23,
+              grasas: 0.9
+            }
+          ]
+        }
+      ],
+      totalCalorias: 561,
+      totalProteinas: 40.6,
+      totalCarbohidratos: 80,
+      totalGrasas: 7.5
     },
-    fechaInicio: '2024-01-01',
-    duracion: '12 semanas'
-  });
+    notas: [
+      "Cliente muestra buena adherencia al plan",
+      "Ajustar macros según evolución de peso la próxima semana",
+      "Considerar aumentar la ingesta de proteínas"
+    ]
+  };
 
-  const [diaActual] = useState<DiaComidas>({
-    fecha: new Date().toISOString(),
-    comidas: [
-      {
-        nombre: 'Desayuno',
-        calorias: 450,
-        proteinas: 30,
-        carbohidratos: 45,
-        grasas: 15,
-        horario: '08:00'
-      },
-      {
-        nombre: 'Almuerzo',
-        calorias: 650,
-        proteinas: 40,
-        carbohidratos: 65,
-        grasas: 25,
-        horario: '13:00'
-      },
-      {
-        nombre: 'Merienda',
-        calorias: 300,
-        proteinas: 20,
-        carbohidratos: 35,
-        grasas: 10,
-        horario: '16:00'
-      }
-    ],
-    totales: {
-      calorias: 1400,
-      proteinas: 90,
-      carbohidratos: 145,
-      grasas: 50
-    }
-  });
+  const calcularProgreso = () => {
+    return (planDieta.semanasCompletadas / planDieta.duracionSemanas) * 100;
+  };
 
-  const handleNewMeal = () => {
-    setShowNewMealForm(true);
+  const formatearFecha = (fecha: string) => {
+    return new Date(fecha).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
 
   return (
-    <div className="flex flex-col w-full h-full gap-6">
-      {/* Encabezado y Botón de Nueva Comida */}
-      <div className={`p-6 rounded-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} flex justify-between items-center`}>
-        <div>
-          <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-            Plan Nutricional
-          </h2>
-          <p className={`mt-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-            {planActual.nombre} - {planActual.objetivo}
-          </p>
+    <div className={`rounded-lg ${isDark ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+      {/* Encabezado del Plan */}
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
+              {planDieta.nombre}
+            </h2>
+            <div className="flex items-center mt-2">
+              <Target className="w-5 h-5 mr-2 text-blue-500" />
+              <p className={`${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                {planDieta.meta}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => console.log('Editar plan')}
+          >
+            <Edit2 size={16} className="mr-2" />
+            Editar Plan
+          </Button>
         </div>
-        <Button
-          variant="primary"
-          onClick={handleNewMeal}
-          className="flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Nueva Comida</span>
-        </Button>
-      </div>
 
-      {/* Resumen Nutricional */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <Utensils className={theme === 'dark' ? 'text-blue-400' : 'text-blue-600'} />
-            <h3 className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-              Calorías
-            </h3>
-          </div>
-          <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
-            {diaActual.totales.calorias} / {planActual.caloriasDiarias}
-          </p>
-          <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-            kcal consumidas
-          </p>
-        </motion.div>
-
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <Apple className={theme === 'dark' ? 'text-red-400' : 'text-red-600'} />
-            <h3 className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-              Proteínas
-            </h3>
-          </div>
-          <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
-            {diaActual.totales.proteinas}g
-          </p>
-          <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-            {planActual.distribucion.proteinas}% del total
-          </p>
-        </motion.div>
-
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <Coffee className={theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600'} />
-            <h3 className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-              Carbohidratos
-            </h3>
-          </div>
-          <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
-            {diaActual.totales.carbohidratos}g
-          </p>
-          <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-            {planActual.distribucion.carbohidratos}% del total
-          </p>
-        </motion.div>
-
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <Salad className={theme === 'dark' ? 'text-green-400' : 'text-green-600'} />
-            <h3 className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-              Grasas
-            </h3>
-          </div>
-          <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
-            {diaActual.totales.grasas}g
-          </p>
-          <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-            {planActual.distribucion.grasas}% del total
-          </p>
-        </motion.div>
-      </div>
-
-      {/* Detalles del Plan */}
-      <div className={`p-6 rounded-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
-        <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-          Detalles del Plan
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-center gap-2">
-            <CalendarIcon className={theme === 'dark' ? 'text-blue-400' : 'text-blue-600'} />
-            <span className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>
-              Inicio: {new Date(planActual.fechaInicio).toLocaleDateString()}
+        {/* Barra de Progreso */}
+        <div className="mt-6">
+          <div className="flex justify-between items-center mb-2">
+            <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              Progreso del Plan
+            </span>
+            <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+              {planDieta.semanasCompletadas} de {planDieta.duracionSemanas} semanas
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <Clock className={theme === 'dark' ? 'text-purple-400' : 'text-purple-600'} />
-            <span className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>
-              Duración: {planActual.duracion}
-            </span>
+          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+            <div
+              className="bg-blue-600 h-2.5 rounded-full"
+              style={{ width: `${calcularProgreso()}%` }}
+            ></div>
           </div>
-          <div className="flex items-center gap-2">
-            <TrendingUp className={theme === 'dark' ? 'text-green-400' : 'text-green-600'} />
-            <span className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>
-              Objetivo: {planActual.objetivo}
-            </span>
+        </div>
+
+        {/* Duración */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-center">
+            <Calendar className="w-5 h-5 mr-2 text-green-500" />
+            <div>
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Fecha de inicio
+              </p>
+              <p className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                {formatearFecha(planDieta.fechaInicio)}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center">
+            <Clock className="w-5 h-5 mr-2 text-red-500" />
+            <div>
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Fecha de finalización
+              </p>
+              <p className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                {formatearFecha(planDieta.fechaFin)}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Comidas del Día */}
-      <div className={`p-6 rounded-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
-        <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-          Comidas del Día
+      {/* Dieta de Hoy */}
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+        <h3 className={`text-xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>
+          Plan de Hoy
         </h3>
-        <div className="space-y-4">
-          {diaActual.comidas.map((comida, index) => (
-            <motion.div
+        <div className="space-y-6">
+          {planDieta.dietaHoy.comidas.map((comida, index) => (
+            <div
               key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
               className={`p-4 rounded-lg ${
-                theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
-              } hover:shadow-md transition-shadow`}
+                isDark ? 'bg-gray-700' : 'bg-gray-50'
+              }`}
             >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Clock className={theme === 'dark' ? 'text-blue-400' : 'text-blue-600'} />
-                  <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-                    {comida.nombre} - {comida.horario}
-                  </span>
-                </div>
-                <span className={`font-bold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
-                  {comida.calorias} kcal
+              <div className="flex justify-between items-center mb-3">
+                <h4 className={`font-medium ${isDark ? 'text-white' : 'text-gray-800'}`}>
+                  {comida.nombre}
+                </h4>
+                <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {comida.horario}
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-4 mt-2">
-                <div className="flex items-center gap-2">
-                  <Apple className="w-4 h-4" />
-                  <span>P: {comida.proteinas}g</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Coffee className="w-4 h-4" />
-                  <span>C: {comida.carbohidratos}g</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Salad className="w-4 h-4" />
-                  <span>G: {comida.grasas}g</span>
-                </div>
+              <div className="space-y-2">
+                {comida.alimentos.map((alimento, idx) => (
+                  <div key={idx} className="flex justify-between items-center">
+                    <div className="flex-1">
+                      <p className={`${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+                        {alimento.nombre}
+                      </p>
+                      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {alimento.cantidad}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-sm font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+                        {alimento.calorias} kcal
+                      </p>
+                      <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        P: {alimento.proteinas}g | C: {alimento.carbohidratos}g | G: {alimento.grasas}g
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </motion.div>
+            </div>
+          ))}
+        </div>
+
+        {/* Totales del día */}
+        <div className={`mt-4 p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
+          <h4 className={`font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>
+            Totales del día
+          </h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Calorías</p>
+              <p className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                {planDieta.dietaHoy.totalCalorias} kcal
+              </p>
+            </div>
+            <div>
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Proteínas</p>
+              <p className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                {planDieta.dietaHoy.totalProteinas}g
+              </p>
+            </div>
+            <div>
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Carbohidratos</p>
+              <p className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                {planDieta.dietaHoy.totalCarbohidratos}g
+              </p>
+            </div>
+            <div>
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Grasas</p>
+              <p className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                {planDieta.dietaHoy.totalGrasas}g
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Notas */}
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>
+            Notas
+          </h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => console.log('Agregar nota')}
+          >
+            <Plus size={16} className="mr-2" />
+            Agregar Nota
+          </Button>
+        </div>
+        <div className="space-y-3">
+          {planDieta.notas.map((nota, index) => (
+            <div
+              key={index}
+              className={`p-3 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}
+            >
+              <div className="flex items-start">
+                <FileText className="w-5 h-5 mr-2 mt-0.5" />
+                <p className={`${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+                  {nota}
+                </p>
+              </div>
+            </div>
           ))}
         </div>
       </div>
-
-      {/* Modal de Nueva Comida */}
-      {showNewMealForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className={`p-6 rounded-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} w-full max-w-md`}
-          >
-            <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-              Añadir Nueva Comida
-            </h3>
-            {/* Aquí iría el formulario de nueva comida */}
-            <div className="flex justify-end gap-2 mt-4">
-              <Button
-                variant="secondary"
-                onClick={() => setShowNewMealForm(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() => {
-                  // Aquí iría la lógica para guardar la comida
-                  setShowNewMealForm(false);
-                }}
-              >
-                Guardar
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      )}
     </div>
   );
 };

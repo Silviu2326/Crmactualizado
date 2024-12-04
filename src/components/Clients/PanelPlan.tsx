@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { motion } from 'framer-motion';
 import {
@@ -7,21 +7,46 @@ import {
   Target,
   Dumbbell,
   FileText,
+  Edit,
 } from 'lucide-react';
 
 interface PlanPlanProps {
   clienteId: string;
 }
 
+interface Plan {
+  nombre: string;
+  meta: string;
+  fechaInicio: string;
+  fechaFin: string;
+  progreso: number;
+  rutinaHoy: string;
+  notas: string;
+}
+
 const PanelPlan: React.FC<PlanPlanProps> = ({ clienteId }) => {
   const { theme } = useTheme();
+  const [plan, setPlan] = useState<Plan>({
+    nombre: 'Plan de Pérdida de Peso',
+    meta: 'Reducir 5kg en 3 meses con entrenamiento progresivo',
+    fechaInicio: '2024-01-01',
+    fechaFin: '2024-03-31',
+    progreso: 45,
+    rutinaHoy: 'Entrenamiento de fuerza + 30 min cardio',
+    notas: 'Cliente con molestia leve en rodilla derecha. Evitar ejercicios de alto impacto.',
+  });
+
+  const handleEditRutina = () => {
+    // Implementar lógica para editar la rutina
+    console.log('Editar rutina del día');
+  };
 
   return (
     <div className="flex flex-col w-full h-full gap-4 p-4">
-      {/* Encabezado */}
+      {/* Encabezado con nombre del plan */}
       <div className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
         <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-          Plan de Entrenamiento
+          {plan.nombre}
         </h2>
       </div>
 
@@ -34,11 +59,11 @@ const PanelPlan: React.FC<PlanPlanProps> = ({ clienteId }) => {
           <div className="flex items-center gap-2">
             <Target className={theme === 'dark' ? 'text-blue-400' : 'text-blue-600'} />
             <h3 className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-              Objetivo Actual
+              Meta de la Planificación
             </h3>
           </div>
           <p className={`mt-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-            [Objetivo del cliente]
+            {plan.meta}
           </p>
         </motion.div>
 
@@ -52,9 +77,17 @@ const PanelPlan: React.FC<PlanPlanProps> = ({ clienteId }) => {
               Progreso
             </h3>
           </div>
-          <p className={`mt-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-            [Progreso actual]
-          </p>
+          <div className="mt-2">
+            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+              <div 
+                className="bg-blue-600 h-2.5 rounded-full" 
+                style={{ width: `${plan.progreso}%` }}
+              ></div>
+            </div>
+            <p className={`mt-1 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+              {plan.progreso}% completado
+            </p>
+          </div>
         </motion.div>
 
         <motion.div
@@ -64,40 +97,50 @@ const PanelPlan: React.FC<PlanPlanProps> = ({ clienteId }) => {
           <div className="flex items-center gap-2">
             <CalendarIcon className={theme === 'dark' ? 'text-purple-400' : 'text-purple-600'} />
             <h3 className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-              Duración del Plan
+              Duración
             </h3>
           </div>
           <p className={`mt-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-            [Duración]
+            Inicio: {new Date(plan.fechaInicio).toLocaleDateString()}
+            <br />
+            Fin: {new Date(plan.fechaFin).toLocaleDateString()}
           </p>
         </motion.div>
       </div>
 
-      {/* Detalles del plan */}
+      {/* Rutina de hoy */}
       <div className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
-        <div className="flex items-center gap-2 mb-4">
-          <Dumbbell className={theme === 'dark' ? 'text-orange-400' : 'text-orange-600'} />
-          <h3 className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-            Rutinas de Entrenamiento
-          </h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Dumbbell className={theme === 'dark' ? 'text-orange-400' : 'text-orange-600'} />
+            <h3 className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+              Rutina de Hoy
+            </h3>
+          </div>
+          <button
+            onClick={handleEditRutina}
+            className={`p-2 rounded-full hover:bg-gray-700 transition-colors ${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+            }`}
+          >
+            <Edit size={20} />
+          </button>
         </div>
-        <div className={`space-y-4 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-          {/* Aquí irían las rutinas de entrenamiento */}
-          <p>No hay rutinas asignadas actualmente</p>
+        <div className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+          {plan.rutinaHoy}
         </div>
       </div>
 
-      {/* Notas y observaciones */}
+      {/* Notas */}
       <div className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
         <div className="flex items-center gap-2 mb-4">
           <FileText className={theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600'} />
           <h3 className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-            Notas y Observaciones
+            Notas
           </h3>
         </div>
-        <div className={`space-y-4 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-          {/* Aquí irían las notas relacionadas con el plan */}
-          <p>No hay notas disponibles</p>
+        <div className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+          {plan.notas}
         </div>
       </div>
     </div>

@@ -9,7 +9,7 @@ import {
   Wallet, Receipt, TrendingUp, FileText,
   LayoutDashboard, Users, BarChart,
   Apple, Coffee, Utensils, Salad, Plus, Edit2, Pencil, X, Eye,
-  AlertCircle
+  AlertCircle, MessageCircle
 } from 'lucide-react';
 import Button from '../Common/Button';
 import InfoCard from './InfoCard';
@@ -18,11 +18,14 @@ import ClientCalendar from './Calendar';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import PanelPlan from './PanelPlan';
-import PanelCheckins from './PanelCheckins';
+import PanelProgreso from './PanelProgreso';
 import PanelFinanzas from './PanelFinanzas';
 import PanelDietas from './PanelDietas';
+import PanelPersonal from './PanelPersonal';
+import PanelChat from './PanelChat';
+import PanelAgenda from './PanelAgenda';
 
-type Section = 'dashboard' | 'plan' | 'checkins' | 'dietas' | 'finances';
+type Section = 'dashboard' | 'plan' | 'progreso' | 'dietas' | 'finances' | 'personal' | 'chat' | 'agenda';
 
 interface Nota {
   texto: string;
@@ -116,7 +119,7 @@ interface PanelClienteProps {
   onClose: () => void;
 }
 
-const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api';
+const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com//api';
 
 const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
   const { theme } = useTheme();
@@ -357,9 +360,12 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
   const navigationButtons = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'plan', icon: Dumbbell, label: 'Plan' },
-    { id: 'checkins', icon: BarChart, label: 'Check-ins' },
+    { id: 'progreso', icon: TrendingUp, label: 'Progreso' },
     { id: 'dietas', icon: Utensils, label: 'Dietas' },
     { id: 'finances', icon: Wallet, label: 'Finanzas' },
+    { id: 'personal', icon: User, label: 'Personal' },
+    { id: 'chat', icon: MessageCircle, label: 'Chat' },
+    { id: 'agenda', icon: CalendarIcon, label: 'Agenda' },
   ];
 
   // Función para formatear la fecha en español
@@ -452,7 +458,7 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
                 animate={{ opacity: 1, x: 0 }}
               >
                 <Button
-                  variant="normal"
+                  variant="ghost"
                   onClick={onClose}
                   className="hover:rotate-180 transition-transform duration-300"
                 >
@@ -468,7 +474,7 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
                 return (
                   <Button
                     key={button.id}
-                    variant="normal"
+                    variant={activeSection === button.id ? 'default' : 'ghost'}
                     onClick={() => setActiveSection(button.id as Section)}
                     className={`
                       flex items-center space-x-2 px-4 py-2 rounded-full
@@ -604,17 +610,29 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
               <div className="col-span-2">
                 <PanelPlan clienteId={clienteId} />
               </div>
-            ) : activeSection === 'checkins' ? (
+            ) : activeSection === 'progreso' ? (
               <div className="col-span-2">
-                <PanelCheckins clienteId={clienteId} />
+                <PanelProgreso clienteId={clienteId} />
               </div>
             ) : activeSection === 'finances' ? (
               <div className="col-span-2">
-                <PanelFinanzas clienteId={clienteId} />
+                <PanelFinanzas cliente={cliente} />
               </div>
             ) : activeSection === 'dietas' ? (
               <div className="col-span-2">
                 <PanelDietas clienteId={clienteId} />
+              </div>
+            ) : activeSection === 'personal' ? (
+              <div className="col-span-2">
+                <PanelPersonal cliente={cliente} onEdit={() => console.log('Editar información personal')} />
+              </div>
+            ) : activeSection === 'chat' ? (
+              <div className="col-span-2">
+                <PanelChat clienteId={clienteId} clienteName={cliente.nombre} />
+              </div>
+            ) : activeSection === 'agenda' ? (
+              <div className="col-span-2">
+                <PanelAgenda clienteId={clienteId} />
               </div>
             ) : null}
           </div>

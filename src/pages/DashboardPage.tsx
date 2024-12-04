@@ -23,7 +23,7 @@ import GenerateStoryModal from '../components/modals/GenerateStoryModal';
 import GeneratePostModal from '../components/modals/GeneratePostModal';
 import CreateGroupClassModal from '../components/modals/CreateGroupClassModal';
 
-const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api'; // Asegúrate de que coincida con tu backend
+const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com//api'; // Asegúrate de que coincida con tu backend
 
 const DashboardPage: React.FC = () => {
   const { theme } = useTheme();
@@ -70,7 +70,7 @@ const DashboardPage: React.FC = () => {
         // Función para obtener las alertas
         const fetchAlerts = async () => {
           try {
-            const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/economic-alerts', {
+            const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com//api/economic-alerts', {
               headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
@@ -113,12 +113,12 @@ const DashboardPage: React.FC = () => {
         await fetchClientes();
 
         // Fetch ingresos
-        const ingresosResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos', { headers });
+        const ingresosResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com//api/ingresos', { headers });
         const ingresosData = await ingresosResponse.json();
         setIngresos(ingresosData);
 
         // Fetch gastos
-        const gastosResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos', { headers });
+        const gastosResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com//api/gastos', { headers });
         const gastosData = await gastosResponse.json();
         setGastos(gastosData);
 

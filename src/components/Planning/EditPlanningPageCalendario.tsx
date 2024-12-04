@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Plus, Calendar } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import axios from 'axios';
 
-const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api';
+const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com//api';
 
 interface EditPlanningPageCalendarioProps {
   weeks: WeekPlan[];

@@ -1,92 +1,139 @@
-import React, { useState } from 'react';
-import { Search, X, Plus, Filter, Download, Dumbbell, Target, Clock, Users, Calendar, TrendingUp, Pencil, Trash2, BarChart } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, X, Plus, Filter, Download, Dumbbell, Target, Clock, Users, Calendar, TrendingUp, Pencil, Trash2 } from 'lucide-react';
 import Button from '../Common/Button';
 import Table from '../Common/Table';
 import CreateRoutineModal from './CreateRoutineModal';
 import { useTheme } from '../../contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import axios from 'axios';
+
+interface Metric {
+  type: string;
+  value: string;
+  _id: string;
+}
+
+interface Exercise {
+  name: string;
+  metrics: Metric[];
+  notes: string;
+  _id: string;
+}
+
+interface Routine {
+  _id: string;
+  name: string;
+  description: string;
+  tags: string[];
+  notes: string;
+  exercises: Exercise[];
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 const WorkoutList: React.FC = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreateAIModalOpen, setIsCreateAIModalOpen] = useState(false);
+  const [routines, setRoutines] = useState<Routine[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedRoutine, setSelectedRoutine] = useState<Routine | null>(null);
 
-  const handleCreateRoutine = (routineData: any) => {
-    // Aquí implementaremos la lógica para guardar la nueva rutina
-    console.log('Nueva rutina:', routineData);
-    // TODO: Agregar la rutina a la lista y enviar al backend
+  useEffect(() => {
+    fetchRoutines();
+  }, []);
+
+  const fetchRoutines = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com//api/routines/routines', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.data.status === 'success') {
+        setRoutines(response.data.data);
+      } else {
+        throw new Error('Error al obtener las rutinas');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar las rutinas');
+      console.error('Error fetching routines:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const routinesData = [
-    { 
-      nombre: 'Rutina de Fuerza', 
-      descripcion: 'Esta es una rutina de fuerza', 
-      tags: ['Fuerza', 'Intermedio'], 
-      notas: 'Esta rutina es para principiantes', 
-      acciones: 'Editar' 
-    },
-    { 
-      nombre: 'Cardio HIIT', 
-      descripcion: 'Esta es una rutina de cardio', 
-      tags: ['Cardio', 'Avanzado'], 
-      notas: 'Esta rutina es para avanzados', 
-      acciones: 'Editar' 
-    },
-    { 
-      nombre: 'Yoga para principiantes', 
-      descripcion: 'Esta es una rutina de yoga', 
-      tags: ['Yoga', 'Principiante'], 
-      notas: 'Esta rutina es para principiantes', 
-      acciones: 'Editar' 
-    },
-  ];
+  const handleCreateRoutine = async (routineData: any) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
 
-  const statsCards = [
-    { 
-      icon: Dumbbell,
-      title: "Rutinas Activas",
-      value: "24",
-      color: "bg-blue-500"
-    },
-    {
-      icon: Target,
-      title: "Objetivos Cumplidos",
-      value: "85%",
-      color: "bg-purple-500"
-    },
-    {
-      icon: Clock,
-      title: "Tiempo Total",
-      value: "1,240h",
-      color: "bg-green-500"
-    },
-    {
-      icon: Users,
-      title: "Clientes Asignados",
-      value: "89",
-      color: "bg-amber-500"
+      if (selectedRoutine) {
+        // Si hay una rutina seleccionada, es una edición
+        await axios.put(`https://fitoffice2-f70b52bef77e.herokuapp.com//api/routines/routines/${selectedRoutine._id}`, routineData, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      } else {
+        // Si no hay rutina seleccionada, es una creación
+        await axios.post('https://fitoffice2-f70b52bef77e.herokuapp.com//api/routines/routines', routineData, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      }
+
+      // Actualizar la lista de rutinas
+      fetchRoutines();
+      // Limpiar la rutina seleccionada
+      setSelectedRoutine(null);
+    } catch (err) {
+      console.error('Error saving routine:', err);
+      // Aquí podrías mostrar un mensaje de error al usuario
     }
-  ];
+  };
 
-  const renderCell = (key: string, value: any) => {
-    switch (key) {
-      case 'tags':
-        return (
-          <div className="flex flex-wrap gap-1">
-            {value?.map((tag, index) => (
-              <span key={index} className={`px-3 py-1 rounded-full text-sm font-medium ${
-                tag === 'Fuerza' ? 'bg-purple-100 text-purple-800' :
-                tag === 'Cardio' ? 'bg-red-100 text-red-800' :
-                'bg-blue-100 text-blue-800'
-              }`}>
-                {tag}
-              </span>
-            ))}
-          </div>
-        );
-      default:
-        return value;
+  const handleEditRoutine = (routine: Routine) => {
+    setSelectedRoutine(routine);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleDeleteRoutine = async (routineId: string) => {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar esta rutina?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com//api/routines/routines/${routineId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      // Actualizar la lista de rutinas
+      fetchRoutines();
+    } catch (err) {
+      console.error('Error deleting routine:', err);
+      // Aquí podrías mostrar un mensaje de error al usuario
     }
   };
 
@@ -103,32 +150,6 @@ const WorkoutList: React.FC = () => {
         <p className="text-gray-500 dark:text-gray-400">
           Crea y gestiona rutinas personalizadas para tus clientes
         </p>
-      </motion.div>
-
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
-      >
-        {statsCards.map((card, index) => (
-          <motion.div
-            key={card.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className={`${theme === 'dark' ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg shadow-lg`}
-          >
-            <div className="flex items-center space-x-4">
-              <div className={`${card.color} p-3 rounded-lg`}>
-                <card.icon className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-sm text-gray-500 dark:text-gray-400">{card.title}</h3>
-                <p className="text-2xl font-bold">{card.value}</p>
-              </div>
-            </div>
-          </motion.div>
-        ))}
       </motion.div>
 
       <motion.div 
@@ -181,27 +202,36 @@ const WorkoutList: React.FC = () => {
         className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden"
       >
         <div className="overflow-x-auto">
-          <table className="table w-full">
-            <thead>
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
-                <th>Nombre</th>
-                <th>Descripción</th>
-                <th>Tags/Categorías</th>
-                <th>Notas Adicionales</th>
-                <th>Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Descripción</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tags/Categorías</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Notas Adicionales</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
-            <tbody>
-              {routinesData.map((rutina) => (
-                <tr key={rutina.nombre}>
-                  <td>{rutina.nombre}</td>
-                  <td>{rutina.descripcion}</td>
-                  <td>
+            <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
+              {routines.map((routine, idx) => (
+                <tr 
+                  key={routine._id}
+                  className={`hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 ${
+                    idx % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'
+                  }`}
+                >
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{routine.name}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{routine.description}</div>
+                  </td>
+                  <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1">
-                      {rutina.tags?.map((tag, index) => (
+                      {routine.tags.map((tag, index) => (
                         <span key={index} className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          tag === 'Fuerza' ? 'bg-purple-100 text-purple-800' :
-                          tag === 'Cardio' ? 'bg-red-100 text-red-800' :
+                          tag.toLowerCase().includes('fuerza') ? 'bg-purple-100 text-purple-800' :
+                          tag.toLowerCase().includes('cardio') ? 'bg-red-100 text-red-800' :
                           'bg-blue-100 text-blue-800'
                         }`}>
                           {tag}
@@ -209,20 +239,22 @@ const WorkoutList: React.FC = () => {
                       ))}
                     </div>
                   </td>
-                  <td>{rutina.notas}</td>
-                  <td>
-                    <div className="flex gap-2">
-                      <button
-                        className="btn btn-sm btn-ghost"
-                        onClick={() => console.log('Editar rutina')}
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{routine.notes}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex space-x-2 justify-end">
+                      <button 
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                        onClick={() => handleEditRoutine(routine)}
                       >
-                        <Pencil className="h-4 w-4" />
+                        <Pencil className="w-5 h-5" />
                       </button>
-                      <button
-                        className="btn btn-sm btn-ghost text-error"
-                        onClick={() => console.log('Eliminar rutina')}
+                      <button 
+                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                        onClick={() => handleDeleteRoutine(routine._id)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
                   </td>
@@ -233,11 +265,19 @@ const WorkoutList: React.FC = () => {
         </div>
       </motion.div>
 
-      <CreateRoutineModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSave={handleCreateRoutine}
-      />
+      {/* Modal de creación/edición */}
+      {isCreateModalOpen && (
+        <CreateRoutineModal
+          isOpen={isCreateModalOpen}
+          onClose={() => {
+            setIsCreateModalOpen(false);
+            setSelectedRoutine(null);
+          }}
+          onSave={handleCreateRoutine}
+          routine={selectedRoutine}
+          theme={theme}
+        />
+      )}
     </div>
   );
 };

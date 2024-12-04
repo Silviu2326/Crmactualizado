@@ -7,22 +7,11 @@ import Button from '../Common/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 import ExerciseSelector from './ExerciseSelector';
 import SesionEntrenamiento from './SesionEntrenamiento';
-import { trainingVariants, Set } from './trainingVariants'; // Importar desde archivo común
+import { trainingVariants, Set } from './trainingVariants';
 import {
   predefinedExercises,
   Exercise as PredefinedExercise,
-} from './predefinedExercises'; // Importar ejercicios predefinidos
-
-// Simulated external data for training status
-const trainingStatus = {
-  Lunes: 'regular',
-  Martes: 'good',
-  Miércoles: 'good',
-  Jueves: 'regular',
-  Viernes: 'good',
-  Sábado: 'bad',
-  Domingo: 'good',
-} as const;
+} from './predefinedExercises';
 
 // Definición de interfaces
 interface Exercise {
@@ -53,7 +42,7 @@ interface VistaComplejaProps {
   planSemanal: WeekPlan;
   updatePlan: (plan: WeekPlan) => void;
   onReload?: () => void;
-  planningId: string; // Añadiendo planningId como prop
+  planningId: string;
 }
 
 const VistaCompleja: React.FC<VistaComplejaProps> = ({
@@ -61,7 +50,7 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
   planSemanal,
   updatePlan,
   onReload,
-  planningId, // Recibiendo planningId
+  planningId,
 }) => {
   const { theme } = useTheme();
   const [diaSeleccionado, setDiaSeleccionado] = useState('Lunes');
@@ -89,234 +78,48 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
     'Domingo',
   ];
 
-  // Función para obtener el estado del día anterior
-  const getPreviousDayStatus = (
-    currentDay: string
-  ): 'good' | 'regular' | 'bad' | undefined => {
-    const diasOrdenados = [
-      'Lunes',
-      'Martes',
-      'Miércoles',
-      'Jueves',
-      'Viernes',
-      'Sábado',
-      'Domingo',
-    ];
-    const currentIndex = diasOrdenados.indexOf(currentDay);
-
-    if (currentIndex <= 0) return undefined; // Lunes o día inválido
-
-    const previousDay = diasOrdenados[currentIndex - 1];
-    const status = trainingStatus[previousDay as keyof typeof trainingStatus];
-
-    return status;
-  };
-
-  // Función para determinar la variante basada en el estado del día anterior
-  const determineVariant = (currentDay: string): 0 | 1 | 2 | 3 => {
-    const previousStatus = getPreviousDayStatus(currentDay);
-
-    switch (previousStatus) {
-      case 'good':
-        return 1; // Verde
-      case 'regular':
-        return 2; // Amarillo
-      case 'bad':
-        return 3; // Rojo
-      default:
-        return 0; // Normal
-    }
-  };
-
-  // Función para manejar el cambio de variante
-  const handleVariantChange = (variant: 0 | 1 | 2 | 3) => {
-    if (variant === selectedVariant) return; // Evita actualizaciones innecesarias
-
-    const variantInfo = trainingVariants[variant];
-    const requiredSetCount = variantInfo.setCount;
-
-    // Seleccionar el día actual
-    const updatedPlan: WeekPlan = {
-      ...planSemanal,
-      [diaSeleccionado]: {
-        ...planSemanal[diaSeleccionado],
-        sessions: planSemanal[diaSeleccionado].sessions.map((session) => ({
-          ...session,
-          exercises: session.exercises.map((exercise) => ({
-            ...exercise,
-            sets: trainingVariants[variant]
-              .setModifier(
-                // Asegurar que haya suficientes sets
-                [...exercise.sets],
-                exercise.name
-              )
-              .slice(0, requiredSetCount), // Limitar al setCount requerido
-          })),
-        })),
-      },
-    };
-
-    // Debug para ver los sets antes y después
-    console.log('Antes:', planSemanal[diaSeleccionado].sessions);
-    console.log('Después:', updatedPlan[diaSeleccionado].sessions);
-
-    setSelectedVariant(variant);
-    updatePlan(updatedPlan); // Actualiza el plan sin causar bucles
-  };
-
-  // Actualizar la variante cuando cambia el día seleccionado
-  useEffect(() => {
-    const newVariant = determineVariant(diaSeleccionado);
-    if (newVariant !== selectedVariant) {
-      handleVariantChange(newVariant);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [diaSeleccionado]);
-
-  // Función para obtener el icono de estado
-  const getStatusIcon = (dia: string) => {
-    const status = trainingStatus[dia as keyof typeof trainingStatus];
-    if (!status || status === 'good') return null;
-
-    return status === 'regular' ? (
-      <div className="absolute top-2 right-2">
-        <AlertCircle className="w-6 h-6 text-yellow-500" />
-      </div>
-    ) : status === 'bad' ? (
-      <div className="absolute top-2 right-2">
-        <XCircle className="w-6 h-6 text-red-500" />
-      </div>
-    ) : null;
-  };
-
-  // Función para obtener el fondo basado en el estado
-  const getStatusBackground = (dia: string, isSelected: boolean = false) => {
-    const status = trainingStatus[dia as keyof typeof trainingStatus];
-    if (!status) {
-      return isSelected
-        ? theme === 'dark'
-          ? 'bg-blue-600 text-white'
-          : 'bg-blue-500 text-white'
-        : '';
-    }
-
-    if (theme === 'dark') {
-      if (status === 'good') {
-        return isSelected
-          ? 'bg-gradient-to-br from-green-800 to-green-700 text-white'
-          : 'bg-gradient-to-br from-green-900/30 to-green-800/30';
-      } else if (status === 'regular') {
-        return isSelected
-          ? 'bg-gradient-to-br from-yellow-800 to-yellow-700 text-white'
-          : 'bg-gradient-to-br from-yellow-900/30 to-yellow-800/30';
-      } else if (status === 'bad') {
-        return isSelected
-          ? 'bg-gradient-to-br from-red-800 to-red-700 text-white'
-          : 'bg-gradient-to-br from-red-900/30 to-red-800/30';
-      }
-    } else {
-      if (status === 'good') {
-        return isSelected
-          ? 'bg-gradient-to-br from-green-200 to-green-300 text-green-900'
-          : 'bg-gradient-to-br from-green-50 to-green-100/50';
-      } else if (status === 'regular') {
-        return isSelected
-          ? 'bg-gradient-to-br from-yellow-200 to-yellow-300 text-yellow-900'
-          : 'bg-gradient-to-br from-yellow-50 to-yellow-100/50';
-      } else if (status === 'bad') {
-        return isSelected
-          ? 'bg-gradient-to-br from-red-200 to-red-300 text-red-900'
-          : 'bg-gradient-to-br from-red-50 to-red-100/50';
-      }
-    }
-    return '';
-  };
-
-  // Función para obtener el color de la variante
-  const getVariantColor = (variant: 0 | 1 | 2 | 3) => {
-    switch (variant) {
-      case 0:
-        return theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200';
-      case 1:
-        return 'bg-gradient-to-r from-green-500 to-green-600';
-      case 2:
-        return 'bg-gradient-to-r from-yellow-500 to-yellow-600';
-      case 3:
-        return 'bg-gradient-to-r from-red-500 to-red-600';
-    }
-  };
-
   const handleAddSession = async (dia: string) => {
     console.log('🚀 Iniciando creación de sesión para el día:', dia);
     setShowSessionPopup(true);
   };
 
   const handleCreateSession = async () => {
-    try {
-      if (!sessionName.trim()) {
-        console.error('El nombre de la sesión es requerido');
-        return;
-      }
+    console.log('VistaCompleja: Creando nueva sesión:', {
+      nombre: sessionName,
+      tipo: sessionType,
+      rondas: sessionRounds
+    });
 
-      console.log('Creando nueva sesión:', {
-        name: sessionName,
-        tipo: sessionType,
-        rondas: sessionType === 'Superset' ? sessionRounds : undefined
-      });
-
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No se encontró el token de autenticación');
-      }
-
-      const sessionData = {
-        planningId: planningId,
-        weekNumber: semanaActual,
-        day: diaSeleccionado,
-        sessionData: {
-          name: sessionName.trim(),
-          tipo: sessionType,
-          rondas: sessionType === 'Superset' ? sessionRounds : undefined
-        }
-      };
-
-      console.log('Creando sesión:', sessionData);
-
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(sessionData),
-      });
-
-      console.log('Respuesta del servidor:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.mensaje || 'Error al crear la sesión');
-      }
-
-      const data = await response.json();
-      console.log('Sesión creada:', data);
-
-      // Limpiar el formulario
-      setSessionName('');
-      setSessionType('Normal');
-      setSessionRounds(undefined);
-      setShowSessionPopup(false);
-
-      // Recargar los datos
-      if (onReload) {
-        onReload();
-      }
-
-    } catch (error) {
-      console.error('Error al crear la sesión:', error);
-    } finally {
-      setIsCreatingSession(false);
+    if (!sessionName.trim()) {
+      console.warn('VistaCompleja: Nombre de sesión vacío');
+      return;
     }
+
+    const newSession: Session = {
+      _id: Date.now().toString(),
+      name: sessionName,
+      tipo: sessionType,
+      exercises: [],
+    };
+
+    if (sessionType === 'Superset' && sessionRounds) {
+      newSession.rondas = sessionRounds;
+    }
+
+    const updatedPlan = {
+      ...planSemanal,
+      [diaSeleccionado]: {
+        ...planSemanal[diaSeleccionado],
+        sessions: [...planSemanal[diaSeleccionado].sessions, newSession],
+      },
+    };
+
+    console.log('VistaCompleja: Plan actualizado con nueva sesión:', updatedPlan[diaSeleccionado]);
+    updatePlan(updatedPlan);
+    setShowSessionPopup(false);
+    setSessionName('');
+    setSessionType('Normal');
+    setSessionRounds(undefined);
   };
 
   // Función para manejar la adición de un ejercicio
@@ -327,32 +130,48 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
   };
 
   // Función para manejar la selección de un ejercicio desde el selector
-  const handleSelectExercise = (exercise: PredefinedExercise) => {
-    console.log('Ejercicio seleccionado:', exercise);
+  const handleSelectExercise = (exercise: any) => {
+    console.log('VistaCompleja: Ejercicio seleccionado:', exercise);
     if (!selectedSessionId) {
-      console.error('No hay sesión seleccionada');
+      console.warn('VistaCompleja: No hay sesión seleccionada');
       return;
     }
 
-    const newExercise: Exercise = {
-      _id: exercise._id || Math.random().toString(),
-      name: exercise.name,
-      sets: []
+    const updatedPlan = { ...planSemanal };
+    const dayPlan = updatedPlan[diaSeleccionado];
+    const sessionIndex = dayPlan.sessions.findIndex(
+      (session) => session._id === selectedSessionId
+    );
+
+    if (sessionIndex === -1) {
+      console.error('VistaCompleja: No se encontró la sesión:', selectedSessionId);
+      return;
+    }
+
+    // Verificar si el ejercicio ya existe en la sesión
+    const exerciseExists = dayPlan.sessions[sessionIndex].exercises.some(
+      (e) => e._id === exercise._id
+    );
+
+    if (exerciseExists) {
+      console.warn('VistaCompleja: El ejercicio ya existe en esta sesión');
+      return;
+    }
+
+    const newExercise = {
+      _id: exercise._id,
+      name: exercise.nombre,
+      sets: [{
+        id: Date.now().toString(),
+        reps: 12,
+        weight: 10,
+        rest: 60
+      }]
     };
 
-    console.log('Actualizando sesión:', selectedSessionId, 'con ejercicio:', newExercise);
-
-    const updatedPlan: WeekPlan = {
-      ...planSemanal,
-      [diaSeleccionado]: {
-        ...planSemanal[diaSeleccionado],
-        sessions: planSemanal[diaSeleccionado].sessions.map((session) =>
-          session._id === selectedSessionId
-            ? { ...session, exercises: [...session.exercises, newExercise] }
-            : session
-        ),
-      },
-    };
+    console.log('VistaCompleja: Nuevo ejercicio a agregar:', newExercise);
+    dayPlan.sessions[sessionIndex].exercises.push(newExercise);
+    console.log('VistaCompleja: Sesión actualizada:', dayPlan.sessions[sessionIndex]);
 
     updatePlan(updatedPlan);
     setShowExerciseSelector(false);
@@ -375,12 +194,10 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        console.log('No se encontró token de autenticación');
         throw new Error('No se encontró el token de autenticación');
       }
-      console.log('Token encontrado, procediendo con la eliminación');
 
-      const url = `https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/session/${sessionId}`;
+      const url = `https://fitoffice2-f70b52bef77e.herokuapp.com//api/plannings/session/${sessionId}`;
       console.log('URL de eliminación:', url);
 
       const response = await fetch(url, {
@@ -395,7 +212,6 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.log('Error del servidor:', errorData);
         throw new Error(errorData.mensaje || 'Error al eliminar la sesión');
       }
 
@@ -409,7 +225,6 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
       
       // Recargar los datos
       if (onReload) {
-        console.log('Iniciando recarga de datos');
         onReload();
       } else {
         console.log('No hay función onReload disponible');
@@ -433,11 +248,17 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
 
   return (
     <>
-      <ExerciseSelector
-        isOpen={showExerciseSelector}
-        onClose={() => setShowExerciseSelector(false)}
-        onSelectExercise={handleSelectExercise}
-      />
+      {showExerciseSelector && (
+        <ExerciseSelector
+          isOpen={showExerciseSelector}
+          onClose={() => setShowExerciseSelector(false)}
+          onSelectExercise={handleSelectExercise}
+          planningId={planningId}
+          weekNumber={semanaActual}
+          selectedDay={diaSeleccionado}
+          sessionId={selectedSessionId || ''}
+        />
+      )}
 
       <div className="space-y-6">
         {/* Grid de días de la semana */}
@@ -445,32 +266,20 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
           {dias.map((dia) => (
             <motion.div
               key={dia}
-              className={`relative rounded-xl transition-all duration-300 transform hover:scale-105 overflow-hidden shadow-lg
-                ${
-                  diaSeleccionado === dia
-                    ? getStatusBackground(dia, true)
-                    : theme === 'dark'
-                    ? 'bg-gray-800 hover:bg-gray-700'
-                    : 'bg-white hover:bg-gray-50'
-                } ${diaSeleccionado !== dia ? getStatusBackground(dia) : ''}`}
+              onClick={() => setDiaSeleccionado(dia)}
+              className={`p-4 rounded-lg cursor-pointer transition-colors duration-200 ${
+                diaSeleccionado === dia
+                  ? theme === 'dark'
+                    ? 'bg-blue-600'
+                    : 'bg-blue-500 text-white'
+                  : theme === 'dark'
+                  ? 'bg-gray-800 hover:bg-gray-700'
+                  : 'bg-white hover:bg-gray-50'
+              }`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              {getStatusIcon(dia)}
-              <button
-                onClick={() => setDiaSeleccionado(dia)}
-                className="w-full p-4 text-center"
-              >
-                <div className="flex flex-col items-center space-y-2">
-                  <Calendar
-                    className={`w-6 h-6 ${
-                      diaSeleccionado === dia ? 'text-current' : 'text-blue-500'
-                    }`}
-                  />
-                  <span className="font-medium">{dia}</span>
-                  <span className="text-sm opacity-75">
-                    {planSemanal[dia].sessions.length} sesiones
-                  </span>
-                </div>
-              </button>
+              <h3 className="text-lg font-semibold text-center">{dia}</h3>
             </motion.div>
           ))}
         </div>
@@ -482,48 +291,12 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className={`p-6 rounded-xl shadow-lg ${getStatusBackground(
-              diaSeleccionado
-            )}
-              ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
+            className={`p-6 rounded-lg shadow-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
           >
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-3">
                 <Calendar className="w-6 h-6 text-blue-500" />
                 <h2 className="text-2xl font-bold">{diaSeleccionado}</h2>
-                {getStatusIcon(diaSeleccionado)}
-              </div>
-
-              {/* Controles de variantes */}
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  {[0, 1, 2, 3].map((variant) => (
-                    <button
-                      key={variant}
-                      onClick={() =>
-                        handleVariantChange(variant as 0 | 1 | 2 | 3)
-                      }
-                      className={`px-6 py-3 rounded-lg transition-all duration-300 ${getVariantColor(
-                        variant as 0 | 1 | 2 | 3
-                      )} ${
-                        selectedVariant === variant
-                          ? 'ring-2 ring-blue-500 transform scale-105'
-                          : 'hover:opacity-90'
-                      } text-white shadow-lg`}
-                      aria-label={`Seleccionar variante ${
-                        trainingVariants[
-                          variant as keyof typeof trainingVariants
-                        ].name
-                      }`}
-                    >
-                      {
-                        trainingVariants[
-                          variant as keyof typeof trainingVariants
-                        ].name
-                      }
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Controles de filtrado y añadir sesión */}
@@ -568,8 +341,9 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
                   }
                   planSemanal={planSemanal}
                   updatePlan={updatePlan}
-                  variant={selectedVariant}
-                  previousDayStatus={getPreviousDayStatus(diaSeleccionado)}
+                  planningId={planningId}
+                  weekNumber={semanaActual}
+                  selectedDay={diaSeleccionado}
                 />
               ))}
 

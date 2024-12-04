@@ -90,8 +90,8 @@ const Calendar: React.FC<CalendarProps> = ({ clientId }) => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      console.log('🔄 Realizando petición a:', `https://fitoffice2-f70b52bef77e.herokuapp.com/api/events/client/${clientId}`);
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/events/client/${clientId}`, {
+      console.log('🔄 Realizando petición a:', `https://fitoffice2-f70b52bef77e.herokuapp.com//api/events/client/${clientId}`);
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com//api/events/client/${clientId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

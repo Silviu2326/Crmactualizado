@@ -44,7 +44,7 @@ interface Cliente {
   __v: number;
 }
 
-const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api';
+const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com//api';
 
 const ClientList: React.FC = () => {
   const { theme } = useTheme();

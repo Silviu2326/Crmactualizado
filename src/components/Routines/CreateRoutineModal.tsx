@@ -1,57 +1,93 @@
-import React, { useState } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Plus, Trash2, ChevronDown } from 'lucide-react';
+import { BasicInformation } from './BasicInformation';
+import { Exercise, CreateRoutineModalProps } from './types';
+import axios from 'axios';
 
-interface Exercise {
-  id: string;
-  name: string;
-  reps: string;
-  weight: string;
-  rest: string;
-}
+const metricOptions = [
+  'Repeticiones', 'Peso', 'Descanso', 'Tempo', 'RPE',
+  'RPM', 'RIR', 'Tiempo', 'Velocidad', 'Cadencia',
+  'Distancia', 'Altura', 'Calorías', 'Ronda'
+];
 
-interface CreateRoutineModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (routineData: any) => void;
-}
-
-const CreateRoutineModal: React.FC<CreateRoutineModalProps> = ({ isOpen, onClose, onSave }) => {
+const CreateRoutineModal: React.FC<CreateRoutineModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSave,
+  routine,
+  theme = 'light' 
+}) => {
   const [routineName, setRoutineName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [selectedGoal, setSelectedGoal] = useState('');
+  const [exercises, setExercises] = useState<Exercise[]>([{
+    id: Date.now().toString(),
+    name: '',
+    metrics: [
+      { type: 'Repeticiones', value: '' },
+      { type: 'Peso', value: '' },
+      { type: 'Descanso', value: '' }
+    ],
+    notes: ''
+  }]);
+  const [openMetricDropdown, setOpenMetricDropdown] = useState<string | null>(null);
+  const [apiExercises, setApiExercises] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [focusedExerciseId, setFocusedExerciseId] = useState<string | null>(null);
 
-  const predefinedTags = ['Upper body', 'Lower body', 'Push', 'Pull', 'Legs'];
-  const goalOptions = [
-    'Cardio',
-    'Fuerza',
-    'Hipertrofia',
-    'Resistencia',
-    'Movilidad',
-    'Coordinación',
-    'Definición',
-    'Recomposición',
-    'Rehabilitación',
-    'Otra'
-  ];
+  useEffect(() => {
+    if (routine) {
+      setRoutineName(routine.name || '');
+      setDescription(routine.description || '');
+      setSelectedTags(routine.tags || []);
+      setNotes(routine.notes || '');
+      setExercises(routine.exercises || []);
+    }
+    fetchExercises();
+  }, [routine]);
 
-  const handleTagToggle = (tag: string) => {
-    setSelectedTags(prev =>
-      prev.includes(tag)
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
+  const fetchExercises = async () => {
+    try {
+      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com//api/exercises');
+      setApiExercises(response.data.data);
+    } catch (error) {
+      console.error('Error fetching exercises:', error);
+    }
+  };
+
+  const handleExerciseNameChange = (exerciseId: string, value: string) => {
+    const filteredSuggestions = apiExercises.filter(exercise =>
+      exercise.nombre.toLowerCase().includes(value.toLowerCase())
     );
+    setSuggestions(value ? filteredSuggestions : []);
+    setFocusedExerciseId(exerciseId);
+
+    const newExercises = exercises.map(exercise =>
+      exercise.id === exerciseId ? { ...exercise, name: value } : exercise
+    );
+    setExercises(newExercises);
+  };
+
+  const selectSuggestion = (exerciseId: string, suggestion: any) => {
+    const newExercises = exercises.map(exercise =>
+      exercise.id === exerciseId ? { ...exercise, name: suggestion.nombre } : exercise
+    );
+    setExercises(newExercises);
+    setSuggestions([]);
+    setFocusedExerciseId(null);
   };
 
   const addExercise = () => {
     const newExercise: Exercise = {
       id: Date.now().toString(),
       name: '',
-      reps: '',
-      weight: '',
-      rest: ''
+      metrics: [
+        { type: 'Repeticiones', value: '' },
+        { type: 'Peso', value: '' },
+        { type: 'Descanso', value: '' }
+      ],
+      notes: ''
     };
     setExercises([...exercises, newExercise]);
   };
@@ -60,20 +96,41 @@ const CreateRoutineModal: React.FC<CreateRoutineModalProps> = ({ isOpen, onClose
     setExercises(exercises.filter(exercise => exercise.id !== id));
   };
 
-  const updateExercise = (id: string, field: keyof Exercise, value: string) => {
+  const updateMetricValue = (exerciseId: string, metricIndex: number, value: string) => {
     setExercises(exercises.map(exercise =>
-      exercise.id === id ? { ...exercise, [field]: value } : exercise
+      exercise.id === exerciseId
+        ? {
+            ...exercise,
+            metrics: exercise.metrics.map((metric, idx) =>
+              idx === metricIndex ? { ...metric, value } : metric
+            )
+          }
+        : exercise
     ));
   };
 
-  const handleSave = () => {
+  const handleUpdateMetric = (metricIndex: number, newType: string) => {
+    setExercises(exercises.map(exercise => ({
+      ...exercise,
+      metrics: exercise.metrics.map((metric, idx) =>
+        idx === metricIndex ? { ...metric, type: newType } : metric
+      )
+    })));
+    setOpenMetricDropdown(null);
+  };
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
     const routineData = {
       name: routineName,
       description,
       tags: selectedTags,
       notes,
-      exercises,
-      goal: selectedGoal
+      exercises: exercises.map(ex => ({
+        name: ex.name,
+        metrics: ex.metrics.map(metric => ({ type: metric.type, value: metric.value })),
+        notes: ex.notes
+      }))
     };
     onSave(routineData);
     onClose();
@@ -82,188 +139,202 @@ const CreateRoutineModal: React.FC<CreateRoutineModalProps> = ({ isOpen, onClose
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl p-6 max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Crear Nueva Rutina</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-red-100 rounded-full transition-colors"
-          >
-            <X className="h-6 w-6 text-red-800" />
-          </button>
-        </div>
-
-        {/* General Information */}
-        <div className="space-y-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Nombre de la Rutina
-            </label>
-            <input
-              type="text"
-              value={routineName}
-              onChange={(e) => setRoutineName(e.target.value)}
-              className="input input-bordered w-full"
-              placeholder="Ingrese el nombre de la rutina"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Meta
-            </label>
-            <select
-              value={selectedGoal}
-              onChange={(e) => setSelectedGoal(e.target.value)}
-              className="select select-bordered w-full"
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className={`w-full max-w-5xl rounded-lg shadow-xl overflow-hidden ${
+        theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+      }`}>
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+              {routine ? "Editar Rutina" : "Crear Nueva Rutina"}
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
-              <option value="">Seleccione una meta</option>
-              {goalOptions.map(goal => (
-                <option key={goal} value={goal}>{goal}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Descripción
-            </label>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="input input-bordered w-full"
-              placeholder="Describa la rutina"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Tags/Categorías
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {predefinedTags.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => handleTagToggle(tag)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                    selectedTags.includes(tag)
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Notas Adicionales
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="textarea textarea-bordered w-full h-24"
-              placeholder="Añada notas adicionales sobre la rutina"
-            />
+              <X className="h-6 w-6" />
+            </button>
           </div>
         </div>
 
-        {/* Exercises Section */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Ejercicios/Actividades
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="table w-full">
-              <thead>
-                <tr>
-                  <th>Ejercicio</th>
-                  <th>Repeticiones</th>
-                  <th>Peso</th>
-                  <th>Descanso</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {exercises.map((exercise) => (
-                  <tr key={exercise.id}>
-                    <td>
-                      <input
-                        type="text"
-                        value={exercise.name}
-                        onChange={(e) => updateExercise(exercise.id, 'name', e.target.value)}
-                        className="input input-bordered w-full"
-                        placeholder="Nombre del ejercicio"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={exercise.reps}
-                        onChange={(e) => updateExercise(exercise.id, 'reps', e.target.value)}
-                        className="input input-bordered w-full"
-                        placeholder="Repeticiones"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={exercise.weight}
-                        onChange={(e) => updateExercise(exercise.id, 'weight', e.target.value)}
-                        className="input input-bordered w-full"
-                        placeholder="Peso (kg)"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={exercise.rest}
-                        onChange={(e) => updateExercise(exercise.id, 'rest', e.target.value)}
-                        className="input input-bordered w-full"
-                        placeholder="Descanso"
-                      />
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => removeExercise(exercise.id)}
-                        className="btn btn-ghost btn-sm text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </td>
+        <div className="p-6 max-h-[80vh] overflow-y-auto">
+          <form onSubmit={handleSave}>
+            <BasicInformation
+              routineName={routineName}
+              setRoutineName={setRoutineName}
+              description={description}
+              setDescription={setDescription}
+              selectedTags={selectedTags}
+              setSelectedTags={setSelectedTags}
+              notes={notes}
+              setNotes={setNotes}
+              theme={theme}
+            />
+
+            <div className="mt-8 overflow-visible">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 rounded-lg overflow-hidden shadow-sm">
+                <thead className={`${
+                  theme === 'dark' 
+                    ? 'bg-gray-800 text-gray-200' 
+                    : 'bg-blue-50 text-gray-700'
+                }`}>
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-1/4">
+                      Ejercicio
+                    </th>
+                    {exercises[0]?.metrics.map((metric, index) => (
+                      <th key={index} className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">
+                        <button
+                          onClick={() => setOpenMetricDropdown(openMetricDropdown === `header-${index}` ? null : `header-${index}`)}
+                          className="group flex items-center gap-1 hover:text-blue-500 focus:outline-none transition-colors duration-200"
+                        >
+                          <span>{metric.type}</span>
+                          <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${
+                            openMetricDropdown === `header-${index}` ? 'rotate-180' : ''
+                          }`} />
+                        </button>
+                        {openMetricDropdown === `header-${index}` && (
+                          <div className="fixed mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-50">
+                            <div className="py-1 max-h-60 overflow-auto">
+                              {metricOptions.map((option) => (
+                                <button
+                                  key={option}
+                                  type="button"
+                                  className="block w-full text-left px-4 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors duration-150"
+                                  onClick={() => handleUpdateMetric(index, option)}
+                                >
+                                  {option}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </th>
+                    ))}
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">
+                      Notas
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider w-20">
+                      Acciones
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <button
-            onClick={addExercise}
-            className="btn btn-ghost btn-sm mt-4"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Agregar ejercicio
-          </button>
-        </div>
+                </thead>
+                <tbody className={`${
+                  theme === 'dark' ? 'bg-gray-900' : 'bg-white'
+                } divide-y divide-gray-200 dark:divide-gray-700`}>
+                  {exercises.map((exercise, exerciseIndex) => (
+                    <tr 
+                      key={exercise.id} 
+                      className={`${
+                        theme === 'dark'
+                          ? exerciseIndex % 2 === 0 
+                            ? 'bg-gray-800/50' 
+                            : 'bg-gray-900'
+                          : exerciseIndex % 2 === 0
+                            ? 'bg-gray-50/50'
+                            : 'bg-white'
+                      } hover:bg-blue-50/50 dark:hover:bg-gray-800/70 transition-colors duration-150`}
+                    >
+                      <td className="px-6 py-4 relative">
+                        <input
+                          type="text"
+                          value={exercise.name}
+                          onChange={(e) => handleExerciseNameChange(exercise.id, e.target.value)}
+                          onFocus={() => setFocusedExerciseId(exercise.id)}
+                          className={`w-full bg-transparent border-0 focus:ring-2 focus:ring-blue-500 rounded-md ${
+                            theme === 'dark' ? 'text-gray-200' : 'text-gray-900'
+                          }`}
+                          placeholder="Nombre del ejercicio"
+                        />
+                        {focusedExerciseId === exercise.id && suggestions.length > 0 && (
+                          <div className="fixed mt-1 ml-6 w-96 bg-white dark:bg-gray-700 rounded-md shadow-lg z-[100]" style={{ maxWidth: 'calc(100% - 2rem)' }}>
+                            {suggestions.map((suggestion) => (
+                              <button
+                                key={suggestion._id}
+                                type="button"
+                                className="block w-full text-left px-4 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-600"
+                                onClick={() => selectSuggestion(exercise.id, suggestion)}
+                              >
+                                {suggestion.nombre}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                      {exercise.metrics.map((metric, metricIndex) => (
+                        <td key={metricIndex} className="px-6 py-4">
+                          <input
+                            type="text"
+                            value={metric.value}
+                            onChange={(e) => updateMetricValue(exercise.id, metricIndex, e.target.value)}
+                            className={`w-full bg-transparent border-0 focus:ring-2 focus:ring-blue-500 rounded-md ${
+                              theme === 'dark' ? 'text-gray-200' : 'text-gray-900'
+                            }`}
+                            placeholder={`${metric.type}`}
+                          />
+                        </td>
+                      ))}
+                      <td className="px-6 py-4">
+                        <input
+                          type="text"
+                          value={exercise.notes || ''}
+                          onChange={(e) => {
+                            const newExercises = [...exercises];
+                            newExercises[exerciseIndex].notes = e.target.value;
+                            setExercises(newExercises);
+                          }}
+                          className={`w-full bg-transparent border-0 focus:ring-2 focus:ring-blue-500 rounded-md ${
+                            theme === 'dark' ? 'text-gray-200' : 'text-gray-900'
+                          }`}
+                          placeholder="Notas"
+                        />
+                      </td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => removeExercise(exercise.id)}
+                          className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                          title="Eliminar ejercicio"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-between mt-6">
-          <button
-            onClick={handleSave}
-            className="btn bg-purple-600 hover:bg-purple-700 text-white"
-          >
-            Guardar
-          </button>
-          <button
-            onClick={onClose}
-            className="btn bg-red-800 hover:bg-red-900 text-white"
-          >
-            Cerrar
-          </button>
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={addExercise}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                <Plus className="h-5 w-5" />
+                Agregar Ejercicio
+              </button>
+            </div>
+
+            <div className="flex justify-end space-x-4 mt-8">
+              <button
+                type="button"
+                onClick={onClose}
+                className={`px-6 py-2 rounded-lg font-medium ${
+                  theme === 'dark'
+                    ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                } transition-colors`}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2 rounded-lg font-medium bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+              >
+                {routine ? 'Actualizar' : 'Guardar'}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

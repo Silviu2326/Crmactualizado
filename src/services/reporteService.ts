@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api';
+const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com//api';
 
 export interface Reporte {
   _id: string;

@@ -12,11 +12,29 @@ import {
   Receipt,
   Wallet,
   AlertCircle,
+  Edit3,
 } from 'lucide-react';
 import Button from '../Common/Button';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface PanelFinanzasProps {
   clienteId: string;
+}
+
+interface ServicioContratado {
+  id: string;
+  nombre: string;
+  fechaInicio: string;
+  fechaFinal: string;
+  importeTotal: number;
+}
+
+interface Pago {
+  id: string;
+  fecha: string;
+  metodoPago: string;
+  aTiempo: boolean;
+  monto: number;
 }
 
 interface Transaccion {
@@ -40,10 +58,36 @@ interface PlanPago {
 
 const PanelFinanzas: React.FC<PanelFinanzasProps> = ({ clienteId }) => {
   const { theme } = useTheme();
+  const [notas, setNotas] = useState<string>('');
+  const [editandoNotas, setEditandoNotas] = useState(false);
   const [showNewPaymentForm, setShowNewPaymentForm] = useState(false);
-  
+
   // Datos de ejemplo
-  const [planesPago] = useState<PlanPago[]>([
+  const serviciosContratados: ServicioContratado[] = [
+    {
+      id: '1',
+      nombre: 'Plan Premium Trimestral',
+      fechaInicio: '2024-01-01',
+      fechaFinal: '2024-03-31',
+      importeTotal: 149.97
+    },
+    {
+      id: '2',
+      nombre: 'Sesiones Personalizadas',
+      fechaInicio: '2024-02-01',
+      fechaFinal: '2024-02-28',
+      importeTotal: 299.99
+    }
+  ];
+
+  const pagos: Pago[] = [
+    { id: '1', fecha: '2024-01-01', metodoPago: 'Tarjeta', aTiempo: true, monto: 49.99 },
+    { id: '2', fecha: '2024-02-01', metodoPago: 'Tarjeta', aTiempo: true, monto: 49.99 },
+    { id: '3', fecha: '2024-03-01', metodoPago: 'Efectivo', aTiempo: false, monto: 49.99 },
+    { id: '4', fecha: '2024-02-01', metodoPago: 'PayPal', aTiempo: true, monto: 299.99 }
+  ];
+
+  const planesPago: PlanPago[] = [
     {
       id: '1',
       nombre: 'Plan Premium',
@@ -53,9 +97,9 @@ const PanelFinanzas: React.FC<PanelFinanzasProps> = ({ clienteId }) => {
       fechaProximoPago: '2024-02-01',
       estado: 'activo'
     }
-  ]);
+  ];
 
-  const [transacciones] = useState<Transaccion[]>([
+  const transacciones: Transaccion[] = [
     {
       id: '1',
       fecha: '2024-01-15',
@@ -72,7 +116,30 @@ const PanelFinanzas: React.FC<PanelFinanzasProps> = ({ clienteId }) => {
       estado: 'completado',
       metodoPago: 'Efectivo'
     }
-  ]);
+  ];
+
+  // Cálculos
+  const importeTotal = serviciosContratados.reduce((sum, servicio) => sum + servicio.importeTotal, 0);
+  const pagosATiempo = pagos.filter(p => p.aTiempo).length;
+  const ratioPagosATiempo = (pagosATiempo / pagos.length) * 100;
+
+  // Calcular método de pago preferido
+  const metodoPagoCounts = pagos.reduce((acc, pago) => {
+    acc[pago.metodoPago] = (acc[pago.metodoPago] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const metodoPagoPreferido = Object.entries(metodoPagoCounts).reduce((a, b) =>
+    metodoPagoCounts[a[0]] > metodoPagoCounts[b[0]] ? a : b
+  )[0];
+
+  // Datos para el gráfico circular
+  const pieData = serviciosContratados.map(servicio => ({
+    name: servicio.nombre,
+    value: servicio.importeTotal
+  }));
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
   const handleNewPayment = () => {
     setShowNewPaymentForm(true);
@@ -83,7 +150,7 @@ const PanelFinanzas: React.FC<PanelFinanzasProps> = ({ clienteId }) => {
     .reduce((sum, t) => sum + t.monto, 0);
 
   return (
-    <div className="flex flex-col w-full h-full gap-6">
+    <div className={`flex flex-col gap-6 p-6 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}>
       {/* Encabezado y Botón de Nuevo Pago */}
       <div className={`p-6 rounded-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} flex justify-between items-center`}>
         <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
@@ -97,6 +164,33 @@ const PanelFinanzas: React.FC<PanelFinanzasProps> = ({ clienteId }) => {
           <Plus className="w-4 h-4" />
           <span>Nuevo Pago</span>
         </Button>
+      </div>
+
+      {/* Servicios Contratados */}
+      <div className={`rounded-lg p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <h2 className="text-xl font-bold mb-4">Servicios Contratados</h2>
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr className={`${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                <th className="px-4 py-2">Nombre</th>
+                <th className="px-4 py-2">Fecha Inicio</th>
+                <th className="px-4 py-2">Fecha Final</th>
+                <th className="px-4 py-2">Importe Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {serviciosContratados.map(servicio => (
+                <tr key={servicio.id} className={`${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                  <td className="px-4 py-2">{servicio.nombre}</td>
+                  <td className="px-4 py-2">{servicio.fechaInicio}</td>
+                  <td className="px-4 py-2">{servicio.fechaFinal}</td>
+                  <td className="px-4 py-2">${servicio.importeTotal}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Resumen Financiero */}
@@ -160,6 +254,53 @@ const PanelFinanzas: React.FC<PanelFinanzasProps> = ({ clienteId }) => {
             Al día
           </p>
         </motion.div>
+      </div>
+
+      {/* Estadísticas y Gráfico */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Gráfico Circular */}
+        <div className={`rounded-lg p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+          <h2 className="text-xl font-bold mb-4">Distribución de Ingresos</h2>
+          <div style={{ width: '100%', height: 300 }}>
+            <ResponsiveContainer>
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Estadísticas */}
+        <div className={`rounded-lg p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+          <h2 className="text-xl font-bold mb-4">Resumen Financiero</h2>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm opacity-70">Importe Total Generado</p>
+              <p className="text-2xl font-bold">${importeTotal.toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-sm opacity-70">Ratio de Pagos a Tiempo</p>
+              <p className="text-2xl font-bold">{ratioPagosATiempo.toFixed(1)}%</p>
+            </div>
+            <div>
+              <p className="text-sm opacity-70">Método de Pago Preferido</p>
+              <p className="text-2xl font-bold">{metodoPagoPreferido}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Plan de Pago Actual */}
@@ -245,6 +386,35 @@ const PanelFinanzas: React.FC<PanelFinanzasProps> = ({ clienteId }) => {
             </motion.div>
           ))}
         </div>
+      </div>
+
+      {/* Notas */}
+      <div className={`rounded-lg p-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Notas</h2>
+          <Button
+            variant="ghost"
+            onClick={() => setEditandoNotas(!editandoNotas)}
+            className="p-2"
+          >
+            <Edit3 className="w-5 h-5" />
+          </Button>
+        </div>
+        {editandoNotas ? (
+          <textarea
+            value={notas}
+            onChange={(e) => setNotas(e.target.value)}
+            className={`w-full p-2 rounded-lg ${
+              theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
+            }`}
+            rows={4}
+            placeholder="Añade notas sobre las finanzas del cliente..."
+          />
+        ) : (
+          <p className={`${notas ? '' : 'opacity-50'}`}>
+            {notas || 'No hay notas disponibles'}
+          </p>
+        )}
       </div>
 
       {/* Modal de Nuevo Pago */}

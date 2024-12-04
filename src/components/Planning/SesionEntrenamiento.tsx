@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import EditSessionPopup from './EditSessionPopup';
 import { trainingVariants } from './trainingVariants';
 import type { Set } from './trainingVariants';
+import axios from 'axios';
 
 interface Session {
   _id: string;
@@ -27,26 +28,33 @@ interface Session {
   exercises: Exercise[];
 }
 
+interface Exercise {
+  _id: string;
+  name: string;
+  sets: Set[];
+}
+
+interface Set {
+  id: string;
+  reps: number;
+  weight: number;
+  rest: number;
+}
+
 interface SesionEntrenamientoProps {
   session: Session;
-  diaSeleccionado: string;
-  onDeleteSession: () => void;
-  onAddExercise: () => void;
-  planSemanal: WeekPlan;
-  updatePlan: (plan: WeekPlan) => void;
-  variant: 0 | 1 | 2 | 3;
-  previousDayStatus?: 'good' | 'regular' | 'bad';
+  onClose: () => void;
+  planningId: string;
+  weekNumber: number;
+  selectedDay: string;
 }
 
 const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
   session,
-  diaSeleccionado,
-  onDeleteSession,
-  onAddExercise,
-  planSemanal,
-  updatePlan,
-  variant,
-  previousDayStatus,
+  onClose,
+  planningId,
+  weekNumber,
+  selectedDay,
 }) => {
   const { theme } = useTheme();
   const [ejerciciosExpandidos, setEjerciciosExpandidos] = useState<Set<string>>(
@@ -59,16 +67,11 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
   console.log('Session data:', session);
 
   const handleSaveSession = (updatedSession: Session) => {
-    const updatedPlan: WeekPlan = {
-      ...planSemanal,
-      [diaSeleccionado]: {
-        ...planSemanal[diaSeleccionado],
-        sessions: planSemanal[diaSeleccionado].sessions.map((s) =>
-          s._id === session._id ? { ...s, name: updatedSession.name } : s
-        ),
-      },
+    const updatedPlan: any = {
+      ...session,
+      name: updatedSession.name,
     };
-    updatePlan(updatedPlan);
+    console.log('Plan actualizado:', updatedPlan);
   };
 
   const handleUpdateRounds = async () => {
@@ -80,7 +83,7 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
 
       console.log('Actualizando rondas para sesión:', session._id, 'Nuevas rondas:', editedRounds);
 
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/session/${session._id}/rounds`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com//api/plannings/session/${session._id}/rounds`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -97,16 +100,6 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
       }
 
       // Actualizar el estado local
-      const updatedPlan = {
-        ...planSemanal,
-        [diaSeleccionado]: {
-          ...planSemanal[diaSeleccionado],
-          sessions: planSemanal[diaSeleccionado].sessions.map(s =>
-            s._id === session._id ? { ...s, rondas: editedRounds } : s
-          ),
-        },
-      };
-      updatePlan(updatedPlan);
       setIsEditingRounds(false);
     } catch (error) {
       console.error('Error al actualizar las rondas:', error);
@@ -125,112 +118,122 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
     });
   };
 
-  const handleDeleteExercise = (exerciseId: string) => {
-    const updatedPlan: WeekPlan = {
-      ...planSemanal,
-      [diaSeleccionado]: {
-        ...planSemanal[diaSeleccionado],
-        sessions: planSemanal[diaSeleccionado].sessions.map((s) =>
-          s._id === session._id
-            ? {
-                ...s,
-                exercises: s.exercises.filter((e) => e.id !== exerciseId),
-              }
-            : s
-        ),
-      },
-    };
-    updatePlan(updatedPlan);
-    setEjerciciosExpandidos((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(exerciseId);
-      return newSet;
-    });
+  const updatePlanningExercise = async (exerciseId: string, updatedSets: Set[]) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      console.log('SesionEntrenamiento: Actualizando ejercicio:', {
+        planningId,
+        weekNumber,
+        day: selectedDay,
+        sessionId: session._id,
+        exerciseId,
+        sets: updatedSets
+      });
+
+      const url = `https://fitoffice2-f70b52bef77e.herokuapp.com//api/plannings/${planningId}/weeks/${weekNumber}/days/${selectedDay}/sessions/${session._id}/exercises/${exerciseId}`;
+      
+      const response = await axios.put(
+        url,
+        { sets: updatedSets },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.data) {
+        throw new Error('Error al actualizar el ejercicio');
+      }
+
+      console.log('SesionEntrenamiento: Ejercicio actualizado exitosamente:', response.data);
+      return response.data;
+    } catch (err) {
+      console.error('SesionEntrenamiento: Error al actualizar ejercicio:', err);
+      throw err;
+    }
   };
 
-  const handleAddSet = (exerciseId: string) => {
-    const newSet: Set = {
-      id: `set-${Date.now()}`,
-      reps: 12,
-      weight: 0,
-      rest: 60,
-    };
+  const handleSetChange = async (exerciseId: string, setId: string, field: keyof Set, value: number) => {
+    try {
+      const exercise = session.exercises.find(e => e._id === exerciseId);
+      if (!exercise) return;
 
-    const updatedPlan: WeekPlan = {
-      ...planSemanal,
-      [diaSeleccionado]: {
-        ...planSemanal[diaSeleccionado],
-        sessions: planSemanal[diaSeleccionado].sessions.map((s) =>
-          s._id === session._id
-            ? {
-                ...s,
-                exercises: s.exercises.map((exercise) =>
-                  exercise.id === exerciseId
-                    ? { ...exercise, sets: [...exercise.sets, newSet] }
-                    : exercise
-                ),
-              }
-            : s
-        ),
-      },
-    };
-    updatePlan(updatedPlan);
+      const updatedSets = exercise.sets.map(set => 
+        set.id === setId ? { ...set, [field]: value } : set
+      );
+
+      await updatePlanningExercise(exerciseId, updatedSets);
+      
+      // Actualizar el estado local después de la actualización exitosa
+      session.exercises = session.exercises.map(e => 
+        e._id === exerciseId ? { ...e, sets: updatedSets } : e
+      );
+    } catch (error) {
+      console.error('Error al actualizar el set:', error);
+      // Aquí podrías mostrar un mensaje de error al usuario
+    }
   };
 
-  const handleDeleteSet = (exerciseId: string, setId: string) => {
-    const updatedPlan: WeekPlan = {
-      ...planSemanal,
-      [diaSeleccionado]: {
-        ...planSemanal[diaSeleccionado],
-        sessions: planSemanal[diaSeleccionado].sessions.map((s) =>
-          s._id === session._id
-            ? {
-                ...s,
-                exercises: s.exercises.map((exercise) =>
-                  exercise.id === exerciseId
-                    ? {
-                        ...exercise,
-                        sets: exercise.sets.filter((set) => set.id !== setId),
-                      }
-                    : exercise
-                ),
-              }
-            : s
-        ),
-      },
-    };
-    updatePlan(updatedPlan);
+  const handleAddSet = async (exerciseId: string) => {
+    try {
+      const exercise = session.exercises.find(e => e._id === exerciseId);
+      if (!exercise) return;
+
+      const newSet: Set = {
+        id: Date.now().toString(),
+        reps: 12,
+        weight: 10,
+        rest: 60
+      };
+
+      const updatedSets = [...exercise.sets, newSet];
+      await updatePlanningExercise(exerciseId, updatedSets);
+
+      // Actualizar el estado local después de la actualización exitosa
+      session.exercises = session.exercises.map(e => 
+        e._id === exerciseId ? { ...e, sets: updatedSets } : e
+      );
+    } catch (error) {
+      console.error('Error al agregar el set:', error);
+      // Aquí podrías mostrar un mensaje de error al usuario
+    }
   };
 
-  const handleUpdateSet = (
-    exerciseId: string,
-    setId: string,
-    updatedSet: { reps: number; weight?: number; rest?: number }
-  ) => {
-    const updatedPlan: WeekPlan = {
-      ...planSemanal,
-      [diaSeleccionado]: {
-        ...planSemanal[diaSeleccionado],
-        sessions: planSemanal[diaSeleccionado].sessions.map((s) =>
-          s._id === session._id
-            ? {
-                ...s,
-                exercises: s.exercises.map((exercise) =>
-                  exercise.id === exerciseId
-                    ? {
-                        ...exercise,
-                        sets: exercise.sets.map((set) =>
-                          set.id === setId ? { ...set, ...updatedSet } : set
-                        ),
-                      }
-                    : exercise
-                ),
-              }
-            : s
-        ),
-      },
-    };
-    updatePlan(updatedPlan);
+  const handleDeleteSet = async (exerciseId: string, setId: string) => {
+    try {
+      const exercise = session.exercises.find(e => e._id === exerciseId);
+      if (!exercise || exercise.sets.length <= 1) return; // No permitir eliminar el último set
+
+      const updatedSets = exercise.sets.filter(set => set.id !== setId);
+      await updatePlanningExercise(exerciseId, updatedSets);
+
+      // Actualizar el estado local después de la actualización exitosa
+      session.exercises = session.exercises.map(e => 
+        e._id === exerciseId ? { ...e, sets: updatedSets } : e
+      );
+    } catch (error) {
+      console.error('Error al eliminar el set:', error);
+      // Aquí podrías mostrar un mensaje de error al usuario
+    }
+  };
+
+  const renderSetValue = (value: number, unit: string) => {
+    switch(unit) {
+      case 'kg':
+        return `${value} kg`;
+      case 'reps':
+        return `${value} reps`;
+      case 'sec':
+        return `${value} seg`;
+      default:
+        return value;
+    }
   };
 
   return (
@@ -302,7 +305,7 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
           </div>
           {/* Controles de la sesión */}
           <div className="flex items-center space-x-2">
-            <Button variant="normal" onClick={onAddExercise} className="p-2">
+            <Button variant="normal" onClick={onClose} className="p-2">
               <Plus className="w-4 h-4" />
             </Button>
             <Button
@@ -312,7 +315,7 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
             >
               <Edit2 className="w-4 h-4" />
             </Button>
-            <Button variant="delete" onClick={onDeleteSession} className="p-2">
+            <Button variant="delete" onClick={onClose} className="p-2">
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
@@ -321,14 +324,14 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
         <div className="grid gap-3">
           {session.exercises.map((exercise) => (
             <motion.div
-              key={exercise.id}
+              key={exercise._id}
               className={`rounded-lg transition-all duration-200 ${
                 theme === 'dark' ? 'bg-gray-700' : 'bg-white'
               }`}
             >
               <div
                 className="p-3 flex items-center justify-between cursor-pointer hover:bg-opacity-90"
-                onClick={() => toggleEjercicio(exercise.id)}
+                onClick={() => toggleEjercicio(exercise._id)}
               >
                 <div className="flex items-center space-x-4">
                   <Target className="w-5 h-5 text-green-500" />
@@ -337,18 +340,8 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
                 <div className="flex items-center space-x-6">
                   <div className="flex items-center space-x-6">
                     <span>{exercise.sets.length} series</span>
-                    <Button
-                      variant="delete"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteExercise(exercise.id);
-                      }}
-                      className="p-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
                   </div>
-                  {ejerciciosExpandidos.has(exercise.id) ? (
+                  {ejerciciosExpandidos.has(exercise._id) ? (
                     <ChevronUp className="w-5 h-5" />
                   ) : (
                     <ChevronDown className="w-5 h-5" />
@@ -357,7 +350,7 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
               </div>
 
               <AnimatePresence>
-                {ejerciciosExpandidos.has(exercise.id) && (
+                {ejerciciosExpandidos.has(exercise._id) && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
@@ -368,22 +361,13 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
                       <div className="space-y-4">
                         {exercise.sets.map((set, index) => (
                           <div
-                            key={set.id}
+                            key={`${exercise._id}-set-${index}`}
                             className={`p-4 rounded-lg ${
                               theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
                             }`}
                           >
                             <div className="flex items-center justify-between mb-2">
                               <h4 className="font-medium">Serie {index + 1}</h4>
-                              <Button
-                                variant="delete"
-                                onClick={() =>
-                                  handleDeleteSet(exercise.id, set.id)
-                                }
-                                className="p-1"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
                             </div>
                             <div className="grid grid-cols-3 gap-4">
                               <div>
@@ -393,11 +377,7 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
                                 <input
                                   type="number"
                                   value={set.reps}
-                                  onChange={(e) =>
-                                    handleUpdateSet(exercise.id, set.id, {
-                                      reps: parseInt(e.target.value),
-                                    })
-                                  }
+                                  onChange={(e) => handleSetChange(exercise._id, set.id, 'reps', parseInt(e.target.value))}
                                   className={`w-full p-2 rounded-md border ${
                                     theme === 'dark'
                                       ? 'bg-gray-700 border-gray-500'
@@ -412,11 +392,7 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
                                 <input
                                   type="number"
                                   value={set.weight}
-                                  onChange={(e) =>
-                                    handleUpdateSet(exercise.id, set.id, {
-                                      weight: parseInt(e.target.value),
-                                    })
-                                  }
+                                  onChange={(e) => handleSetChange(exercise._id, set.id, 'weight', parseInt(e.target.value))}
                                   className={`w-full p-2 rounded-md border ${
                                     theme === 'dark'
                                       ? 'bg-gray-700 border-gray-500'
@@ -431,11 +407,7 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
                                 <input
                                   type="number"
                                   value={set.rest}
-                                  onChange={(e) =>
-                                    handleUpdateSet(exercise.id, set.id, {
-                                      rest: parseInt(e.target.value),
-                                    })
-                                  }
+                                  onChange={(e) => handleSetChange(exercise._id, set.id, 'rest', parseInt(e.target.value))}
                                   className={`w-full p-2 rounded-md border ${
                                     theme === 'dark'
                                       ? 'bg-gray-700 border-gray-500'
@@ -444,26 +416,21 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
                                 />
                               </div>
                             </div>
+                            <div className="flex justify-between items-center mt-4">
+                              <span>Valor: {renderSetValue(set.reps, 'reps')} - {renderSetValue(set.weight, 'kg')} - {renderSetValue(set.rest, 'sec')}</span>
+                            </div>
                           </div>
                         ))}
                       </div>
 
                       <div className="mt-4 flex justify-between items-center">
-                        <Button
-                          variant="normal"
-                          onClick={() => handleAddSet(exercise.id)}
-                          className="flex items-center space-x-2"
+                        <button
+                          onClick={() => handleAddSet(exercise._id)}
+                          className="flex items-center text-blue-500 hover:text-blue-700"
                         >
-                          <Plus className="w-4 h-4" />
-                          <span>Añadir Serie</span>
-                        </Button>
-                        <Button
-                          variant="create"
-                          className="flex items-center space-x-2"
-                        >
-                          <Save className="w-4 h-4" />
-                          <span>Guardar</span>
-                        </Button>
+                          <Plus className="w-4 h-4 mr-1" />
+                          Agregar Set
+                        </button>
                       </div>
                     </div>
                   </motion.div>

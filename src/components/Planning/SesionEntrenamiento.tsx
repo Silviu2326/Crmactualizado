@@ -83,7 +83,7 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
 
       console.log('Actualizando rondas para sesión:', session._id, 'Nuevas rondas:', editedRounds);
 
-      const response = await fetch(`http://localhost:3000/api/plannings/session/${session._id}/rounds`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/session/${session._id}/rounds`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -108,7 +108,7 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
 
   const handleDeleteSession = async () => {
     try {
-      await axios.delete(`http://localhost:3000/api/plannings/session/${session._id}`, {
+      await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/session/${session._id}`, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -148,7 +148,7 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
         sets: updatedSets
       });
 
-      const url = `http://localhost:3000/api/plannings/${planningId}/weeks/${weekNumber}/days/${selectedDay}/sessions/${session._id}/exercises/${exerciseId}`;
+      const url = `https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${planningId}/weeks/${weekNumber}/days/${selectedDay}/sessions/${session._id}/exercises/${exerciseId}`;
       
       const response = await axios.put(
         url,

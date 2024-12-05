@@ -53,7 +53,7 @@ const WorkoutList: React.FC = () => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com//api/routines/routines', {
+      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/routines/routines', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -81,7 +81,7 @@ const WorkoutList: React.FC = () => {
 
       if (selectedRoutine) {
         // Si hay una rutina seleccionada, es una edición
-        await axios.put(`https://fitoffice2-f70b52bef77e.herokuapp.com//api/routines/routines/${selectedRoutine._id}`, routineData, {
+        await axios.put(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/routines/routines/${selectedRoutine._id}`, routineData, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -89,7 +89,7 @@ const WorkoutList: React.FC = () => {
         });
       } else {
         // Si no hay rutina seleccionada, es una creación
-        await axios.post('https://fitoffice2-f70b52bef77e.herokuapp.com//api/routines/routines', routineData, {
+        await axios.post('https://fitoffice2-f70b52bef77e.herokuapp.com/api/routines/routines', routineData, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -123,7 +123,7 @@ const WorkoutList: React.FC = () => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com//api/routines/routines/${routineId}`, {
+      await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/routines/routines/${routineId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

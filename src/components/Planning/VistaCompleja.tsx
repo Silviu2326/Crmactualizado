@@ -197,7 +197,7 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const url = `https://fitoffice2-f70b52bef77e.herokuapp.com//api/plannings/session/${sessionId}`;
+      const url = `https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/session/${sessionId}`;
       console.log('URL de eliminación:', url);
 
       const response = await fetch(url, {

@@ -49,7 +49,7 @@ const CreateRoutineModal: React.FC<CreateRoutineModalProps> = ({
 
   const fetchExercises = async () => {
     try {
-      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com//api/exercises');
+      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/exercises');
       setApiExercises(response.data.data);
     } catch (error) {
       console.error('Error fetching exercises:', error);

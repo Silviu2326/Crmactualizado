@@ -64,7 +64,7 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
         }
 
         // Realizar la petición GET al backend incluyendo el token en los encabezados
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com//api/invoice', {
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/invoice', {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,

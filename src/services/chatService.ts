@@ -5,7 +5,7 @@ interface ChatResponse {
   answer: string;  
 }
 
-const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com//api';
+const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api';
 
 const chatDescriptions = {
   chat1: "Experto en creación de posts virales para redes sociales",

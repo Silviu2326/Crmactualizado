@@ -14,7 +14,7 @@ const CommandMessages: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: '¡Hola! ¿En qué puedo ayudarte hoy?',
+      text: '¡https://fitoffice2-f70b52bef77e.herokuapp.com/! ¿En qué puedo ayudarte hoy?',
       sender: 'assistant',
       timestamp: new Date(),
       status: 'sent',

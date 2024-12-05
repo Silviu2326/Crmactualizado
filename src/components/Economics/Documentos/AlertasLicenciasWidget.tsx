@@ -44,7 +44,7 @@ const AlertasLicenciasWidget: React.FC = () => {
       setError(null);
       const token = localStorage.getItem('token');
       const response = await axios.get<ApiResponse>(
-        'https://fitoffice2-f70b52bef77e.herokuapp.com//api/economic-alerts',
+        'https://fitoffice2-f70b52bef77e.herokuapp.com/api/economic-alerts',
         {
           headers: {
             Authorization: `Bearer ${token}`,

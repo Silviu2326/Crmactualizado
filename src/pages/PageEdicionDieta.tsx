@@ -67,7 +67,7 @@ export default function PageEdicionDieta() {
           console.log(' Token obtenido:', token ? 'Token presente' : 'Token no encontrado');
 
           console.log(' Realizando petición a la API...');
-          const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com//api/dietas/${id}`, {
+          const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/dietas/${id}`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -173,7 +173,7 @@ export default function PageEdicionDieta() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com//api/dietas/${id}/dias/${selectedDayForMacros.fecha}/macros`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/dietas/${id}/dias/${selectedDayForMacros.fecha}/macros`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -275,7 +275,7 @@ export default function PageEdicionDieta() {
 
       // Primero guardar la comida
       const token = localStorage.getItem('token');
-      const endpoint = `https://fitoffice2-f70b52bef77e.herokuapp.com//api/dietas/${id}/dias/${selectedDayForMeal.fecha}/comidas`;
+      const endpoint = `https://fitoffice2-f70b52bef77e.herokuapp.com/api/dietas/${id}/dias/${selectedDayForMeal.fecha}/comidas`;
       const method = selectedMealForEdit ? 'PUT' : 'POST';
       
       const response = await fetch(endpoint + (selectedMealForEdit ? `/${selectedMealForEdit.id}` : ''), {
@@ -322,7 +322,7 @@ export default function PageEdicionDieta() {
       };
 
       console.log('\n🎯 ACTUALIZANDO MACROS:');
-      console.log('URL:', `https://fitoffice2-f70b52bef77e.herokuapp.com//api/dietas/${id}/dias/${selectedDayForMeal.fecha}/macros`);
+      console.log('URL:', `https://fitoffice2-f70b52bef77e.herokuapp.com/api/dietas/${id}/dias/${selectedDayForMeal.fecha}/macros`);
       console.log('Macros a enviar:', {
         calorias: `${macrosData.calorias} kcal (${typeof macrosData.calorias})`,
         proteinas: `${macrosData.proteinas} g (${typeof macrosData.proteinas})`,
@@ -336,7 +336,7 @@ export default function PageEdicionDieta() {
       }
 
       // Actualizar los macros en la API
-      const macrosResponse = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com//api/dietas/${id}/dias/${selectedDayForMeal.fecha}/macros`, {
+      const macrosResponse = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/dietas/${id}/dias/${selectedDayForMeal.fecha}/macros`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -422,7 +422,7 @@ export default function PageEdicionDieta() {
       console.log('📅 Nueva semana creada:', newWeek);
 
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com//api/dietas/${id}/semanas`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/dietas/${id}/semanas`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

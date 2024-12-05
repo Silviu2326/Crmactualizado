@@ -38,7 +38,7 @@ const ReportesPage: React.FC = () => {
           return;
         }
 
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com//api/reports', {
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/reports', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

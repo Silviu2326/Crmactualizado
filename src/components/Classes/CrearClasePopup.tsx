@@ -37,7 +37,7 @@ const CrearClasePopup: React.FC<CrearClasePopupProps> = ({ onClose, onCreate }) 
       };
 
       const response = await axios.post(
-        'holaapi/servicios/services',
+        'http://localhost:3000/api/servicios/services',
         payload,
         {
           headers: {

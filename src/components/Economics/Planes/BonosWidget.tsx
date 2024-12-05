@@ -40,7 +40,7 @@ const BonosWidget: React.FC = () => {
 
   const fetchBonos = async () => {
     try {
-      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/bonos');
+      const response = await axios.get('http://localhost:3000/api/bonos');
       setBonos(response.data.data.bonos);
       setLoading(false);
     } catch (err) {

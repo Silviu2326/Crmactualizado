@@ -83,7 +83,7 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
 
       console.log('Actualizando rondas para sesión:', session._id, 'Nuevas rondas:', editedRounds);
 
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/session/${session._id}/rounds`, {
+      const response = await fetch(`http://localhost:3000/api/plannings/session/${session._id}/rounds`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -103,6 +103,20 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
       setIsEditingRounds(false);
     } catch (error) {
       console.error('Error al actualizar las rondas:', error);
+    }
+  };
+
+  const handleDeleteSession = async () => {
+    try {
+      await axios.delete(`http://localhost:3000/api/plannings/session/${session._id}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      onClose();
+    } catch (error) {
+      console.error('Error deleting session:', error);
     }
   };
 
@@ -134,7 +148,7 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
         sets: updatedSets
       });
 
-      const url = `https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${planningId}/weeks/${weekNumber}/days/${selectedDay}/sessions/${session._id}/exercises/${exerciseId}`;
+      const url = `http://localhost:3000/api/plannings/${planningId}/weeks/${weekNumber}/days/${selectedDay}/sessions/${session._id}/exercises/${exerciseId}`;
       
       const response = await axios.put(
         url,
@@ -315,7 +329,7 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
             >
               <Edit2 className="w-4 h-4" />
             </Button>
-            <Button variant="delete" onClick={onClose} className="p-2">
+            <Button variant="delete" onClick={handleDeleteSession} className="p-2">
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>

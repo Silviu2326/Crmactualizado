@@ -45,7 +45,7 @@ const OtrosDocumentosWidget: React.FC = () => {
   const fetchDocumentos = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get<ApiResponse>('https://fitoffice2-f70b52bef77e.herokuapp.com/api/otros-documentos', {
+      const response = await axios.get<ApiResponse>('http://localhost:3000/api/otros-documentos', {
         headers: {
           Authorization: `Bearer ${token}`
         }

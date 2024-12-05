@@ -66,7 +66,7 @@ const ClassList: React.FC = () => {
       try {
         setLoading(true);
         const response = await axios.get<ClaseGrupal[]>(
-          'holaapi/servicios/services/tipo/ClaseGrupal',
+          'http://localhost:3000/api/servicios/services/tipo/ClaseGrupal',
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -102,7 +102,7 @@ const ClassList: React.FC = () => {
     try {
       setLoading(true);
       const response = await axios.get<ClaseGrupal[]>(
-        'holaapi/servicios/services/tipo/ClaseGrupal',
+        'http://localhost:3000/api/servicios/services/tipo/ClaseGrupal',
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -252,7 +252,7 @@ const ClassList: React.FC = () => {
     if (!confirmDelete) return;
 
     try {
-      await axios.delete(`holaapi/servicios/services/${id}`, {
+      await axios.delete(`http://localhost:3000/api/servicios/services/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

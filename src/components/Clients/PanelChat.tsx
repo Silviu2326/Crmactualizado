@@ -34,7 +34,7 @@ const PanelChat: React.FC<PanelChatProps> = ({ clienteId, clienteName }) => {
     setMessages([
       {
         id: '1',
-        text: '¡https://fitoffice2-f70b52bef77e.herokuapp.com/! ¿Cómo va el entrenamiento?',
+        text: '¡http://localhost:3000/! ¿Cómo va el entrenamiento?',
         sender: 'client',
         timestamp: new Date(Date.now() - 86400000) // 24 horas atrás
       },

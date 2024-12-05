@@ -12,6 +12,7 @@ import {
   predefinedExercises,
   Exercise as PredefinedExercise,
 } from './predefinedExercises';
+import axios from 'axios';
 
 // Definición de interfaces
 interface Exercise {
@@ -84,42 +85,57 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
   };
 
   const handleCreateSession = async () => {
-    console.log('VistaCompleja: Creando nueva sesión:', {
-      nombre: sessionName,
-      tipo: sessionType,
-      rondas: sessionRounds
-    });
+    try {
+      if (!sessionName.trim()) {
+        console.warn('VistaCompleja: Nombre de sesión vacío');
+        return;
+      }
 
-    if (!sessionName.trim()) {
-      console.warn('VistaCompleja: Nombre de sesión vacío');
-      return;
+      console.log('🚀 Creating session with data:');
+      console.log('Planning ID:', planningId);
+      console.log('Week Number:', semanaActual);
+      console.log('Selected Day:', diaSeleccionado);
+      console.log('Session Name:', sessionName);
+      console.log('Session Type:', sessionType);
+      console.log('Session Rounds:', sessionRounds);
+
+      const sessionData = {
+        planningId: planningId,
+        weekNumber: semanaActual,
+        day: diaSeleccionado,
+        sessionData: {
+          name: sessionName,
+          tipo: sessionType,
+          rondas: sessionRounds
+        }
+      };
+
+      console.log('📦 Complete session data being sent:', sessionData);
+
+      const response = await axios.post('http://localhost:3000/api/plannings/session', sessionData, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      console.log('✅ Server response:', response.data);
+
+      if (response.data) {
+        setShowSessionPopup(false);
+        setSessionName('');
+        setSessionType('Normal');
+        setSessionRounds(undefined);
+        
+        // Refresh the planning data if onReload is provided
+        if (onReload) {
+          onReload();
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error creating session:', error);
+      console.error('Error details:', error.response?.data);
     }
-
-    const newSession: Session = {
-      _id: Date.now().toString(),
-      name: sessionName,
-      tipo: sessionType,
-      exercises: [],
-    };
-
-    if (sessionType === 'Superset' && sessionRounds) {
-      newSession.rondas = sessionRounds;
-    }
-
-    const updatedPlan = {
-      ...planSemanal,
-      [diaSeleccionado]: {
-        ...planSemanal[diaSeleccionado],
-        sessions: [...planSemanal[diaSeleccionado].sessions, newSession],
-      },
-    };
-
-    console.log('VistaCompleja: Plan actualizado con nueva sesión:', updatedPlan[diaSeleccionado]);
-    updatePlan(updatedPlan);
-    setShowSessionPopup(false);
-    setSessionName('');
-    setSessionType('Normal');
-    setSessionRounds(undefined);
   };
 
   // Función para manejar la adición de un ejercicio
@@ -197,7 +213,7 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const url = `https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/session/${sessionId}`;
+      const url = `http://localhost:3000/api/plannings/session/${sessionId}`;
       console.log('URL de eliminación:', url);
 
       const response = await fetch(url, {
@@ -388,25 +404,28 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
               </select>
             </div>
 
-            {/* Número de rondas (opcional) */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">
-                Número de rondas (opcional)
-              </label>
-              <input
-                type="number"
-                value={sessionRounds || ''}
-                onChange={(e) => {
-                  const value = e.target.value ? parseInt(e.target.value) : undefined;
-                  if (value === undefined || value >= 1) {
-                    setSessionRounds(value);
-                  }
-                }}
-                min="1"
-                className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'} focus:ring-2 focus:ring-blue-500`}
-                placeholder="Número de rondas"
-              />
-            </div>
+            {/* Número de rondas (solo para Superset) */}
+            {sessionType === 'Superset' && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">
+                  Número de rondas
+                </label>
+                <input
+                  type="number"
+                  value={sessionRounds || ''}
+                  onChange={(e) => {
+                    const value = e.target.value ? parseInt(e.target.value) : undefined;
+                    if (value === undefined || value >= 1) {
+                      setSessionRounds(value);
+                    }
+                  }}
+                  min="1"
+                  required
+                  className={`w-full p-2 rounded border ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'} focus:ring-2 focus:ring-blue-500`}
+                  placeholder="Número de rondas"
+                />
+              </div>
+            )}
 
             <div className="flex justify-end gap-2">
               <button
@@ -417,7 +436,7 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
               </button>
               <button
                 onClick={handleCreateSession}
-                disabled={isCreatingSession || !sessionName.trim()}
+                disabled={isCreatingSession || !sessionName.trim() || (sessionType === 'Superset' && !sessionRounds)}
                 className={`px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {isCreatingSession ? 'Creando...' : 'Crear'}

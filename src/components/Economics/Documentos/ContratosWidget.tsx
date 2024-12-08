@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FileSignature, Search, Filter, Plus, Calendar } from 'lucide-react';
+import { FileSignature, Search, Filter, Plus, Eye, Edit2, Trash2, Calendar } from 'lucide-react';
 import Table from '../../Common/Table';
 import Button from '../../Common/Button';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { motion } from 'framer-motion';
 import axios from 'axios';
+import { motion } from 'framer-motion';
+import AddDocumentoModal from './AddDocumentoModal';
+import EditContratoModal from './EditContratoModal';
 
 interface Contrato {
   _id: string;
@@ -34,6 +36,9 @@ const ContratosWidget: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string>('todos');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedContrato, setSelectedContrato] = useState<Contrato | null>(null);
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -110,6 +115,54 @@ const ContratosWidget: React.FC = () => {
     }
   };
 
+  const handleView = async (contrato: Contrato) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/contracts/${contrato._id}/download`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', contrato.nombre);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error('Error al descargar el contrato:', err);
+      setError('Error al descargar el contrato');
+    }
+  };
+
+  const handleEdit = (contrato: Contrato) => {
+    setSelectedContrato(contrato);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDelete = async (contratoId: string) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este contrato?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/contracts/${contratoId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      setContratos(contratos.filter(contrato => contrato._id !== contratoId));
+    } catch (err) {
+      console.error('Error al eliminar el contrato:', err);
+      setError('Error al eliminar el contrato');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className={`text-center py-4 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -127,11 +180,7 @@ const ContratosWidget: React.FC = () => {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
+    <div className={`p-4 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-lg shadow-md`}>
       <div className="flex items-center space-x-2 mb-4">
         <div className="relative flex-grow">
           <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
@@ -176,10 +225,17 @@ const ContratosWidget: React.FC = () => {
             </div>
           )}
         </div>
-        <Button variant="create" onClick={() => console.log('Añadir nuevo contrato')}>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setIsAddModalOpen(true)}
+          className={`inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+            theme === 'dark' ? 'focus:ring-offset-gray-800' : ''
+          }`}
+        >
           <Plus className="w-4 h-4 mr-1" />
           Añadir
-        </Button>
+        </motion.button>
       </div>
       {filteredContratos.length === 0 ? (
         <div className={`text-center py-4 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -187,7 +243,7 @@ const ContratosWidget: React.FC = () => {
         </div>
       ) : (
         <Table
-          headers={['Nombre', 'Fecha de Inicio', 'Fecha de Fin', 'Estado']}
+          headers={['Nombre', 'Fecha de Inicio', 'Fecha de Fin', 'Estado', 'Acciones']}
           data={filteredContratos.map(contrato => ({
             Nombre: (
               <div className="flex items-center">
@@ -211,12 +267,62 @@ const ContratosWidget: React.FC = () => {
               <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(contrato.estado)}`}>
                 {contrato.estado}
               </span>
+            ),
+            Acciones: (
+              <div className="flex items-center space-x-2">
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => handleView(contrato)}
+                  className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                    theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
+                  }`}
+                  title="Ver contrato"
+                >
+                  <Eye size={16} />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => handleEdit(contrato)}
+                  className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                    theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
+                  }`}
+                  title="Modificar"
+                >
+                  <Edit2 size={16} />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => handleDelete(contrato._id)}
+                  className={`p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors ${
+                    theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                  }`}
+                  title="Eliminar"
+                >
+                  <Trash2 size={16} />
+                </motion.button>
+              </div>
             )
           }))}
           variant={theme === 'dark' ? 'dark' : 'white'}
         />
       )}
-    </motion.div>
+      <AddDocumentoModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onDocumentoAdded={fetchContratos}
+      />
+      {selectedContrato && (
+        <EditContratoModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          contrato={selectedContrato}
+          onContratoUpdated={fetchContratos}
+        />
+      )}
+    </div>
   );
 };
 

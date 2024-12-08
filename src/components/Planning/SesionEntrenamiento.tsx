@@ -1,6 +1,6 @@
 // src/components/SesionEntrenamiento.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import {
   Plus,
@@ -12,6 +12,7 @@ import {
   ChevronUp,
   Save,
   XCircle,
+  Clock,
 } from 'lucide-react';
 import Button from '../Common/Button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,26 +20,44 @@ import EditSessionPopup from './EditSessionPopup';
 import { trainingVariants } from './trainingVariants';
 import type { Set } from './trainingVariants';
 import axios from 'axios';
+import ExerciseSelector from './ExerciseSelector';
+
+interface Exercise {
+  _id: string;
+  exercise: {
+    _id: string;
+    nombre: string;
+    grupoMuscular: string[];
+    descripcion: string;
+    equipo: string[];
+    imgUrl: string;
+  };
+  sets: Set[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Set {
+  _id: string;
+  reps: { value: number; type: MeasureType };
+  weight: { value: number; type: MeasureType };
+  rest: { value: number; type: MeasureType };
+  renderConfig?: {
+    campo1: string;
+    campo2: string;
+    campo3: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface Session {
   _id: string;
   name: string;
   tipo: 'Normal' | 'Superset';
-  rondas?: number;
   exercises: Exercise[];
-}
-
-interface Exercise {
-  _id: string;
-  name: string;
-  sets: Set[];
-}
-
-interface Set {
-  id: string;
-  reps: number;
-  weight: number;
-  rest: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface SesionEntrenamientoProps {
@@ -49,6 +68,25 @@ interface SesionEntrenamientoProps {
   selectedDay: string;
 }
 
+const MEASURE_TYPES = {
+  REPS: 'Repeticiones',
+  WEIGHT: 'Peso',
+  REST: 'Descanso',
+  TEMPO: 'Tempo',
+  RPE: 'Esfuerzo Percibido',
+  RPM: 'Revoluciones por Minuto',
+  RIR: 'Repeticiones en Reserva',
+  TIME: 'Tiempo',
+  SPEED: 'Velocidad',
+  CADENCE: 'Cadencia',
+  DISTANCE: 'Distancia',
+  HEIGHT: 'Altura',
+  CALORIES: 'Calorías',
+  ROUND: 'Ronda'
+} as const;
+
+type MeasureType = keyof typeof MEASURE_TYPES;
+
 const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
   session,
   onClose,
@@ -57,14 +95,186 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
   selectedDay,
 }) => {
   const { theme } = useTheme();
-  const [ejerciciosExpandidos, setEjerciciosExpandidos] = useState<Set<string>>(
-    new Set()
-  );
-  const [showEditPopup, setShowEditPopup] = useState(false);
+  const [localSession, setLocalSession] = useState<Session>(session);
+  const [ejerciciosExpandidos, setEjerciciosExpandidos] = useState(new Set<string>());
+  const [showExerciseSelector, setShowExerciseSelector] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(session.name);
   const [isEditingRounds, setIsEditingRounds] = useState(false);
   const [editedRounds, setEditedRounds] = useState(session.rondas || 0);
+  const [showEditPopup, setShowEditPopup] = useState(false);
+  
+  // Nuevo estado para mantener los tipos de medición seleccionados para cada set
+  const [selectedTypes, setSelectedTypes] = useState<{
+    [exerciseId: string]: {
+      [setId: string]: {
+        reps: MeasureType;
+        weight: MeasureType;
+        rest: MeasureType;
+      }
+    }
+  }>({});
 
-  console.log('Session data:', session);
+  // Función para obtener los tipos seleccionados para un set específico
+  const getSelectedTypesForSet = (exerciseId: string, setId: string) => {
+    return selectedTypes[exerciseId]?.[setId] || {
+      reps: 'REPS',
+      weight: 'WEIGHT',
+      rest: 'REST'
+    };
+  };
+
+  // Función para actualizar la configuración de renderizado en el backend
+  const updateRenderConfig = async (
+    exerciseId: string,
+    setId: string,
+    config: { campo1: string; campo2: string; campo3: string }
+  ) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const url = `https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${planningId}/weeks/${weekNumber}/days/${selectedDay}/sessions/${session._id}/exercises/${exerciseId}/sets/${setId}/render-config`;
+      
+      await axios.patch(url, config, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('Configuración de renderizado actualizada exitosamente');
+    } catch (error) {
+      console.error('Error al actualizar la configuración de renderizado:', error);
+    }
+  };
+
+  // Función para actualizar los tipos seleccionados
+  const handleTypeChange = async (
+    exerciseId: string,
+    setId: string,
+    campo: string,
+    newType: MeasureType
+  ) => {
+    // Actualizar el estado local
+    setSelectedTypes((prevTypes) => {
+      const updatedTypes = { ...prevTypes };
+      if (!updatedTypes[exerciseId]) {
+        updatedTypes[exerciseId] = {};
+      }
+      if (!updatedTypes[exerciseId][setId]) {
+        updatedTypes[exerciseId][setId] = {
+          reps: 'REPS',
+          weight: 'WEIGHT',
+          rest: 'REST'
+        };
+      }
+      updatedTypes[exerciseId][setId] = {
+        ...updatedTypes[exerciseId][setId],
+        [campo]: newType
+      };
+      return updatedTypes;
+    });
+
+    try {
+      // Encontrar el ejercicio y el set actual
+      const exercise = session.exercises.find(e => e._id === exerciseId);
+      const set = exercise?.sets.find(s => s._id === setId);
+      
+      if (!set || !set.renderConfig) return;
+
+      // Crear el nuevo renderConfig basado en el campo que se está cambiando
+      const newRenderConfig = {
+        ...set.renderConfig,
+        [campo]: newType.toLowerCase()
+      };
+
+      // Enviar la petición PATCH al backend
+      const response = await axios.patch(
+        `https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${planningId}/weeks/${weekNumber}/days/${selectedDay}/sessions/${session._id}/exercises/${exerciseId}/sets/${setId}/render-config`,
+        newRenderConfig
+      );
+
+      if (response.status === 200) {
+        console.log('RenderConfig actualizado exitosamente:', response.data);
+        
+        // Actualizar el estado local de la sesión
+        setLocalSession(prevSession => {
+          const newSession = { ...prevSession };
+          const exerciseIndex = newSession.exercises.findIndex(e => e._id === exerciseId);
+          if (exerciseIndex !== -1) {
+            const setIndex = newSession.exercises[exerciseIndex].sets.findIndex(s => s._id === setId);
+            if (setIndex !== -1) {
+              newSession.exercises[exerciseIndex].sets[setIndex].renderConfig = response.data.data.renderConfig;
+            }
+          }
+          return newSession;
+        });
+      }
+    } catch (error) {
+      console.error('Error al actualizar el renderConfig:', error);
+    }
+  };
+
+  // Función para obtener el valor basado en el tipo seleccionado y el renderConfig
+  const getValueForType = (set: any, type: MeasureType) => {
+    // Si el set tiene renderConfig, usamos esa configuración
+    if (set.renderConfig) {
+      // Encontrar qué campo (campo1, campo2, campo3) corresponde al tipo actual
+      const campo = Object.entries(set.renderConfig).find(([_, value]) => value === type.toLowerCase())?.[0];
+      if (campo) {
+        // Obtener el valor correspondiente según el campo del renderConfig
+        const propertyName = set.renderConfig[campo];
+        return {
+          value: set[propertyName] || 0,
+          type: type
+        };
+      }
+    }
+
+    // Si no hay renderConfig o no se encuentra el tipo, usar el valor directo
+    return {
+      value: set[type.toLowerCase()] || 0,
+      type: type
+    };
+  };
+
+  // Función para obtener la estructura de datos del set basada en renderConfig
+  const getSetStructuredData = (set: any) => {
+    if (!set.renderConfig) {
+      // Valores por defecto si no hay renderConfig
+      return {
+        campo1: { value: set.reps || 0, type: 'REPS' },
+        campo2: { value: set.weight || 0, type: 'WEIGHT' },
+        campo3: { value: set.rest || 0, type: 'REST' }
+      };
+    }
+
+    const { campo1, campo2, campo3 } = set.renderConfig;
+    
+    return {
+      campo1: {
+        value: set[campo1] || 0,
+        type: campo1.toUpperCase()
+      },
+      campo2: {
+        value: set[campo2] || 0,
+        type: campo2.toUpperCase()
+      },
+      campo3: {
+        value: set[campo3] || 0,
+        type: campo3.toUpperCase()
+      }
+    };
+  };
+
+  useEffect(() => {
+    console.log('Session recibida:', session);
+    console.log('Exercises:', session.exercises);
+    setLocalSession(session);
+  }, [session]);
 
   const handleSaveSession = (updatedSession: Session) => {
     const updatedPlan: any = {
@@ -120,16 +330,209 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
     }
   };
 
-  const toggleEjercicio = (ejercicioId: string) => {
-    setEjerciciosExpandidos((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(ejercicioId)) {
-        newSet.delete(ejercicioId);
-      } else {
-        newSet.add(ejercicioId);
+  const handleSelectExercise = async (exercise: any) => {
+    try {
+      console.log('Exercise recibido en handleSelectExercise:', exercise);
+      
+      const newExercise: Exercise = {
+        _id: exercise._id,
+        exercise: exercise,
+        sets: exercise.sets.map((set: any) => {
+          console.log('Set original:', set);
+          return {
+            _id: set._id || Date.now().toString(),
+            reps: set.reps || { value: 0, type: 'REPS' },
+            weight: set.weight || { value: 0, type: 'WEIGHT' },
+            rest: set.rest || { value: 0, type: 'REST' },
+            createdAt: set.createdAt || new Date().toISOString(),
+            updatedAt: set.updatedAt || new Date().toISOString(),
+          };
+        }),
+        createdAt: exercise.createdAt || new Date().toISOString(),
+        updatedAt: exercise.updatedAt || new Date().toISOString(),
+      };
+
+      console.log('Nuevo ejercicio formateado:', newExercise);
+
+      setLocalSession(prev => {
+        const newSession = {
+          ...prev,
+          exercises: [...prev.exercises, newExercise]
+        };
+        console.log('Nueva sesión local:', newSession);
+        return newSession;
+      });
+
+      setEjerciciosExpandidos(prev => {
+        const newSet = new Set(prev);
+        newSet.add(exercise._id);
+        return newSet;
+      });
+
+      setShowExerciseSelector(false);
+    } catch (error) {
+      console.error('Error al agregar el ejercicio:', error);
+    }
+  };
+
+  const handleAddSet = async (exerciseId: string) => {
+    try {
+      const exercise = localSession.exercises.find(e => e._id === exerciseId);
+      if (!exercise) return;
+
+      const newSet: Set = {
+        _id: Date.now().toString(),
+        reps: { value: 12, type: 'REPS' },
+        weight: { value: 10, type: 'WEIGHT' },
+        rest: { value: 60, type: 'REST' },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      console.log('Nuevo set a añadir:', newSet);
+
+      // Hacer la petición a la API para añadir el set
+      const response = await axios.post(
+        `https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${planningId}/weeks/${weekNumber}/days/${selectedDay}/sessions/${session._id}/exercises/${exerciseId}/sets`,
+        newSet
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        console.log('Respuesta de la API al añadir set:', response.data);
+        
+        setLocalSession(prev => {
+          const newSession = {
+            ...prev,
+            exercises: prev.exercises.map(e => 
+              e._id === exerciseId 
+                ? { ...e, sets: [...e.sets, newSet] }
+                : e
+            )
+          };
+          console.log('Nueva sesión después de añadir set:', newSession);
+          return newSession;
+        });
       }
-      return newSet;
-    });
+    } catch (error) {
+      console.error('Error al agregar el set:', error);
+    }
+  };
+
+  const handleDeleteSet = async (exerciseId: string, setId: string) => {
+    try {
+      const exercise = localSession.exercises.find(e => e._id === exerciseId);
+      if (!exercise || exercise.sets.length <= 1) return; // No permitir eliminar el último set
+
+      const updatedSets = exercise.sets.filter(set => set._id !== setId);
+      await updatePlanningExercise(exerciseId, updatedSets);
+
+      // Actualizar el estado local después de la actualización exitosa
+      setLocalSession(prev => ({
+        ...prev,
+        exercises: prev.exercises.map(e => 
+          e._id === exerciseId ? { ...e, sets: updatedSets } : e
+        )
+      }));
+    } catch (error) {
+      console.error('Error al eliminar el set:', error);
+    }
+  };
+
+  const getDefaultLabel = (type: string) => {
+    switch (type) {
+      case 'REPS':
+        return 'Repeticiones';
+      case 'WEIGHT':
+        return 'Peso';
+      case 'REST':
+        return 'Descanso';
+      default:
+        return MEASURE_TYPES[type as keyof typeof MEASURE_TYPES];
+    }
+  };
+
+  const getMeasureUnit = (measureType: MeasureType): string => {
+    switch (measureType) {
+      case 'WEIGHT':
+        return 'kg';
+      case 'REPS':
+        return 'reps';
+      case 'REST':
+        return 'seg';
+      case 'TIME':
+        return 'min';
+      case 'SPEED':
+        return 'km/h';
+      case 'RPM':
+        return 'rpm';
+      case 'DISTANCE':
+        return 'm';
+      case 'HEIGHT':
+        return 'cm';
+      case 'CALORIES':
+        return 'kcal';
+      default:
+        return '';
+    }
+  };
+
+  const isCategoryInUse = (set: Set, newType: MeasureType, currentField: keyof Set) => {
+    const categories = {
+      reps: set.reps.type,
+      weight: set.weight.type,
+      rest: set.rest.type
+    };
+    
+    // Excluimos la categoría actual que estamos editando
+    const { [currentField]: _, ...otherCategories } = categories;
+    
+    return Object.values(otherCategories).includes(newType);
+  };
+
+  const handleSetChange = async (exerciseId: string, setId: string, field: keyof Set, value: any) => {
+    try {
+      const exercise = localSession.exercises.find(e => e._id === exerciseId);
+      if (!exercise) return;
+
+      const set = exercise.sets.find(s => s._id === setId);
+      if (!set) return;
+
+      // Si estamos cambiando el tipo, verificar que no esté duplicado
+      if (value.type && field !== 'value') {
+        if (isCategoryInUse(set, value.type, field)) {
+          alert('Esta categoría ya está en uso en este set. Por favor seleccione una diferente.');
+          return;
+        }
+      }
+
+      const updatedSets = exercise.sets.map(s => 
+        s._id === setId ? { ...s, [field]: value } : s
+      );
+
+      await updatePlanningExercise(exerciseId, updatedSets);
+      
+      setLocalSession(prev => ({
+        ...prev,
+        exercises: prev.exercises.map(e => 
+          e._id === exerciseId ? { ...e, sets: updatedSets } : e
+        )
+      }));
+    } catch (error) {
+      console.error('Error al actualizar el set:', error);
+    }
+  };
+
+  const getAvailableCategories = (set: Set, currentField: keyof Set) => {
+    const usedCategories = new Set([
+      set.reps.type,
+      set.weight.type,
+      set.rest.type
+    ]);
+    
+    // Removemos la categoría actual para que aparezca en las opciones
+    usedCategories.delete(set[currentField].type);
+    
+    return Object.entries(MEASURE_TYPES).filter(([key]) => !usedCategories.has(key as MeasureType));
   };
 
   const updatePlanningExercise = async (exerciseId: string, updatedSets: Set[]) => {
@@ -173,81 +576,36 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
     }
   };
 
-  const handleSetChange = async (exerciseId: string, setId: string, field: keyof Set, value: number) => {
-    try {
-      const exercise = session.exercises.find(e => e._id === exerciseId);
-      if (!exercise) return;
-
-      const updatedSets = exercise.sets.map(set => 
-        set.id === setId ? { ...set, [field]: value } : set
-      );
-
-      await updatePlanningExercise(exerciseId, updatedSets);
-      
-      // Actualizar el estado local después de la actualización exitosa
-      session.exercises = session.exercises.map(e => 
-        e._id === exerciseId ? { ...e, sets: updatedSets } : e
-      );
-    } catch (error) {
-      console.error('Error al actualizar el set:', error);
-      // Aquí podrías mostrar un mensaje de error al usuario
-    }
+  const toggleEjercicio = (ejercicioId: string) => {
+    setEjerciciosExpandidos((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(ejercicioId)) {
+        newSet.delete(ejercicioId);
+      } else {
+        newSet.add(ejercicioId);
+      }
+      return newSet;
+    });
   };
 
-  const handleAddSet = async (exerciseId: string) => {
-    try {
-      const exercise = session.exercises.find(e => e._id === exerciseId);
-      if (!exercise) return;
-
-      const newSet: Set = {
-        id: Date.now().toString(),
-        reps: 12,
-        weight: 10,
-        rest: 60
-      };
-
-      const updatedSets = [...exercise.sets, newSet];
-      await updatePlanningExercise(exerciseId, updatedSets);
-
-      // Actualizar el estado local después de la actualización exitosa
-      session.exercises = session.exercises.map(e => 
-        e._id === exerciseId ? { ...e, sets: updatedSets } : e
-      );
-    } catch (error) {
-      console.error('Error al agregar el set:', error);
-      // Aquí podrías mostrar un mensaje de error al usuario
-    }
-  };
-
-  const handleDeleteSet = async (exerciseId: string, setId: string) => {
-    try {
-      const exercise = session.exercises.find(e => e._id === exerciseId);
-      if (!exercise || exercise.sets.length <= 1) return; // No permitir eliminar el último set
-
-      const updatedSets = exercise.sets.filter(set => set.id !== setId);
-      await updatePlanningExercise(exerciseId, updatedSets);
-
-      // Actualizar el estado local después de la actualización exitosa
-      session.exercises = session.exercises.map(e => 
-        e._id === exerciseId ? { ...e, sets: updatedSets } : e
-      );
-    } catch (error) {
-      console.error('Error al eliminar el set:', error);
-      // Aquí podrías mostrar un mensaje de error al usuario
-    }
-  };
-
-  const renderSetValue = (value: number, unit: string) => {
-    switch(unit) {
-      case 'kg':
-        return `${value} kg`;
-      case 'reps':
-        return `${value} reps`;
-      case 'sec':
-        return `${value} seg`;
-      default:
-        return value;
-    }
+  // Definir las opciones disponibles para cada campo
+  const fieldOptions = {
+    campo1: [
+      { value: 'reps', label: 'Repeticiones' },
+      { value: 'time', label: 'Tiempo' },
+      { value: 'distance', label: 'Distancia' }
+    ],
+    campo2: [
+      { value: 'weight', label: 'Peso' },
+      { value: 'speed', label: 'Velocidad' },
+      { value: 'height', label: 'Altura' }
+    ],
+    campo3: [
+      { value: 'rest', label: 'Descanso' },
+      { value: 'round', label: 'Ronda' },
+      { value: 'rpe', label: 'RPE' },
+      { value: 'rir', label: 'RIR' }
+    ]
   };
 
   return (
@@ -261,65 +619,21 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <div className="flex items-center space-x-4">
-              <h3 className="text-lg font-semibold">{session.name}</h3>
-              <span className={`px-2 py-1 rounded text-sm ${
-                theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-              }`}>
-                {session.tipo}
-              </span>
-              {session.tipo === 'Superset' && (
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm">Rondas:</span>
-                  {isEditingRounds ? (
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="number"
-                        value={editedRounds}
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value);
-                          if (value >= 1) {
-                            setEditedRounds(value);
-                          }
-                        }}
-                        min="1"
-                        className={`w-16 px-2 py-1 rounded border ${
-                          theme === 'dark'
-                            ? 'bg-gray-700 border-gray-600'
-                            : 'bg-white border-gray-300'
-                        }`}
-                      />
-                      <button
-                        onClick={handleUpdateRounds}
-                        className="text-green-500 hover:text-green-600"
-                      >
-                        <Save size={16} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsEditingRounds(false);
-                          setEditedRounds(session.rondas || 0);
-                        }}
-                        className="text-red-500 hover:text-red-600"
-                      >
-                        <XCircle size={16} />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setIsEditingRounds(true)}
-                      className="flex items-center space-x-1 text-sm hover:text-blue-500"
-                    >
-                      <span>{session.rondas || 0}</span>
-                      <Edit2 size={14} />
-                    </button>
-                  )}
-                </div>
+              <h3 className="text-lg font-semibold">{localSession.name}</h3>
+              {localSession.tipo === 'Superset' && (
+                <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                  Superset
+                </span>
               )}
             </div>
           </div>
           {/* Controles de la sesión */}
           <div className="flex items-center space-x-2">
-            <Button variant="normal" onClick={onClose} className="p-2">
+            <Button
+              variant="normal"
+              onClick={() => setShowExerciseSelector(true)}
+              className="p-2"
+            >
               <Plus className="w-4 h-4" />
             </Button>
             <Button
@@ -329,137 +643,234 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
             >
               <Edit2 className="w-4 h-4" />
             </Button>
-            <Button variant="delete" onClick={handleDeleteSession} className="p-2">
+            <Button variant="danger" onClick={handleDeleteSession} className="p-2">
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
-        <div className="grid gap-3">
-          {session.exercises.map((exercise) => (
-            <motion.div
+        {/* ExerciseSelector Modal */}
+        <ExerciseSelector
+          isOpen={showExerciseSelector}
+          onClose={() => setShowExerciseSelector(false)}
+          onSelectExercise={handleSelectExercise}
+          planningId={planningId}
+          weekNumber={weekNumber}
+          selectedDay={selectedDay}
+          sessionId={localSession._id}
+        />
+
+        {/* Rondas (si es superset) */}
+        {localSession.tipo === 'Superset' && (
+          <div className="flex items-center space-x-2 mt-2">
+            <span className="text-sm">Rondas:</span>
+            {isEditingRounds ? (
+              <div className="flex items-center space-x-2">
+                <input
+                  type="number"
+                  value={editedRounds}
+                  onChange={(e) => setEditedRounds(Number(e.target.value))}
+                  className={`w-16 px-2 py-1 rounded ${
+                    theme === 'dark'
+                      ? 'bg-gray-700 text-white'
+                      : 'bg-gray-100 text-gray-800'
+                  }`}
+                  min="1"
+                />
+                <Button
+                  variant="success"
+                  onClick={() => {
+                    handleUpdateRounds();
+                    setIsEditingRounds(false);
+                  }}
+                  className="p-1"
+                >
+                  <Save className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={() => {
+                    setEditedRounds(session.rondas || 0);
+                    setIsEditingRounds(false);
+                  }}
+                  className="p-1"
+                >
+                  <XCircle className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <span className="font-medium">{session.rondas || 0}</span>
+                <Button
+                  variant="normal"
+                  onClick={() => setIsEditingRounds(true)}
+                  className="p-1"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Lista de ejercicios */}
+        <div className="mt-4 space-y-4">
+          {localSession.exercises.map((exercise) => (
+            <div
               key={exercise._id}
-              className={`rounded-lg transition-all duration-200 ${
-                theme === 'dark' ? 'bg-gray-700' : 'bg-white'
-              }`}
+              className="mb-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow"
             >
-              <div
-                className="p-3 flex items-center justify-between cursor-pointer hover:bg-opacity-90"
-                onClick={() => toggleEjercicio(exercise._id)}
-              >
-                <div className="flex items-center space-x-4">
-                  <Target className="w-5 h-5 text-green-500" />
-                  <span className="font-medium">{exercise.name}</span>
-                </div>
-                <div className="flex items-center space-x-6">
-                  <div className="flex items-center space-x-6">
-                    <span>{exercise.sets.length} series</span>
-                  </div>
-                  {ejerciciosExpandidos.has(exercise._id) ? (
-                    <ChevronUp className="w-5 h-5" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5" />
-                  )}
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-lg font-medium">
+                  {exercise.exercise.nombre}
+                </h4>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => toggleEjercicio(exercise._id)}
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                  >
+                    {ejerciciosExpandidos.has(exercise._id) ? (
+                      <ChevronUp className="w-5 h-5" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handleDeleteExercise(exercise._id)}
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-red-500"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
 
-              <AnimatePresence>
-                {ejerciciosExpandidos.has(exercise._id) && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="px-4 pb-4"
-                  >
-                    <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
-                      <div className="space-y-4">
-                        {exercise.sets.map((set, index) => (
-                          <div
-                            key={`${exercise._id}-set-${index}`}
-                            className={`p-4 rounded-lg ${
-                              theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-medium">Serie {index + 1}</h4>
-                            </div>
-                            <div className="grid grid-cols-3 gap-4">
-                              <div>
-                                <label className="block text-sm font-medium mb-1">
-                                  Repeticiones
-                                </label>
-                                <input
-                                  type="number"
-                                  value={set.reps}
-                                  onChange={(e) => handleSetChange(exercise._id, set.id, 'reps', parseInt(e.target.value))}
-                                  className={`w-full p-2 rounded-md border ${
-                                    theme === 'dark'
-                                      ? 'bg-gray-700 border-gray-500'
-                                      : 'bg-white border-gray-300'
-                                  }`}
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium mb-1">
-                                  Peso (kg)
-                                </label>
-                                <input
-                                  type="number"
-                                  value={set.weight}
-                                  onChange={(e) => handleSetChange(exercise._id, set.id, 'weight', parseInt(e.target.value))}
-                                  className={`w-full p-2 rounded-md border ${
-                                    theme === 'dark'
-                                      ? 'bg-gray-700 border-gray-500'
-                                      : 'bg-white border-gray-300'
-                                  }`}
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium mb-1">
-                                  Descanso (s)
-                                </label>
-                                <input
-                                  type="number"
-                                  value={set.rest}
-                                  onChange={(e) => handleSetChange(exercise._id, set.id, 'rest', parseInt(e.target.value))}
-                                  className={`w-full p-2 rounded-md border ${
-                                    theme === 'dark'
-                                      ? 'bg-gray-700 border-gray-500'
-                                      : 'bg-white border-gray-300'
-                                  }`}
-                                />
-                              </div>
-                            </div>
-                            <div className="flex justify-between items-center mt-4">
-                              <span>Valor: {renderSetValue(set.reps, 'reps')} - {renderSetValue(set.weight, 'kg')} - {renderSetValue(set.rest, 'sec')}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+              {ejerciciosExpandidos.has(exercise._id) && (
+                <div className="mt-4">
+                  {exercise.sets.map((set, index) => {
+                    console.log('Renderizando set:', set);
 
-                      <div className="mt-4 flex justify-between items-center">
+                    const setData = getSetStructuredData(set);
+                    console.log('Set data estructurado:', setData);
+                    
+                    return (
+                      <div
+                        key={set._id}
+                        className="grid grid-cols-4 gap-4 items-center mb-4 p-2 bg-white dark:bg-gray-700 rounded shadow"
+                      >
+                        <span className="font-medium">Set {index + 1}</span>
+                        
+                        {/* Primera categoría */}
+                        <div className="flex items-center space-x-2">
+                          <select
+                            value={set.renderConfig?.campo1 || 'reps'}
+                            className="p-1 border rounded"
+                            onChange={(e) => handleTypeChange(
+                              exercise._id,
+                              set._id,
+                              'campo1',
+                              e.target.value as MeasureType
+                            )}
+                          >
+                            {fieldOptions.campo1.map(option => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            type="number"
+                            value={setData.campo1.value}
+                            readOnly
+                            className="w-20 p-1 border rounded"
+                          />
+                          <span>{getMeasureUnit(setData.campo1.type)}</span>
+                        </div>
+
+                        {/* Segunda categoría */}
+                        <div className="flex items-center space-x-2">
+                          <select
+                            value={set.renderConfig?.campo2 || 'weight'}
+                            className="p-1 border rounded"
+                            onChange={(e) => handleTypeChange(
+                              exercise._id,
+                              set._id,
+                              'campo2',
+                              e.target.value as MeasureType
+                            )}
+                          >
+                            {fieldOptions.campo2.map(option => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            type="number"
+                            value={setData.campo2.value}
+                            readOnly
+                            className="w-20 p-1 border rounded"
+                          />
+                          <span>{getMeasureUnit(setData.campo2.type)}</span>
+                        </div>
+
+                        {/* Tercera categoría */}
+                        <div className="flex items-center space-x-2">
+                          <select
+                            value={set.renderConfig?.campo3 || 'rest'}
+                            className="p-1 border rounded"
+                            onChange={(e) => handleTypeChange(
+                              exercise._id,
+                              set._id,
+                              'campo3',
+                              e.target.value as MeasureType
+                            )}
+                          >
+                            {fieldOptions.campo3.map(option => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            type="number"
+                            value={setData.campo3.value}
+                            readOnly
+                            className="w-20 p-1 border rounded"
+                          />
+                          <span>{getMeasureUnit(setData.campo3.type)}</span>
+                        </div>
+
                         <button
-                          onClick={() => handleAddSet(exercise._id)}
-                          className="flex items-center text-blue-500 hover:text-blue-700"
+                          onClick={() => handleDeleteSet(exercise._id, set._id)}
+                          className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-red-500"
                         >
-                          <Plus className="w-4 h-4 mr-1" />
-                          Agregar Set
+                          <XCircle className="w-4 h-4" />
                         </button>
                       </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
+                    );
+                  })}
+                  <button
+                    onClick={() => handleAddSet(exercise._id)}
+                    className="mt-2 flex items-center space-x-2 text-blue-500 hover:text-blue-600"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Añadir Set</span>
+                  </button>
+                </div>
+              )}
+            </div>
           ))}
         </div>
-
-        {session.exercises.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            No hay ejercicios en esta sesión
-          </div>
-        )}
       </div>
+
+      {/* Popup de edición */}
+      {showEditPopup && (
+        <EditSessionPopup
+          session={localSession}
+          onSave={handleSaveSession}
+          onClose={() => setShowEditPopup(false)}
+        />
+      )}
     </div>
   );
 };

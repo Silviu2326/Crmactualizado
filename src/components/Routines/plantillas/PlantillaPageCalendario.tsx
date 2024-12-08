@@ -1,140 +1,195 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
-import Button from '../../Common/Button';
 import { Plus, Calendar } from 'lucide-react';
+import Button from '../../Common/Button';
+
+interface Exercise {
+  _id: string;
+  nombre: string;
+  tipo: string;
+  grupoMuscular: string[];
+}
+
+interface Set {
+  reps: number;
+  weight: number;
+  rest: number;
+  tempo: string;
+  rpe: number;
+  _id: string;
+}
+
+interface ExerciseWithSets {
+  exercise: Exercise;
+  sets: Set[];
+  _id: string;
+}
+
+interface Session {
+  name: string;
+  tipo: string;
+  rondas: number;
+  exercises: ExerciseWithSets[];
+  _id: string;
+}
+
+interface Day {
+  dayNumber: number;
+  sessions: Session[];
+  _id: string;
+}
+
+interface Week {
+  weekNumber: number;
+  days: Day[];
+  _id: string;
+}
+
+interface Template {
+  _id: string;
+  nombre: string;
+  descripcion: string;
+  trainer: {
+    _id: string;
+    nombre: string;
+    email: string;
+  };
+  totalWeeks: number;
+  plan: Week[];
+  isActive: boolean;
+  difficulty: string;
+  category: string;
+  assignedClients: string[];
+}
 
 interface PlantillaPageCalendarioProps {
-  plantilla: any;
-  onDayClick: (semana: number, dia: string) => void;
+  plantilla: Template | null;
+  onWeekSelect: (weekNumber: number) => void;
 }
 
 const PlantillaPageCalendario: React.FC<PlantillaPageCalendarioProps> = ({ 
   plantilla,
-  onDayClick 
+  onWeekSelect
 }) => {
   const { theme } = useTheme();
-  const [numSemanas, setNumSemanas] = useState(4);
-  const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+  const [totalWeeks, setTotalWeeks] = useState(plantilla?.totalWeeks || 4);
+  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
 
-  const handleAddWeek = () => {
-    setNumSemanas(prev => prev + 1);
+  const handleAddWeek = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token || !plantilla?._id) return;
+
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/planningtemplate/templates/${plantilla._id}/week`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          weekNumber: totalWeeks + 1
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al añadir semana');
+      }
+
+      setTotalWeeks(prev => prev + 1);
+    } catch (error) {
+      console.error('Error adding week:', error);
+    }
   };
 
-  const getDayNumber = (semanaIndex: number, diaIndex: number) => {
-    return (semanaIndex * 7) + diaIndex + 1;
+  const handleWeekClick = (weekNumber: number) => {
+    setSelectedWeek(weekNumber);
+    onWeekSelect(weekNumber);
+  };
+
+  const getSessionsForDay = (weekNumber: number, dayNumber: number): Session[] => {
+    if (!plantilla?.plan) return [];
+    
+    const week = plantilla.plan.find(w => w.weekNumber === weekNumber);
+    if (!week) return [];
+
+    const day = week.days.find(d => d.dayNumber === dayNumber);
+    return day?.sessions || [];
+  };
+
+  const renderSessionPreview = (sessions: Session[]) => {
+    if (sessions.length === 0) {
+      return (
+        <div className="text-center text-gray-400 dark:text-gray-500">
+          <Plus className="w-5 h-5 mx-auto mb-1" />
+          <span className="text-sm">Añadir sesión</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-1">
+        {sessions.map((session) => (
+          <div 
+            key={session._id}
+            className="text-sm p-1 rounded bg-blue-50 dark:bg-gray-700"
+          >
+            {session.name}
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
-    <div className={`bg-gradient-to-br ${
-      theme === 'dark' 
-        ? 'from-gray-800 to-gray-700' 
-        : 'from-white to-gray-50'
-    } rounded-xl shadow-lg p-6`}>
-      <div className="flex justify-between items-center mb-6">
+    <div className="overflow-x-auto">
+      <div className="flex justify-between items-center mb-4 p-4">
         <div className="flex items-center">
-          <Calendar className={`w-6 h-6 mr-3 ${
-            theme === 'dark' ? 'text-blue-400' : 'text-blue-500'
-          }`} />
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent">
-            Calendario de la Plantilla
-          </h2>
+          <Calendar className="w-6 h-6 mr-2" />
+          <h2 className="text-xl font-semibold">Calendario de Entrenamiento</h2>
         </div>
-        <Button 
-          variant="normal" 
-          onClick={handleAddWeek} 
-          className={`flex items-center transform transition-transform hover:scale-105 ${
-            theme === 'dark' 
-              ? 'bg-blue-600 hover:bg-blue-700' 
-              : 'bg-blue-500 hover:bg-blue-600'
-          } text-white px-4 py-2 rounded-lg shadow-md`}
+        <Button
+          onClick={handleAddWeek}
+          className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
         >
-          <Plus className="w-4 h-4 mr-2" />
-          Añadir Semana
+          <Plus className="w-4 h-4" />
+          <span>Añadir Semana</span>
         </Button>
       </div>
 
-      <div className="overflow-x-auto rounded-lg shadow-md">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              <th className={`p-4 text-left border-b-2 ${
-                theme === 'dark' 
-                  ? 'bg-gray-700 border-gray-600 text-gray-200' 
-                  : 'bg-blue-50 border-blue-200 text-gray-700'
-              } font-semibold transition-colors duration-150`}>
-                Semana
+      <table className="w-full border-collapse">
+        <thead>
+          <tr className={`${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
+            <th className="border p-3 text-left">Semana</th>
+            {Array.from({ length: 7 }, (_, i) => (
+              <th key={i} className="border p-3 text-center">
+                Día {i + 1}
               </th>
-              {dias.map(dia => (
-                <th
-                  key={dia}
-                  className={`p-4 text-center border-b-2 ${
-                    theme === 'dark'
-                      ? 'bg-gray-700 border-gray-600 text-gray-200'
-                      : 'bg-blue-50 border-blue-200 text-gray-700'
-                  } font-semibold transition-colors duration-150`}
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: totalWeeks }, (_, weekIndex) => (
+            <tr key={weekIndex + 1}>
+              <td 
+                className={`border p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                  selectedWeek === weekIndex + 1 ? 'bg-blue-100 dark:bg-blue-900' : ''
+                }`}
+                onClick={() => handleWeekClick(weekIndex + 1)}
+              >
+                Semana {weekIndex + 1}
+              </td>
+              {Array.from({ length: 7 }, (_, dayIndex) => (
+                <td
+                  key={dayIndex}
+                  className="border p-3"
                 >
-                  {dia}
-                </th>
+                  {renderSessionPreview(getSessionsForDay(weekIndex + 1, dayIndex + 1))}
+                </td>
               ))}
             </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: numSemanas }).map((_, semanaIndex) => (
-              <tr key={semanaIndex} className={
-                theme === 'dark' ? 'hover:bg-gray-750' : 'hover:bg-gray-50'
-              }>
-                <td className={`p-4 border ${
-                  theme === 'dark' 
-                    ? 'border-gray-600 bg-gray-800' 
-                    : 'border-gray-200 bg-white'
-                } font-medium transition-colors duration-150`}>
-                  <div className="flex items-center">
-                    <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full mr-2 ${
-                      theme === 'dark' 
-                        ? 'bg-blue-600 text-white' 
-                        : 'bg-blue-100 text-blue-600'
-                    }`}>
-                      {semanaIndex + 1}
-                    </span>
-                    <span>Semana</span>
-                  </div>
-                </td>
-                {dias.map((dia, diaIndex) => (
-                  <td
-                    key={diaIndex}
-                    onClick={() => onDayClick(semanaIndex + 1, dia)}
-                    className={`p-4 border relative group cursor-pointer ${
-                      theme === 'dark'
-                        ? 'border-gray-600 bg-gray-800 hover:bg-gray-700'
-                        : 'border-gray-200 bg-white hover:bg-blue-50'
-                    } transition-all duration-200`}
-                  >
-                    <div className="min-h-[60px] flex flex-col items-center justify-center relative">
-                      <span className={`absolute top-1 right-1 w-6 h-6 flex items-center justify-center rounded-full text-sm ${
-                        theme === 'dark'
-                          ? 'bg-gray-700 text-gray-300'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {getDayNumber(semanaIndex, diaIndex)}
-                      </span>
-                      <div className={`w-full h-full flex items-center justify-center ${
-                        theme === 'dark'
-                          ? 'group-hover:text-blue-400'
-                          : 'group-hover:text-blue-600'
-                      } transition-colors duration-200`}>
-                        {/* Aquí puedes mostrar las sesiones programadas para este día */}
-                        <span className="text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          + Añadir sesión
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };

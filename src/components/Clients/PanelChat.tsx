@@ -1,18 +1,21 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Send } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Send, Paperclip, Image, Smile, MoreVertical, Search } from 'lucide-react';
-import Button from '../Common/Button';
+import toast from 'react-hot-toast';
+import { chatService, Message as ChatMessage } from '../../services/chatService';
 
 interface Message {
-  id: string;
-  text: string;
-  sender: 'user' | 'client';
-  timestamp: Date;
-  attachments?: {
-    type: 'image' | 'file';
-    url: string;
-    name: string;
-  }[];
+  _id: string;
+  conversacion: string;
+  emisor: string;
+  receptor: string;
+  contenido: string;
+  tipo: 'texto' | 'imagen' | 'archivo';
+  urlArchivo: string | null;
+  leido: boolean;
+  fechaEnvio: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface PanelChatProps {
@@ -21,70 +24,121 @@ interface PanelChatProps {
 }
 
 const PanelChat: React.FC<PanelChatProps> = ({ clienteId, clienteName }) => {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  console.log('🎯 PanelChat - Props recibidos:', { clienteId, clienteName });
+  
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [isAttaching, setIsAttaching] = useState(false);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [chatId, setChatId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const theme = useTheme();
 
-  // Simular algunos mensajes iniciales
   useEffect(() => {
-    setMessages([
-      {
-        id: '1',
-        text: '¡https://fitoffice2-f70b52bef77e.herokuapp.com/! ¿Cómo va el entrenamiento?',
-        sender: 'client',
-        timestamp: new Date(Date.now() - 86400000) // 24 horas atrás
-      },
-      {
-        id: '2',
-        text: 'Todo va muy bien, he completado todos los ejercicios programados',
-        sender: 'user',
-        timestamp: new Date(Date.now() - 82800000) // 23 horas atrás
+    const initializeChat = async () => {
+      console.log('🚀 PanelChat - Iniciando inicialización del chat');
+      
+      if (!clienteId) {
+        console.error('❌ PanelChat - No se proporcionó un ID de cliente');
+        return;
       }
-    ]);
-  }, []);
 
-  useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      setIsLoading(true);
+      try {
+        console.log('🔍 PanelChat - Verificando token...');
+        const token = localStorage.getItem('token') || localStorage.getItem('jwt');
+        console.log('🔑 PanelChat - Token encontrado:', !!token);
+        
+        if (!token) {
+          console.error('❌ PanelChat - No hay token de autenticación');
+          toast.error('Error de autenticación');
+          return;
+        }
+
+        console.log('📞 PanelChat - Iniciando chat para cliente:', clienteId);
+        const chat = await chatService.iniciarChat(clienteId);
+        console.log('📋 PanelChat - Respuesta del servidor (chat):', chat);
+        
+        if (chat._id) {
+          console.log('💾 PanelChat - Chat ID obtenido:', chat._id);
+          setChatId(chat._id);
+          
+          console.log('📥 PanelChat - Obteniendo mensajes del chat...');
+          const chatResponse = await chatService.getChatMessages(chat._id);
+          console.log('📃 PanelChat - Respuesta completa:', chatResponse);
+          
+          setMessages(chatResponse.mensajes || []);
+          console.log('✅ PanelChat - Mensajes guardados en el estado');
+        }
+      } catch (error: any) {
+        console.error('❌ PanelChat - Error al inicializar el chat:', error);
+        console.error('📝 PanelChat - Detalles del error:', {
+          mensaje: error.message,
+          respuesta: error.response?.data,
+          estado: error.response?.status
+        });
+        toast.error(error.message || 'Error al cargar el chat');
+      } finally {
+        setIsLoading(false);
+        console.log('🏁 PanelChat - Finalizada la inicialización del chat');
+      }
+    };
+
+    initializeChat();
+  }, [clienteId]);
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim()) return;
+    
+    console.log('💬 PanelChat - Iniciando envío de mensaje:', {
+      chatId,
+      mensaje: newMessage,
+      longitud: newMessage.length
+    });
+
+    if (!chatId) {
+      console.error('❌ PanelChat - No hay un chat activo');
+      toast.error('Error al enviar mensaje: No hay un chat activo');
+      return;
     }
-  }, [messages]);
 
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      const message: Message = {
-        id: Date.now().toString(),
-        text: newMessage,
-        sender: 'user',
-        timestamp: new Date()
-      };
-      setMessages([...messages, message]);
+    setIsLoading(true);
+    try {
+      console.log('📤 PanelChat - Enviando mensaje al servidor...');
+      const sentMessage = await chatService.sendMessage(chatId, newMessage.trim());
+      console.log('✅ PanelChat - Mensaje enviado exitosamente:', sentMessage);
+      
+      setMessages(prev => {
+        const newMessages = [...prev, sentMessage];
+        console.log('📊 PanelChat - Estado actualizado de mensajes:', newMessages);
+        return newMessages;
+      });
+      
       setNewMessage('');
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    } catch (error: any) {
+      console.error('❌ PanelChat - Error al enviar mensaje:', error);
+      console.error('📝 PanelChat - Detalles del error:', {
+        mensaje: error.message,
+        respuesta: error.response?.data,
+        estado: error.response?.status
+      });
+      toast.error('Error al enviar el mensaje');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
-  const handleAttachClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const formatTimestamp = (date: Date) => {
+  const formatTimestamp = (date: string) => {
+    console.log('🕒 PanelChat - Formateando fecha:', date);
+    const messageDate = new Date(date);
     const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-
+    const diffInHours = (now.getTime() - messageDate.getTime()) / (1000 * 60 * 60);
+    
+    let formattedDate;
     if (diffInHours < 24) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      formattedDate = messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } else {
-      return date.toLocaleDateString([], { 
+      formattedDate = messageDate.toLocaleDateString([], { 
         day: '2-digit',
         month: '2-digit',
         year: '2-digit',
@@ -92,163 +146,76 @@ const PanelChat: React.FC<PanelChatProps> = ({ clienteId, clienteName }) => {
         minute: '2-digit'
       });
     }
+    console.log('🕒 PanelChat - Fecha formateada:', formattedDate);
+    return formattedDate;
   };
 
   return (
     <div className={`flex flex-col h-[600px] rounded-lg ${
-      isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-    } shadow-lg`}>
+      theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+    }`}>
       {/* Header */}
-      <div className={`flex justify-between items-center p-4 border-b ${
-        isDark ? 'border-gray-700' : 'border-gray-200'
-      }`}>
-        <div className="flex items-center space-x-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-            isDark ? 'bg-gray-700' : 'bg-gray-100'
-          }`}>
-            {clienteName.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <h3 className="font-semibold">{clienteName}</h3>
-            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-              Cliente
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => console.log('Buscar en el chat')}
-          >
-            <Search size={20} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => console.log('Más opciones')}
-          >
-            <MoreVertical size={20} />
-          </Button>
-        </div>
+      <div className="p-4 border-b">
+        <h2 className="text-lg font-semibold">Chat con {clienteName}</h2>
       </div>
 
-      {/* Chat Messages */}
-      <div
-        ref={chatContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4"
-      >
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (
           <div
-            key={message.id}
-            className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+            key={message._id}
+            className={`flex ${
+              message.emisor === clienteId ? 'justify-start' : 'justify-end'
+            }`}
           >
             <div
               className={`max-w-[70%] rounded-lg p-3 ${
-                message.sender === 'user'
-                  ? isDark
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-blue-500 text-white'
-                  : isDark
-                  ? 'bg-gray-700 text-white'
-                  : 'bg-gray-100 text-gray-900'
+                message.emisor === clienteId
+                  ? theme === 'dark'
+                    ? 'bg-gray-700'
+                    : 'bg-gray-100'
+                  : theme === 'dark'
+                  ? 'bg-blue-600'
+                  : 'bg-blue-500 text-white'
               }`}
             >
-              <p className="break-words">{message.text}</p>
-              {message.attachments?.map((attachment, index) => (
-                <div
-                  key={index}
-                  className={`mt-2 p-2 rounded ${
-                    isDark ? 'bg-gray-600' : 'bg-gray-200'
-                  }`}
-                >
-                  {attachment.type === 'image' ? (
-                    <img
-                      src={attachment.url}
-                      alt={attachment.name}
-                      className="max-w-full rounded"
-                    />
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      <Paperclip size={16} />
-                      <span>{attachment.name}</span>
-                    </div>
-                  )}
-                </div>
-              ))}
-              <p className={`text-xs mt-1 ${
-                message.sender === 'user'
-                  ? 'text-blue-200'
-                  : isDark
-                  ? 'text-gray-400'
-                  : 'text-gray-500'
-              }`}>
-                {formatTimestamp(message.timestamp)}
-              </p>
+              <p className="text-sm">{message.contenido}</p>
+              <span className="text-xs opacity-75 mt-1 block">
+                {formatTimestamp(message.fechaEnvio)}
+              </span>
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
-      <div className={`p-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-        <div className="flex items-end space-x-2">
-          <div className="flex-1">
-            <textarea
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Escribe un mensaje..."
-              className={`w-full p-3 rounded-lg resize-none ${
-                isDark
-                  ? 'bg-gray-700 text-white placeholder-gray-400'
-                  : 'bg-gray-100 text-gray-900 placeholder-gray-500'
-              } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-              rows={1}
-              style={{ minHeight: '44px', maxHeight: '120px' }}
-            />
-          </div>
-          <div className="flex space-x-2">
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              onChange={(e) => console.log('Archivo seleccionado:', e.target.files)}
-              multiple
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleAttachClick}
-            >
-              <Paperclip size={20} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => console.log('Adjuntar imagen')}
-            >
-              <Image size={20} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => console.log('Insertar emoji')}
-            >
-              <Smile size={20} />
-            </Button>
-            <Button
-              onClick={handleSendMessage}
-              disabled={!newMessage.trim()}
-              className={`${
-                !newMessage.trim()
-                  ? 'opacity-50 cursor-not-allowed'
-                  : ''
-              }`}
-            >
-              <Send size={20} />
-            </Button>
-          </div>
+      {/* Input */}
+      <div className="p-4 border-t">
+        <div className="flex space-x-2">
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            placeholder="Escribe un mensaje..."
+            className={`flex-1 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+            }`}
+            disabled={isLoading}
+          />
+          <button
+            onClick={handleSendMessage}
+            disabled={isLoading || !newMessage.trim()}
+            className={`p-2 rounded-lg ${
+              isLoading || !newMessage.trim()
+                ? 'opacity-50 cursor-not-allowed'
+                : 'hover:bg-blue-600'
+            } ${
+              theme === 'dark' ? 'bg-blue-600' : 'bg-blue-500'
+            } text-white transition-colors`}
+          >
+            <Send size={20} />
+          </button>
         </div>
       </div>
     </div>

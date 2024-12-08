@@ -118,7 +118,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
       }
 
       console.log('ExerciseSelector: Ejercicio agregado exitosamente:', response.data);
-      return true;
+      return response;
     } catch (err) {
       console.error('ExerciseSelector: Error al agregar ejercicio:', err);
       throw err;
@@ -129,18 +129,27 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     try {
       console.log('ExerciseSelector: Ejercicio seleccionado:', exercise);
       
-      // Primero hacer la petición al backend
-      await addExerciseToSession(exercise._id);
+      // Hacer la petición al backend para añadir el ejercicio
+      const response = await addExerciseToSession(exercise._id);
       
-      // Si la petición fue exitosa, crear el ejercicio con sets
+      // Extraer la información de los sets y renderConfig de la respuesta
+      const { sets } = response.data.data;
+      
+      // Crear el ejercicio con los sets de la API
       const exerciseWithSets: ExerciseWithSets = {
         ...exercise,
-        sets: [{
-          id: Date.now().toString(),
-          reps: 12,
-          weight: 10,
-          rest: 60
-        }]
+        sets: sets.map(set => ({
+          id: set._id,
+          // Usar solo los campos especificados en renderConfig
+          ...Object.fromEntries(
+            Object.entries(set)
+              .filter(([key]) => 
+                set.renderConfig[`campo1`] === key ||
+                set.renderConfig[`campo2`] === key ||
+                set.renderConfig[`campo3`] === key
+              )
+          )
+        }))
       };
 
       console.log('ExerciseSelector: Ejercicio con sets:', exerciseWithSets);

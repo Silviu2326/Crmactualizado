@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { File, Search, Filter, Plus, Calendar, Loader2, AlertCircle } from 'lucide-react';
+import { File, Search, Filter, Plus, Eye, Edit2, Trash2, Calendar, Loader2, AlertCircle } from 'lucide-react';
 import Table from '../../Common/Table';
 import Button from '../../Common/Button';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { motion } from 'framer-motion';
 import axios from 'axios';
+import { motion } from 'framer-motion';
 import AddDocumentoModal from './AddDocumentoModal';
+import EditDocumentoModal from './EditDocumentoModal';
 
 interface Trainer {
   _id: string;
@@ -39,7 +40,9 @@ const OtrosDocumentosWidget: React.FC = () => {
   const [documentos, setDocumentos] = useState<OtroDocumento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedDocumento, setSelectedDocumento] = useState<OtroDocumento | null>(null);
   const { theme } = useTheme();
 
   const fetchDocumentos = async () => {
@@ -113,77 +116,112 @@ const OtrosDocumentosWidget: React.FC = () => {
   };
 
   const handleAddDocumento = () => {
-    setIsModalOpen(true);
+    setIsAddModalOpen(true);
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center p-8">
-        <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-      </div>
-    );
-  }
+  const handleView = async (documento: OtroDocumento) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/otros-documentos/${documento._id}/download`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', documento.nombre);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error('Error al descargar el documento:', err);
+      setError('Error al descargar el documento');
+    }
+  };
 
-  if (error) {
-    return (
-      <div className={`flex items-center justify-center p-4 rounded-lg ${
-        theme === 'dark' ? 'bg-red-900/20 text-red-200' : 'bg-red-100 text-red-800'
-      }`}>
-        <AlertCircle className="w-5 h-5 mr-2" />
-        {error}
-      </div>
-    );
-  }
+  const handleEdit = (documento: OtroDocumento) => {
+    setSelectedDocumento(documento);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDelete = async (documentoId: string) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este documento?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/otros-documentos/${documentoId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      setDocumentos(documentos.filter(doc => doc._id !== documentoId));
+    } catch (err) {
+      console.error('Error al eliminar el documento:', err);
+      setError('Error al eliminar el documento');
+    }
+  };
 
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="flex items-center space-x-2 mb-4">
-          <div className="relative flex-grow">
-            <h3 className={`text-lg font-semibold mb-2 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-600'}`}>
-              Otros Documentos {tipoFilter && `- ${tipoFilter}`}
-            </h3>
+      <div className={`p-4 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-lg shadow-md`}>
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center space-x-2">
+            <File className={theme === 'dark' ? 'text-orange-400' : 'text-orange-600'} />
+            <h2 className="text-xl font-semibold">Otros Documentos</h2>
+          </div>
+          <div className="flex items-center space-x-2">
             <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
                 placeholder="Buscar documentos..."
                 value={searchTerm}
-                onChange={handleSearchChange}
-                className={`w-full pl-10 pr-4 py-2 rounded-full ${
-                  theme === 'dark' 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                    : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
-                } border focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300`}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={`pl-10 pr-4 py-2 rounded-lg border ${
+                  theme === 'dark'
+                    ? 'bg-gray-700 border-gray-600 text-white'
+                    : 'bg-white border-gray-300'
+                }`}
               />
-              <Search className={`absolute left-3 top-2.5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} size={20} />
             </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleAddDocumento}
+              className={`inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                theme === 'dark' ? 'focus:ring-offset-gray-800' : ''
+              }`}
+            >
+              <Plus size={20} className="mr-2" />
+              <span>Nuevo Documento</span>
+            </motion.button>
           </div>
-          <Button 
-            variant="filter" 
-            onClick={handleFilter}
-            className={tipoFilter ? 'bg-orange-500 text-white' : ''}
-          >
-            <Filter className="w-4 h-4" />
-          </Button>
-          <Button variant="create" onClick={handleAddDocumento}>
-            <Plus className="w-4 h-4 mr-1" />
-            Añadir
-          </Button>
         </div>
-        
-        {filteredDocumentos.length === 0 ? (
-          <div className={`text-center p-8 rounded-lg ${
-            theme === 'dark' ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-600'
+
+        {loading ? (
+          <div className="flex justify-center items-center p-8">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+          </div>
+        ) : error ? (
+          <div className="flex justify-center items-center p-8 text-red-500">
+            <AlertCircle className="w-6 h-6 mr-2" />
+            <span>{error}</span>
+          </div>
+        ) : filteredDocumentos.length === 0 ? (
+          <div className={`text-center py-4 ${
+            theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
           }`}>
             No se encontraron documentos
           </div>
         ) : (
           <Table
-            headers={['Nombre', 'Tipo', 'Fecha de Creación', 'Trainer', 'Notas']}
+            headers={['Nombre', 'Tipo', 'Fecha de Creación', 'Trainer', 'Notas', 'Acciones']}
             data={filteredDocumentos.map(doc => ({
               Nombre: (
                 <div className="flex items-center">
@@ -203,35 +241,80 @@ const OtrosDocumentosWidget: React.FC = () => {
               ),
               'Fecha de Creación': (
                 <div className="flex items-center">
-                  <Calendar className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-600'}`} />
+                  <Calendar className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}`} />
                   {formatDate(doc.fechaCreacion)}
                 </div>
               ),
-              'Trainer': doc.trainer ? (
+              Trainer: doc.trainer ? (
                 <div className="text-sm">
                   {doc.trainer.nombre}
                 </div>
               ) : (
                 <span className="text-gray-400">-</span>
               ),
-              'Notas': doc.notas ? (
+              Notas: doc.notas ? (
                 <div className="max-w-xs truncate">
                   {doc.notas}
                 </div>
               ) : (
                 <span className="text-gray-400">-</span>
+              ),
+              Acciones: (
+                <div className="flex items-center space-x-2">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => handleView(doc)}
+                    className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                      theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
+                    }`}
+                    title="Ver documento"
+                  >
+                    <Eye size={16} />
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => handleEdit(doc)}
+                    className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                      theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
+                    }`}
+                    title="Modificar"
+                  >
+                    <Edit2 size={16} />
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => handleDelete(doc._id)}
+                    className={`p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors ${
+                      theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                    }`}
+                    title="Eliminar"
+                  >
+                    <Trash2 size={16} />
+                  </motion.button>
+                </div>
               )
             }))}
             variant={theme === 'dark' ? 'dark' : 'white'}
           />
         )}
-      </motion.div>
+      </div>
 
       <AddDocumentoModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
         onDocumentoAdded={fetchDocumentos}
       />
+      {selectedDocumento && (
+        <EditDocumentoModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          documento={selectedDocumento}
+          onDocumentoUpdated={fetchDocumentos}
+        />
+      )}
     </>
   );
 };

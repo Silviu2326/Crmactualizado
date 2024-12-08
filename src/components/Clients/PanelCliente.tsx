@@ -127,6 +127,21 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [planningDetails, setPlanningDetails] = useState<{
+    nombre: string;
+    descripcion: string;
+    meta: string;
+    semanas: number;
+    fechaInicio: string;
+  } | null>(null);
+  const [dietDetails, setDietDetails] = useState<{
+    nombre: string;
+    objetivo: string;
+    restricciones: string;
+    estado: string;
+    fechaInicio: string;
+    semanas: Array<any>;
+  } | null>(null);
   const [editandoDireccion, setEditandoDireccion] = useState(false);
   const [direccionForm, setDireccionForm] = useState<Direccion>({
     calle: cliente?.direccion?.calle || '',
@@ -151,7 +166,6 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
     const fetchCliente = async () => {
       console.log('Iniciando fetchCliente con clienteId:', clienteId);
       try {
-        // Obtener el token del localStorage
         const token = localStorage.getItem('token');
         console.log('Token obtenido:', token ? 'Token presente' : 'Token no encontrado');
 
@@ -171,6 +185,45 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
         const response = await axios.get(`${API_URL}/clientes/${clienteId}`, config);
         console.log('Respuesta recibida:', response.data);
         setCliente(response.data);
+
+        // Fetch planning details if plannings array is not empty
+        if (response.data.plannings && response.data.plannings.length > 0) {
+          const planningId = response.data.plannings[0];
+          try {
+            const planningResponse = await axios.get(`${API_URL}/plannings/${planningId}`, config);
+            setPlanningDetails({
+              nombre: planningResponse.data.nombre,
+              descripcion: planningResponse.data.descripcion,
+              meta: planningResponse.data.meta,
+              semanas: planningResponse.data.semanas,
+              fechaInicio: planningResponse.data.fechaInicio
+            });
+          } catch (planningError) {
+            console.error('Error al obtener los detalles del planning:', planningError);
+          }
+        } else {
+          setPlanningDetails(null);
+        }
+
+        // Fetch diet details if dietas array is not empty
+        if (response.data.dietas && response.data.dietas.length > 0) {
+          const dietaId = response.data.dietas[0];
+          try {
+            const dietaResponse = await axios.get(`${API_URL}/dietas/${dietaId}`, config);
+            setDietDetails({
+              nombre: dietaResponse.data.nombre,
+              objetivo: dietaResponse.data.objetivo,
+              restricciones: dietaResponse.data.restricciones,
+              estado: dietaResponse.data.estado,
+              fechaInicio: dietaResponse.data.fechaInicio,
+              semanas: dietaResponse.data.semanas
+            });
+          } catch (dietaError) {
+            console.error('Error al obtener los detalles de la dieta:', dietaError);
+          }
+        } else {
+          setDietDetails(null);
+        }
       } catch (error: any) {
         console.error('Error detallado al obtener el cliente:', {
           mensaje: error.message,
@@ -187,34 +240,46 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
     fetchCliente();
   }, [clienteId]);
 
+  // Add this effect outside the render
+  React.useEffect(() => {
+    // If current section is disabled, switch to dashboard
+    const isCurrentSectionDisabled = 
+      (activeSection === 'plan' && !planningDetails) || 
+      (activeSection === 'dietas' && !dietDetails);
+
+    if (isCurrentSectionDisabled) {
+      setActiveSection('dashboard');
+    }
+  }, [activeSection, planningDetails, dietDetails]);
+
   // Handlers
   const handleCreatePlan = () => {
-    // Aquí implementaremos la lógica para crear un nuevo plan
     console.log('Crear nuevo plan para el cliente:', cliente?._id);
   };
 
   const handleViewPlan = () => {
-    // Aquí implementaremos la lógica para ver un plan
-    console.log('Ver plan para el cliente:', cliente?._id);
+    if (cliente?.plannings && cliente.plannings.length > 0) {
+      const planningId = cliente.plannings[0];
+      navigate(`/edit-planning/${planningId}`);
+    }
   };
 
   const handleNewCheckin = () => {
-    // Aquí implementaremos la lógica para un nuevo check-in
     console.log('Nuevo check-in para el cliente:', cliente?._id);
   };
 
   const handleCreateDiet = () => {
-    // Aquí implementaremos la lógica para crear una nueva dieta
     console.log('Crear nueva dieta para el cliente:', cliente?._id);
   };
 
   const handleViewDiet = () => {
-    // Aquí implementaremos la lógica para ver una dieta
-    console.log('Ver dieta para el cliente:', cliente?._id);
+    if (cliente?.dietas && cliente.dietas.length > 0) {
+      const dietaId = cliente.dietas[0];
+      navigate(`/edit-diet/${dietaId}`);
+    }
   };
 
   const handleNewPayment = () => {
-    // Aquí implementaremos la lógica para un nuevo pago
     console.log('Nuevo pago para el cliente:', cliente?._id);
   };
 
@@ -228,7 +293,6 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
       };
 
       const response = await axios.post(`${API_URL}/clientes/${clienteId}/notas`, note, config);
-      // Usar directamente la nota del backend
       const nuevaNota = response.data.data;
       
       setCliente(prevCliente => ({
@@ -368,7 +432,6 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
     { id: 'agenda', icon: CalendarIcon, label: 'Agenda' },
   ];
 
-  // Función para formatear la fecha en español
   const formatearFecha = (fecha: string) => {
     try {
       const date = new Date(fecha);
@@ -471,11 +534,15 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
             <div className="flex flex-wrap gap-2 mt-6">
               {navigationButtons.map((button) => {
                 const Icon = button.icon;
+                // Check if button should be disabled
+                const isDisabled = (button.id === 'plan' && !planningDetails) || 
+                                 (button.id === 'dietas' && !dietDetails);
+
                 return (
                   <Button
                     key={button.id}
                     variant={activeSection === button.id ? 'default' : 'ghost'}
-                    onClick={() => setActiveSection(button.id as Section)}
+                    onClick={() => !isDisabled && setActiveSection(button.id as Section)}
                     className={`
                       flex items-center space-x-2 px-4 py-2 rounded-full
                       ${activeSection === button.id
@@ -484,11 +551,15 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
                         ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }
-                      transition-all duration-300
+                      ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'transition-all duration-300'}
                     `}
+                    disabled={isDisabled}
                   >
                     <Icon className="w-4 h-4" />
-                    <span>{button.label}</span>
+                    <span>
+                      {button.label}
+                      {isDisabled && ' (Bloqueado)'}
+                    </span>
                   </Button>
                 );
               })}
@@ -503,7 +574,7 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
                 <InfoCard
                   title="Planificación Deportiva"
                   delay={0.8}
-                  titleButton={!cliente.planningActivo ? {
+                  titleButton={!planningDetails ? {
                     icon: Plus,
                     label: "Añadir planificación",
                     onClick: handleCreatePlan,
@@ -517,22 +588,30 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
                   items={[
                     { 
                       icon: Target,
-                      text: cliente.planningActivo ? (
-                        <div className="flex flex-col gap-1">
+                      text: planningDetails ? (
+                        <div className="flex flex-col gap-2">
                           <div className="flex gap-2">
-                            <span className="font-semibold">Plan actual:</span>
-                            <span>{cliente.planningActivo.nombre}</span>
+                            <span className="font-semibold">Nombre:</span>
+                            <span className="text-green-500">{planningDetails.nombre}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="font-semibold">Descripción:</span>
+                            <span>{planningDetails.descripcion}</span>
                           </div>
                           <div className="flex gap-2">
                             <span className="font-semibold">Meta:</span>
-                            <span>{cliente.planningActivo.meta}</span>
+                            <span>{planningDetails.meta}</span>
                           </div>
                           <div className="flex gap-2">
-                            <span className="font-semibold">Duración:</span>
-                            <span>{cliente.planningActivo.semanas} {cliente.planningActivo.semanas === 1 ? 'semana' : 'semanas'}</span>
+                            <span className="font-semibold">Semanas:</span>
+                            <span>{planningDetails.semanas}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="font-semibold">Fecha inicio:</span>
+                            <span>{formatearFecha(planningDetails.fechaInicio)}</span>
                           </div>
                         </div>
-                      ) : 'Sin plan activo'
+                      ) : "Sin plan activo"
                     }
                   ]}
                 />
@@ -564,29 +643,52 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
                 <InfoCard
                   title="Plan Nutricional"
                   delay={0.6}
-                  items={
-                    cliente.dietaActiva ? [
-                      { icon: Apple, text: `Objetivo: ${cliente.dietaActiva.objetivo}` },
-                      { icon: Coffee, text: `Restricciones: ${cliente.dietaActiva.restricciones}` },
-                      { icon: Utensils, text: `Estado: ${cliente.dietaActiva.estado}` },
-                      { icon: Salad, text: `Inicio: ${formatearFecha(cliente.dietaActiva.fechaInicio)}` }
-                    ] : [
-                      { icon: Apple, text: "No hay plan nutricional activo." },
-                      { icon: Utensils, text: "Crea uno nuevo para comenzar" },
-                      { icon: Salad, text: "el seguimiento nutricional." }
-                    ]
-                  }
-                  titleButton={!cliente.dietaActiva ? {
+                  titleButton={!dietDetails ? {
                     icon: Plus,
-                    label: "Añadir plan",
+                    label: "Añadir dieta",
                     onClick: handleCreateDiet,
                     className: "btn-success btn-sm"
                   } : {
                     icon: Eye,
-                    label: "Ver plan",
+                    label: "Ver dieta",
                     onClick: handleViewDiet,
                     className: "btn-primary btn-sm"
                   }}
+                  items={[
+                    { 
+                      icon: Apple,
+                      text: dietDetails ? (
+                        <div className="flex flex-col gap-2">
+                          <div className="flex gap-2">
+                            <span className="font-semibold">Nombre:</span>
+                            <span className="text-green-500">{dietDetails.nombre}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="font-semibold">Objetivo:</span>
+                            <span>{dietDetails.objetivo}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="font-semibold">Restricciones:</span>
+                            <span>{dietDetails.restricciones}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="font-semibold">Estado:</span>
+                            <span className={dietDetails.estado === 'activa' ? 'text-green-500' : 'text-yellow-500'}>
+                              {dietDetails.estado}
+                            </span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="font-semibold">Fecha inicio:</span>
+                            <span>{formatearFecha(dietDetails.fechaInicio)}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="font-semibold">Semanas:</span>
+                            <span>{dietDetails.semanas.length}</span>
+                          </div>
+                        </div>
+                      ) : "Sin dieta activa"
+                    }
+                  ]}
                 />
 
                 {/* Pagos */}
@@ -606,9 +708,12 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
                   }}
                 />
               </>
-            ) : activeSection === 'plan' ? (
+            ) : activeSection === 'plan' && planningDetails ? (
               <div className="col-span-2">
-                <PanelPlan clienteId={clienteId} />
+                <PanelPlan 
+                  clienteId={clienteId} 
+                  planningDetails={planningDetails}
+                />
               </div>
             ) : activeSection === 'progreso' ? (
               <div className="col-span-2">
@@ -618,9 +723,12 @@ const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
               <div className="col-span-2">
                 <PanelFinanzas cliente={cliente} />
               </div>
-            ) : activeSection === 'dietas' ? (
+            ) : activeSection === 'dietas' && dietDetails ? (
               <div className="col-span-2">
-                <PanelDietas clienteId={clienteId} />
+                <PanelDietas 
+                  clienteId={clienteId} 
+                  dietDetails={dietDetails}
+                />
               </div>
             ) : activeSection === 'personal' ? (
               <div className="col-span-2">

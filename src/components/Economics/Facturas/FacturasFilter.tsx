@@ -33,6 +33,7 @@ const FacturasFilter: React.FC<FilterProps> = ({ isOpen, onClose, onApplyFilters
 
   const handleCheckboxChange = (category: 'estado' | 'tipo', value: string) => {
     setFilters(prev => ({
+
       ...prev,
       [category]: prev[category].includes(value)
         ? prev[category].filter(item => item !== value)
@@ -131,9 +132,9 @@ const FacturasFilter: React.FC<FilterProps> = ({ isOpen, onClose, onApplyFilters
             </div>
           </div>
 
-          {/* Monto */}
-          <div>
-            <h4 className={`text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Monto</h4>
+          {/* Importe */}
+          <div className="mb-4">
+            <h4 className={`text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Importe</h4>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Mínimo</label>

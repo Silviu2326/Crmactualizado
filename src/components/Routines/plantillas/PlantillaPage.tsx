@@ -9,16 +9,104 @@ import PlantillaPageCalendario from './PlantillaPageCalendario';
 
 type Vista = 'clientes' | 'compleja';
 
-interface PlantillaPageProps {}
+interface Exercise {
+  _id: string;
+  nombre: string;
+  tipo: string;
+  grupoMuscular: string[];
+  descripcion: string;
+  equipo: string[];
+  imgUrl: string;
+}
 
-const PlantillaPage: React.FC<PlantillaPageProps> = () => {
+interface Set {
+  reps: number;
+  weight: number;
+  rest: number;
+  tempo: string;
+  rpe: number;
+  renderConfig: {
+    campo1: string;
+    campo2: string;
+    campo3: string;
+    _id: string;
+  };
+  _id: string;
+}
+
+interface ExerciseWithSets {
+  exercise: Exercise;
+  sets: Set[];
+  _id: string;
+}
+
+interface Session {
+  name: string;
+  tipo: string;
+  rondas: number;
+  exercises: ExerciseWithSets[];
+  _id: string;
+}
+
+interface Day {
+  dayNumber: number;
+  sessions: Session[];
+  _id: string;
+}
+
+interface Week {
+  weekNumber: number;
+  days: Day[];
+  _id: string;
+}
+
+interface Trainer {
+  _id: string;
+  nombre: string;
+  email: string;
+}
+
+interface Client {
+  _id: string;
+  nombre: string;
+  email: string;
+}
+
+interface AssignedClient {
+  client: Client;
+  currentWeek: number;
+  currentDay: number;
+  status: string;
+  _id: string;
+  assignedDate: string;
+  modifications: any[];
+}
+
+interface Template {
+  _id: string;
+  nombre: string;
+  descripcion: string;
+  trainer: Trainer;
+  totalWeeks: number;
+  plan: Week[];
+  isActive: boolean;
+  tags: string[];
+  difficulty: string;
+  category: string;
+  assignedClients: AssignedClient[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+const PlantillaPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const [plantilla, setPlantilla] = useState<any>(null);
+  const [plantilla, setPlantilla] = useState<Template | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [vistaActual, setVistaActual] = useState<Vista>('clientes');
+  const [selectedWeek, setSelectedWeek] = useState(1);
 
   useEffect(() => {
     const fetchPlantilla = async () => {
@@ -28,7 +116,7 @@ const PlantillaPage: React.FC<PlantillaPageProps> = () => {
           throw new Error('No se encontró el token de autenticación');
         }
 
-        const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${id}`, {
+        const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/planningtemplate/templates/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -50,6 +138,17 @@ const PlantillaPage: React.FC<PlantillaPageProps> = () => {
     fetchPlantilla();
   }, [id]);
 
+  const handleWeekSelect = (weekNumber: number) => {
+    console.log('Semana seleccionada:', weekNumber);
+    if (!plantilla?._id) {
+      console.error('No hay ID de plantilla disponible');
+      return;
+    }
+    console.log('Template ID:', plantilla._id);
+    setSelectedWeek(weekNumber);
+    setVistaActual('compleja');
+  };
+
   const vistas = [
     {
       id: 'clientes',
@@ -64,17 +163,6 @@ const PlantillaPage: React.FC<PlantillaPageProps> = () => {
       descripcion: 'Vista detallada de la plantilla'
     }
   ];
-
-  const renderVista = () => {
-    switch (vistaActual) {
-      case 'clientes':
-        return <VistaClientes plantilla={plantilla} />;
-      case 'compleja':
-        return <VistaCompleja plantilla={plantilla} />;
-      default:
-        return null;
-    }
-  };
 
   if (loading) {
     return (
@@ -101,113 +189,124 @@ const PlantillaPage: React.FC<PlantillaPageProps> = () => {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center"
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6"
         >
-          <h1 className={`text-4xl font-bold mb-2 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent`}>
-            {plantilla?.nombre || 'Cargando plantilla...'}
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            {plantilla?.nombre}
           </h1>
-          <p className={`text-lg ${
-            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-          }`}>
-            {plantilla?.descripcion || 'Gestiona y visualiza tu planificación de entrenamiento'}
+          <p className="text-gray-600 dark:text-gray-300 mb-4">
+            {plantilla?.descripcion}
           </p>
+          <div className="flex flex-wrap gap-4">
+            <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+              {plantilla?.category}
+            </span>
+            <span className="px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+              {plantilla?.difficulty}
+            </span>
+            <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+              {plantilla?.totalWeeks} semanas
+            </span>
+          </div>
         </motion.div>
 
-        {/* Calendar Section */}
-        <div className="mb-8">
+        {/* Vista Selector */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {vistas.map((vista) => (
+            <motion.button
+              key={vista.id}
+              onClick={() => setVistaActual(vista.id as Vista)}
+              className={`p-4 rounded-xl shadow-md transition-colors duration-200 ${
+                vistaActual === vista.id
+                  ? theme === 'dark'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-blue-500 text-white'
+                  : theme === 'dark'
+                  ? 'bg-gray-800 hover:bg-gray-700'
+                  : 'bg-white hover:bg-gray-50'
+              }`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="flex items-center space-x-3">
+                <vista.icono className="w-6 h-6" />
+                <div className="text-left">
+                  <h3 className="font-semibold">{vista.nombre}</h3>
+                  <p className={`text-sm ${
+                    vistaActual === vista.id
+                      ? 'text-blue-100'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`}>
+                    {vista.descripcion}
+                  </p>
+                </div>
+              </div>
+            </motion.button>
+          ))}
+        </div>
+
+        {/* Calendar Section - Siempre visible */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-lg"
+        >
+          <PlantillaPageCalendario
+            plantilla={plantilla}
+            onWeekSelect={handleWeekSelect}
+          />
+        </motion.div>
+
+        {/* Vista Content Section */}
+        {(vistaActual === 'clientes' || vistaActual === 'compleja') && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`p-6 rounded-xl ${
-              theme === 'dark' 
-                ? 'bg-gray-800/50 backdrop-blur-sm' 
-                : 'bg-white/50 backdrop-blur-sm'
-            } shadow-xl`}
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6"
           >
-            <PlantillaPageCalendario 
-              plantilla={plantilla}
-              onDayClick={(semana, dia) => {
-                console.log(`Semana ${semana}, Día ${dia}`);
-              }}
-            />
+            {vistaActual === 'clientes' && plantilla && (
+              <VistaClientes 
+                assignedClients={plantilla.assignedClients}
+                templateId={plantilla._id}
+                onClientAssigned={() => {
+                  const fetchPlantilla = async () => {
+                    try {
+                      const token = localStorage.getItem('token');
+                      if (!token) {
+                        throw new Error('No se encontró el token de autenticación');
+                      }
+
+                      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/planningtemplate/templates/${id}`, {
+                        headers: {
+                          Authorization: `Bearer ${token}`,
+                        },
+                      });
+
+                      if (!response.ok) {
+                        throw new Error('Error al cargar la plantilla');
+                      }
+
+                      const data = await response.json();
+                      setPlantilla(data);
+                    } catch (err: any) {
+                      setError(err.message);
+                    } finally {
+                      setLoading(false);
+                    }
+                  };
+                  fetchPlantilla();
+                }}
+              />
+            )}
+            {vistaActual === 'compleja' && plantilla && (
+              <VistaCompleja 
+                plantilla={plantilla} 
+                semana={selectedWeek}
+                dia={1}
+              />
+            )}
           </motion.div>
-        </div>
-
-        {/* Navigation Tabs - Centered and Styled */}
-        <div className="flex justify-center mb-8">
-          <div className="inline-flex p-1.5 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-sm">
-            {vistas.map((vista, index) => {
-              const Icon = vista.icono;
-              const isActive = vistaActual === vista.id;
-
-              return (
-                <motion.button
-                  key={vista.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  onClick={() => setVistaActual(vista.id as Vista)}
-                  className={`relative flex items-center px-6 py-3 rounded-lg transition-all duration-300 ${
-                    isActive
-                      ? theme === 'dark'
-                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg shadow-blue-500/20'
-                        : 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg shadow-blue-500/20'
-                      : theme === 'dark'
-                        ? 'hover:bg-gray-800/80'
-                        : 'hover:bg-white/80'
-                  } mx-1 group`}
-                >
-                  <Icon size={20} className={`${
-                    isActive
-                      ? 'text-white'
-                      : theme === 'dark'
-                        ? 'text-gray-400 group-hover:text-white'
-                        : 'text-gray-500 group-hover:text-gray-700'
-                  } transition-colors duration-200`} />
-                  <span className={`ml-2 font-medium ${
-                    isActive
-                      ? 'text-white'
-                      : theme === 'dark'
-                        ? 'text-gray-400 group-hover:text-white'
-                        : 'text-gray-700'
-                  } transition-colors duration-200`}>
-                    {vista.nombre}
-                  </span>
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeIndicator"
-                      className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 -z-10"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                    />
-                  )}
-                </motion.button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Content Area */}
-        <motion.div
-          key={vistaActual}
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.98 }}
-          transition={{ 
-            duration: 0.2,
-            scale: {
-              type: "spring",
-              damping: 30,
-              stiffness: 300
-            }
-          }}
-          className={`rounded-xl overflow-hidden ${
-            theme === 'dark'
-              ? 'bg-gray-800/50 backdrop-blur-sm'
-              : 'bg-white/50 backdrop-blur-sm'
-          } shadow-xl`}
-        >
-          {renderVista()}
-        </motion.div>
+        )}
       </div>
     </div>
   );

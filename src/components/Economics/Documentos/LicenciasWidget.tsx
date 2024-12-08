@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { FileText, Search, Filter, Plus, Calendar, ChevronDown } from 'lucide-react';
+import { FileText, Search, Filter, Plus, Eye, Edit2, Trash2, Calendar, ChevronDown } from 'lucide-react';
 import Table from '../../Common/Table';
 import Button from '../../Common/Button';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -31,6 +31,8 @@ const LicenciasWidget: React.FC = () => {
   const [licencias, setLicencias] = useState<Licencia[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedLicencia, setSelectedLicencia] = useState<Licencia | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string>('todos');
   const { theme } = useTheme();
@@ -82,6 +84,52 @@ const LicenciasWidget: React.FC = () => {
   const handleFilterSelect = (filter: string) => {
     setSelectedFilter(filter);
     setIsFilterOpen(false);
+  };
+
+  const handleView = async (licencia: Licencia) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/licencias/${licencia._id}/download`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', licencia.nombre);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error('Error al descargar la licencia:', err);
+    }
+  };
+
+  const handleEdit = (licencia: Licencia) => {
+    setSelectedLicencia(licencia);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDelete = async (licenciaId: string) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar esta licencia?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/licencias/${licenciaId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      setLicencias(licencias.filter(lic => lic._id !== licenciaId));
+    } catch (err) {
+      console.error('Error al eliminar la licencia:', err);
+    }
   };
 
   const filteredLicencias = useMemo(() => {
@@ -168,7 +216,7 @@ const LicenciasWidget: React.FC = () => {
         </div>
       ) : (
         <Table
-          headers={['Nombre', 'Fecha de Expiración', 'Estado']}
+          headers={['Nombre', 'Fecha de Expiración', 'Estado', 'Acciones']}
           data={filteredLicencias.map(licencia => ({
             Nombre: licencia.nombre,
             'Fecha de Expiración': (
@@ -186,6 +234,37 @@ const LicenciasWidget: React.FC = () => {
               }`}>
                 {licencia.estado}
               </span>
+            ),
+            Acciones: (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handleView(licencia)}
+                  className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                    theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
+                  }`}
+                  title="Ver licencia"
+                >
+                  <Eye size={16} />
+                </button>
+                <button
+                  onClick={() => handleEdit(licencia)}
+                  className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                    theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
+                  }`}
+                  title="Modificar"
+                >
+                  <Edit2 size={16} />
+                </button>
+                <button
+                  onClick={() => handleDelete(licencia._id)}
+                  className={`p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors ${
+                    theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                  }`}
+                  title="Eliminar"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             )
           }))}
           variant={theme === 'dark' ? 'dark' : 'white'}

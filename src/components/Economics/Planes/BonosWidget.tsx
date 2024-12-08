@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Gift, Search, Filter, Plus } from 'lucide-react';
+import { Gift, Search, Filter, Plus, Edit2, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import Table from '../../Common/Table';
 import Button from '../../Common/Button';
 import { useTheme } from '../../../contexts/ThemeContext';
 import AddBonoModal from './AddBonoModal';
+import EditBonoModal from './EditBonoModal';
 
 interface Trainer {
   _id: string;
@@ -35,7 +36,9 @@ const BonosWidget: React.FC = () => {
   const [bonos, setBonos] = useState<Bono[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedBono, setSelectedBono] = useState<Bono | null>(null);
   const { theme } = useTheme();
 
   const fetchBonos = async () => {
@@ -62,12 +65,43 @@ const BonosWidget: React.FC = () => {
     console.log('Filtrar bonos');
   };
 
-  const handleAddBono = () => {
-    setIsModalOpen(true);
+  const handleEdit = (bono: Bono) => {
+    setSelectedBono(bono);
+    setIsEditModalOpen(true);
   };
 
-  const handleModalClose = () => {
-    setIsModalOpen(false);
+  const handleDelete = async (bonoId: string) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este bono?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/bonos/${bonoId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      // Actualizar la lista de bonos después de eliminar
+      setBonos(bonos.filter(bono => bono._id !== bonoId));
+    } catch (err) {
+      console.error('Error al eliminar el bono:', err);
+      setError('Error al eliminar el bono');
+    }
+  };
+
+  const handleAddBono = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedBono(null);
   };
 
   const handleBonoAdded = () => {
@@ -120,7 +154,7 @@ const BonosWidget: React.FC = () => {
         <div className="text-red-500 text-center py-4">{error}</div>
       ) : (
         <Table
-          headers={['Nombre', 'Servicio', 'Sesiones', 'Precio', 'Trainer', 'Estado']}
+          headers={['Nombre', 'Servicio', 'Sesiones', 'Precio', 'Trainer', 'Estado', 'Acciones']}
           data={filteredBonos.map(bono => ({
             Nombre: bono.nombre,
             Servicio: bono.servicio,
@@ -135,16 +169,46 @@ const BonosWidget: React.FC = () => {
               }`}>
                 {bono.estado.charAt(0).toUpperCase() + bono.estado.slice(1)}
               </span>
+            ),
+            Acciones: (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handleEdit(bono)}
+                  className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                    theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
+                  }`}
+                  title="Modificar"
+                >
+                  <Edit2 size={16} />
+                </button>
+                <button
+                  onClick={() => handleDelete(bono._id)}
+                  className={`p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors ${
+                    theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                  }`}
+                  title="Eliminar"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             )
           }))}
           variant={theme === 'dark' ? 'dark' : 'white'}
         />
       )}
       <AddBonoModal
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
+        isOpen={isAddModalOpen}
+        onClose={handleCloseAddModal}
         onBonoAdded={handleBonoAdded}
       />
+      {selectedBono && (
+        <EditBonoModal
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          onBonoUpdated={handleBonoAdded}
+          bono={selectedBono}
+        />
+      )}
     </div>
   );
 };

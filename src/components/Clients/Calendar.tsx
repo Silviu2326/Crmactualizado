@@ -9,9 +9,31 @@ interface CalendarProps {
 }
 
 interface Event {
-  date: string;
-  type: 'training' | 'checkin' | 'payment' | 'meeting';
-  name: string;
+  _id: string;
+  name?: string;
+  title?: string;
+  description: string;
+  date?: string;
+  startDate?: string;
+  endDate?: string;
+  type: string;
+  origin: string;
+  isWorkRelated: boolean;
+  trainer: {
+    _id: string;
+    email: string;
+  } | null;
+  client: {
+    _id: string;
+    email: string;
+  } | null;
+  alerts: Array<{
+    type: string;
+    timeBeforeEvent: number;
+    _id: string;
+  }>;
+  createdAt: string;
+  lead?: string;
 }
 
 const Calendar: React.FC<CalendarProps> = ({ clientId }) => {
@@ -43,8 +65,8 @@ const Calendar: React.FC<CalendarProps> = ({ clientId }) => {
   const weekDays = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
   const eventColors = {
-    training: 'bg-blue-500',
-    checkin: 'bg-green-500',
+    CITA_CON_CLIENTE: 'bg-blue-500',
+    Training: 'bg-green-500',
     payment: 'bg-purple-500',
     meeting: 'bg-yellow-500'
   };
@@ -78,7 +100,7 @@ const Calendar: React.FC<CalendarProps> = ({ clientId }) => {
   };
 
   const fetchEvents = async () => {
-    console.log('🚀 Iniciando fetchEvents para clientId:', clientId);
+    console.log('🚀 Iniciando fetchEvents');
     setLoading(true);
     setError(null);
 
@@ -90,8 +112,7 @@ const Calendar: React.FC<CalendarProps> = ({ clientId }) => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      console.log('🔄 Realizando petición a:', `https://fitoffice2-f70b52bef77e.herokuapp.com/api/events/client/${clientId}`);
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/events/client/${clientId}`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/events`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -104,13 +125,14 @@ const Calendar: React.FC<CalendarProps> = ({ clientId }) => {
         throw new Error('Error al cargar los eventos');
       }
 
-      const data = await response.json();
-      console.log('✅ Datos recibidos:', data);
+      const responseData = await response.json();
+      console.log('✅ Datos recibidos:', responseData);
       
-      const eventsToSet = Array.isArray(data) ? data : data.events || [];
-      console.log('📊 Eventos procesados:', eventsToSet);
-      
-      setEvents(eventsToSet);
+      if (responseData.status === 'success' && responseData.data.events) {
+        setEvents(responseData.data.events);
+      } else {
+        setEvents([]);
+      }
     } catch (error) {
       console.error('❌ Error en fetchEvents:', error);
       setError(error instanceof Error ? error.message : 'Error al cargar los eventos');
@@ -155,15 +177,20 @@ const Calendar: React.FC<CalendarProps> = ({ clientId }) => {
                 {dayNumber}
               </span>
               {events
-                .filter(event => new Date(event.date).getDate() === dayNumber)
+                .filter(event => {
+                  const eventDate = new Date(event.date || event.startDate || '');
+                  return eventDate.getDate() === dayNumber &&
+                         eventDate.getMonth() === currentMonth.getMonth() &&
+                         eventDate.getFullYear() === currentMonth.getFullYear();
+                })
                 .map((event, index) => (
                   <div
-                    key={index}
+                    key={event._id}
                     className={`absolute bottom-1 left-1 right-1 text-xs px-1 py-0.5 rounded ${
-                      eventColors[event.type]
+                      eventColors[event.type] || 'bg-gray-500'
                     } text-white truncate`}
                   >
-                    {event.name}
+                    {event.title || event.name}
                   </div>
                 ))}
             </>

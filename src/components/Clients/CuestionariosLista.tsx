@@ -400,6 +400,7 @@ const CuestionariosLista: React.FC = () => {
         {selectedCuestionario && (
           <VistaCuestionario
             cuestionario={selectedCuestionario}
+            cuestionarioId={selectedCuestionario.id}
             onClose={() => {
               console.log('[VistaCuestionario] Cerrar vista del cuestionario.');
               setSelectedCuestionario(null);

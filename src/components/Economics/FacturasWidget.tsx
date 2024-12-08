@@ -315,10 +315,10 @@ const FacturasWidget: React.FC<FacturasWidgetProps> = ({ isEditMode, onRemove })
 
       <div className="flex-grow overflow-auto custom-scrollbar">
         <Table
-          headers={['Número', 'Monto', 'Estado', 'Tipo', 'Fecha']}
+          headers={['Número', 'Importe', 'Estado', 'Tipo', 'Fecha']}
           data={applyFilters(facturas).map((factura) => ({
             Número: factura.numero,
-            Monto: `${factura.monto} ${factura.currency}`,
+            Importe: `${factura.monto} ${factura.currency}`,
             Estado: factura.estado,
             Tipo: factura.tipo,
             Fecha: factura.fecha,

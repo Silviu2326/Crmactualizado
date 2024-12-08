@@ -225,7 +225,7 @@ const EditPlanningPage: React.FC = () => {
       case 'notas':
         return <VistaNotas {...props} />;
       case 'rutinas':
-        return <VistaRutinasPredefinidas {...props} />;
+        return <VistaRutinasPredefinidas {...props} planning={planning} />;
       case 'configuracion':
         return (
           <VistaConfiguracion planning={planning} setPlanning={setPlanning} />

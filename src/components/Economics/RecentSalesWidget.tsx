@@ -22,7 +22,7 @@ export function RecentSalesWidget() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const headers = ['ID', 'Entrenador', 'Monto', 'Moneda', 'Fecha', 'Descripción', 'Estado'];
+  const headers = ['ID', 'Entrenador', 'Importe', 'Moneda', 'Fecha', 'Descripción', 'Estado'];
 
   const formatData = (data: Income[]) => {
     return data.map(item => ({

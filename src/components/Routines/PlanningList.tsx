@@ -204,39 +204,69 @@ const PlanningList: React.FC = () => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/schemas', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      // Realizar ambas peticiones en paralelo
+      const [planningsResponse, templatesResponse] = await Promise.all([
+        fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/schemas', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }),
+        fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/planningtemplate/templates', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        })
+      ]);
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (!planningsResponse.ok) {
+        const errorData = await planningsResponse.json();
         throw new Error(errorData.mensaje || 'Error al obtener las planificaciones');
       }
 
-      const data: PlanningSchema[] = await response.json();
+      if (!templatesResponse.ok) {
+        const errorData = await templatesResponse.json();
+        throw new Error(errorData.mensaje || 'Error al obtener las plantillas');
+      }
 
-      // Procesa los datos según necesites
-      const filteredData = data.map((planning) => {
-        return {
-          _id: planning._id,
-          nombre: planning.nombre,
-          descripcion: planning.descripcion,
-          duracion: `${planning.semanas} semanas`,
-          fechaInicio: new Date(planning.fechaInicio).toLocaleDateString(),
-          meta: planning.meta,
-          tipo: planning.tipo || 'Planificacion', // Valor por defecto
-          clientesAsociados: 1, // Ajusta según tus datos
-          estado: 'En progreso', // Ajusta según tus datos
-          completado: '65%', // Ajusta según tus datos
-          acciones: 'Editar'
-        };
-      });
+      const planningsData: PlanningSchema[] = await planningsResponse.json();
+      const templatesData = await templatesResponse.json();
 
-      setPlanningData(filteredData);
+      // Procesar datos de planificaciones
+      const processedPlannings = planningsData.map((planning) => ({
+        _id: planning._id,
+        nombre: planning.nombre,
+        descripcion: planning.descripcion,
+        duracion: `${planning.semanas} semanas`,
+        fechaInicio: new Date(planning.fechaInicio).toLocaleDateString(),
+        meta: planning.meta,
+        tipo: planning.tipo || 'Planificacion',
+        clientesAsociados: 1,
+        estado: 'En progreso',
+        completado: '65%',
+        acciones: 'Editar'
+      }));
+
+      // Procesar datos de plantillas
+      const processedTemplates = templatesData.map((template: any) => ({
+        _id: template._id,
+        nombre: template.nombre,
+        descripcion: template.descripcion,
+        duracion: `${template.totalWeeks} semanas`,
+        fechaInicio: new Date(template.createdAt).toLocaleDateString(),
+        meta: template.category,
+        tipo: 'Plantilla',
+        clientesAsociados: template.assignedClients?.length || 0,
+        estado: template.isActive ? 'Activo' : 'Inactivo',
+        completado: '100%',
+        acciones: 'Editar'
+      }));
+
+      // Combinar ambos conjuntos de datos
+      setPlanningData([...processedPlannings, ...processedTemplates]);
     } catch (err: any) {
       console.error('Error al obtener las planificaciones:', err);
       setError(err.message);

@@ -1,6 +1,6 @@
 // src/components/Economics/Cashflow/GastoWidget.tsx
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Plus, Copy, Link, X, ChevronDown, ChevronRight, DollarSign } from 'lucide-react';
+import { Search, Filter, Plus, Edit2, Trash2, CheckCircle, DollarSign } from 'lucide-react';
 import Table from '../../Common/Table';
 import Button from '../../Common/Button';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -19,45 +19,19 @@ interface Gasto {
   descripcion: string;
   categoria: string;
   tipo: 'fijo' | 'variable';
+  estado?: string;
 }
 
 const GastoWidget: React.FC<GastoWidgetProps> = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedGastoId, setSelectedGastoId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [expandedServices, setExpandedServices] = useState<number[]>([]);
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const { theme } = useTheme();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-
-  const servicios: any[] = [
-    {
-      id: 1,
-      nombre: 'Entrenamiento Personal',
-      planes: [
-        { id: 1, nombre: 'Plan Básico' },
-        { id: 2, nombre: 'Plan Avanzado' },
-        { id: 3, nombre: 'Plan Elite' },
-      ]
-    },
-    {
-      id: 2,
-      nombre: 'Clases Grupales',
-      planes: [
-        { id: 4, nombre: 'Plan Mensual' },
-        { id: 5, nombre: 'Plan Trimestral' },
-      ]
-    },
-    {
-      id: 3,
-      nombre: 'Nutrición',
-      planes: [
-        { id: 6, nombre: 'Consulta Individual' },
-        { id: 7, nombre: 'Plan Seguimiento' },
-      ]
-    },
-  ];
 
   // Función para obtener el token del localStorage
   const getToken = (): string | null => {
@@ -125,7 +99,8 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
           fecha: gasto.fecha || new Date().toISOString(),
           descripcion: gasto.descripcion || '',
           categoria: gasto.categoria || 'Sin categoría',
-          tipo: gasto.tipo || 'fijo'
+          tipo: gasto.tipo || 'fijo',
+          estado: gasto.estado || 'pendiente'
         };
       });
 
@@ -153,23 +128,95 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
     // Implementa aquí la lógica de filtrado avanzada si es necesario
   };
 
-  const handleAddGasto = async (formData: any) => {
+  const handleEdit = async (gasto: Gasto) => {
+    setSelectedGastoId(gasto._id);
+    setIsEditing(true);
+    setIsPopupOpen(true);
+  };
+
+  const handleDelete = async (gastoId: string) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este gasto?')) {
+      return;
+    }
+
     try {
       const token = getToken();
       if (!token) {
-        throw new Error('Token no encontrado. Por favor, inicia sesión nuevamente.');
+        throw new Error('Token no encontrado');
       }
 
-      // Adaptar el formData para que coincida con la estructura esperada por el backend
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos/${gastoId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar el gasto');
+      }
+
+      setGastos(gastos.filter(gasto => gasto._id !== gastoId));
+    } catch (error) {
+      console.error('Error al eliminar:', error);
+      setError(error instanceof Error ? error.message : 'Error al eliminar el gasto');
+    }
+  };
+
+  const handleConfirmPayment = async (gastoId: string) => {
+    try {
+      const token = getToken();
+      if (!token) {
+        throw new Error('Token no encontrado');
+      }
+
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos/${gastoId}/confirm`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ estado: 'pagado' }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al confirmar el pago');
+      }
+
+      // Actualizar el estado del gasto en la lista
+      setGastos(gastos.map(gasto => 
+        gasto._id === gastoId ? { ...gasto, estado: 'pagado' } : gasto
+      ));
+    } catch (error) {
+      console.error('Error al confirmar:', error);
+      setError(error instanceof Error ? error.message : 'Error al confirmar el pago');
+    }
+  };
+
+  const handleAddOrUpdateGasto = async (formData: any) => {
+    try {
+      const token = getToken();
+      if (!token) {
+        throw new Error('Token no encontrado');
+      }
+
       const gastoData = {
         monto: formData.importe,
         moneda: formData.moneda,
         descripcion: formData.descripcion,
-        categoria: formData.categoria
+        categoria: formData.categoria,
+        tipo: formData.tipo,
+        estado: formData.estado || 'pendiente'
       };
 
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos', {
-        method: 'POST',
+      const url = isEditing && selectedGastoId
+        ? `https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos/${selectedGastoId}`
+        : 'https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos';
+
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
@@ -179,33 +226,50 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al crear el gasto');
+        throw new Error(errorData.message || `Error al ${isEditing ? 'actualizar' : 'crear'} el gasto`);
       }
 
-      // Recargar la lista de gastos después de crear uno nuevo
       await fetchGastos();
-      setIsPopupOpen(false);
+      handleClosePopup();
     } catch (err) {
-      console.error('Error al crear el gasto:', err);
+      console.error('Error:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');
     }
-  };
-
-  const handleCopyGasto = (id: string) => {
-    console.log(`Copiar gasto con ID: ${id}`);
-    // Implementa aquí la lógica para copiar el gasto (e.g., copiar al portapapeles)
-  };
-
-  const handleAsociarGasto = (id: string) => {
-    setSelectedGastoId(id);
-    setIsPopupOpen(true);
   };
 
   const handleClosePopup = () => {
     setIsPopupOpen(false);
     setSelectedGastoId(null);
-    setExpandedServices([]);
+    setIsEditing(false);
   };
+
+  const servicios: any[] = [
+    {
+      id: 1,
+      nombre: 'Entrenamiento Personal',
+      planes: [
+        { id: 1, nombre: 'Plan Básico' },
+        { id: 2, nombre: 'Plan Avanzado' },
+        { id: 3, nombre: 'Plan Elite' },
+      ]
+    },
+    {
+      id: 2,
+      nombre: 'Clases Grupales',
+      planes: [
+        { id: 4, nombre: 'Plan Mensual' },
+        { id: 5, nombre: 'Plan Trimestral' },
+      ]
+    },
+    {
+      id: 3,
+      nombre: 'Nutrición',
+      planes: [
+        { id: 6, nombre: 'Consulta Individual' },
+        { id: 7, nombre: 'Plan Seguimiento' },
+      ]
+    },
+  ];
 
   const toggleServiceExpansion = (serviceId: number) => {
     setExpandedServices(prev =>
@@ -295,7 +359,7 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
           <p className="text-red-500">{error}</p>
         ) : (
           <Table
-            headers={['Fecha', 'Categoría', 'Descripción', 'Tipo', 'Importe']}
+            headers={['Fecha', 'Categoría', 'Descripción', 'Tipo', 'Importe', 'Estado', 'Acciones']}
             data={filteredGastos.map(gasto => {
               const importeValor = getImporte(gasto);
               console.log('Renderizando gasto:', gasto, 'Importe calculado:', importeValor);
@@ -305,7 +369,42 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
                 'Categoría': gasto.categoria || 'Sin categoría',
                 'Descripción': gasto.descripcion || '-',
                 'Tipo': gasto.tipo || 'fijo',
-                'Importe': formatImporte(importeValor, gasto.moneda)
+                'Importe': formatImporte(importeValor, gasto.moneda),
+                'Estado': (gasto.estado || 'pendiente').charAt(0).toUpperCase() + 
+                         (gasto.estado || 'pendiente').slice(1),
+                'Acciones': (
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleEdit(gasto)}
+                      className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                        theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
+                      }`}
+                      title="Modificar"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(gasto._id)}
+                      className={`p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors ${
+                        theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                      }`}
+                      title="Eliminar"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                    {(!gasto.estado || gasto.estado !== 'pagado') && (
+                      <button
+                        onClick={() => handleConfirmPayment(gasto._id)}
+                        className={`p-1.5 rounded-full hover:bg-green-100 dark:hover:bg-green-900 transition-colors ${
+                          theme === 'dark' ? 'text-green-400' : 'text-green-600'
+                        }`}
+                        title="Confirmar pago"
+                      >
+                        <CheckCircle size={16} />
+                      </button>
+                    )}
+                  </div>
+                )
               };
             })}
             variant={theme === 'dark' ? 'dark' : 'white'}
@@ -332,7 +431,9 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
               <GastoPopup
                 isOpen={isPopupOpen}
                 onClose={handleClosePopup}
-                onSubmit={handleAddGasto}
+                onSubmit={handleAddOrUpdateGasto}
+                initialData={isEditing ? gastos.find(g => g._id === selectedGastoId) : undefined}
+                isEditing={isEditing}
               />
             </motion.div>
           </motion.div>
@@ -340,7 +441,6 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
       </AnimatePresence>
     </div>
   );
-
 };
 
 export default GastoWidget;

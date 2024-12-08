@@ -1,13 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Library, Clock, Dumbbell, Target, Plus, Star } from 'lucide-react';
+import { Library, Clock, Dumbbell, Target, Plus, Star, X } from 'lucide-react';
 import Button from '../Common/Button';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface VistaRutinasPredefinidasProps {
   planSemanal: any;
   updatePlan: (plan: any) => void;
+  planning?: {
+    plan: Array<{
+      weekNumber: number;
+      days: {
+        [key: string]: {
+          day: string;
+          fecha: string;
+          sessions: any[];
+        };
+      };
+    }>;
+  };
+  semanaActual: number;
 }
 
 interface Metric {
@@ -46,11 +59,15 @@ const getStockImage = (index: number): string => {
   return stockImages[index % stockImages.length];
 };
 
-const VistaRutinasPredefinidas: React.FC<VistaRutinasPredefinidasProps> = () => {
+const VistaRutinasPredefinidas: React.FC<VistaRutinasPredefinidasProps> = ({ planSemanal, updatePlan, planning, semanaActual }) => {
   const { theme } = useTheme();
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRoutine, setSelectedRoutine] = useState<Routine | null>(null);
+  const [showPopup, setShowPopup] = useState(false);
+  const [selectedWeek, setSelectedWeek] = useState<number>(semanaActual);
+  const [selectedDay, setSelectedDay] = useState<string>('Lunes');
 
   const fetchRoutines = async () => {
     try {
@@ -81,6 +98,27 @@ const VistaRutinasPredefinidas: React.FC<VistaRutinasPredefinidasProps> = () => 
   useEffect(() => {
     fetchRoutines();
   }, []);
+
+  const handleAddRoutine = (routine: Routine) => {
+    setSelectedRoutine(routine);
+    setShowPopup(true);
+  };
+
+  const handleConfirmAdd = () => {
+    if (selectedRoutine && updatePlan && planSemanal) {
+      const updatedPlan = { ...planSemanal };
+      if (!updatedPlan[selectedDay]) {
+        updatedPlan[selectedDay] = { sessions: [] };
+      }
+      if (!updatedPlan[selectedDay].sessions) {
+        updatedPlan[selectedDay].sessions = [];
+      }
+      updatedPlan[selectedDay].sessions.push(selectedRoutine);
+      updatePlan(updatedPlan);
+      setShowPopup(false);
+      setSelectedRoutine(null);
+    }
+  };
 
   if (loading) {
     return <div className="text-center p-8">Cargando rutinas...</div>;
@@ -170,6 +208,7 @@ const VistaRutinasPredefinidas: React.FC<VistaRutinasPredefinidasProps> = () => 
                     variant="primary"
                     size="sm"
                     className="flex items-center space-x-1"
+                    onClick={() => handleAddRoutine(routine)}
                   >
                     <Plus className="w-4 h-4" />
                     <span>Agregar</span>
@@ -180,6 +219,96 @@ const VistaRutinasPredefinidas: React.FC<VistaRutinasPredefinidasProps> = () => 
           ))}
         </div>
       </div>
+
+      {/* Popup para seleccionar semana y día */}
+      <AnimatePresence>
+        {showPopup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className={`relative p-6 rounded-xl shadow-lg ${
+                theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+              } w-full max-w-md`}
+            >
+              <button
+                onClick={() => setShowPopup(false)}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              
+              <h3 className="text-xl font-bold mb-4">Agregar Rutina al Plan</h3>
+              <p className="mb-4">Selecciona la semana y el día para agregar la rutina: {selectedRoutine?.name}</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Semana</label>
+                  <select
+                    value={selectedWeek}
+                    onChange={(e) => setSelectedWeek(Number(e.target.value))}
+                    className={`w-full px-4 py-2 rounded-lg ${
+                      theme === 'dark'
+                        ? 'bg-gray-700 text-white'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
+                    {planning?.plan.map((week) => (
+                      <option key={week.weekNumber} value={week.weekNumber}>
+                        Semana {week.weekNumber}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2">Día</label>
+                  <select
+                    value={selectedDay}
+                    onChange={(e) => setSelectedDay(e.target.value)}
+                    className={`w-full px-4 py-2 rounded-lg ${
+                      theme === 'dark'
+                        ? 'bg-gray-700 text-white'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
+                    {planning?.plan[selectedWeek - 1]?.days && 
+                      Object.entries(planning.plan[selectedWeek - 1].days).map(([dayName, dayData]) => (
+                        <option key={dayName} value={dayName}>
+                          {dayName}
+                        </option>
+                      ))
+                    }
+                  </select>
+                </div>
+                
+                <div className="flex justify-end space-x-3 mt-6">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowPopup(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleConfirmAdd}
+                  >
+                    Confirmar
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

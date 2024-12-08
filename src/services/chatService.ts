@@ -1,94 +1,127 @@
 import axios from 'axios';
 
-interface ChatResponse {
-  status: string;
-  answer: string;  
-}
-
 const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api';
 
-const chatDescriptions = {
-  chat1: "Experto en creación de posts virales para redes sociales",
-  chat2: "Especialista en diseño de historias para redes sociales",
-  chat3: "Generador de imágenes por IA",
-  chat4: "Analista de audiencia de marketing digital",
-  chat5: "Detector de tendencias de mercado",
-  chat6: "Experto en marketing de contenidos",
-  chat7: "Especialista en SEO",
-  chat8: "Experto en email marketing",
-  chat9: "Analista de métricas digitales"
-};
-
-export interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
+export interface Message {
+  _id: string;
+  conversacion: string;
+  emisor: string;
+  receptor: string;
+  contenido: string;
+  tipo: 'texto' | 'imagen' | 'archivo';
+  urlArchivo: string | null;
+  leido: boolean;
+  fechaEnvio: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
+export interface Chat {
+  _id: string;
+  trainer: {
+    _id: string;
+    nombre: string;
+    email: string;
+  };
+  cliente: {
+    _id: string;
+    nombre: string;
+    email: string;
+  };
+  participantes: string[];
+  estado: string;
+  createdAt: string;
+  updatedAt: string;
+  fechaUltimoMensaje?: string;
+  ultimoMensaje?: Message;
+}
+
+interface ChatResponse {
+  chat: Chat;
+  mensajes: Message[];
+}
+
+const getHeaders = () => {
+  console.log('🔐 ChatService - Obteniendo headers para la petición');
+  const token = localStorage.getItem('token') || localStorage.getItem('jwt');
+  
+  if (!token) {
+    console.error('❌ ChatService - No se encontró token de autenticación');
+    throw new Error('No se encontró el token de autenticación');
+  }
+  
+  console.log('✅ ChatService - Token encontrado y headers generados');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  };
+};
+
 export const chatService = {
-  sendMessage: async (chatId: number, message: string): Promise<string> => {
-    console.log('chatService - sendMessage llamado con:', { chatId, message });
-    
+  async iniciarChat(clienteId: string): Promise<Chat> {
+    console.log('🚀 ChatService - Iniciando chat para cliente:', clienteId);
     try {
-      const token = localStorage.getItem('token');
-      console.log('chatService - Token obtenido:', token ? 'Presente' : 'No presente');
-
-      // Validar que el chatId esté entre 1 y 9
-      if (!chatId || isNaN(chatId) || chatId < 1 || chatId > 9) {
-        throw new Error('Chat number debe estar entre 1 y 9');
-      }
-
-      // Formatear el mensaje con el formato exacto requerido
-      const payload = {
-        query: message,
-        chatNumber: chatId  
-      };
-
-      console.log('chatService - Enviando payload:', payload);
-
-      const response = await axios.post<ChatResponse>(
-        `${API_URL}/chat/chat${chatId}`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      console.log('chatService - Respuesta del servidor:', response.data);
+      const headers = getHeaders();
+      console.log('📤 ChatService - Realizando petición GET para iniciar chat');
       
-      // Extraer la respuesta del campo 'answer'
-      if (!response.data.answer) {
-        throw new Error('Respuesta del servidor no tiene el formato esperado');
-      }
-
-      return response.data.answer;
+      const response = await axios.get(`${API_URL}/iniciar/${clienteId}`, { headers });
+      console.log('📥 ChatService - Respuesta recibida:', response.data);
+      
+      return response.data;
     } catch (error: any) {
-      console.error('chatService - Error en la llamada API:', error);
-      throw new Error(error.response?.data?.message || error.message || 'Error en la comunicación con el asistente');
+      console.error('❌ ChatService - Error al iniciar chat:', error);
+      console.error('📝 ChatService - Detalles del error:', {
+        mensaje: error.message,
+        respuesta: error.response?.data,
+        estado: error.response?.status
+      });
+      throw new Error(error.response?.data?.message || 'Error al iniciar el chat');
     }
   },
 
-  getChatDescription: (chatId?: number): string => {
-    console.log('chatService - getChatDescription llamado con chatId:', chatId);
-    
-    if (!chatId || isNaN(chatId) || chatId < 1 || chatId > 9) {
-      return 'Soy un asistente general. ¿En qué puedo ayudarte?';
+  async getChatMessages(chatId: string): Promise<ChatResponse> {
+    console.log('🔍 ChatService - Obteniendo mensajes para chat:', chatId);
+    try {
+      const headers = getHeaders();
+      console.log('📤 ChatService - Realizando petición GET para obtener mensajes');
+      
+      const response = await axios.get(`${API_URL}/${chatId}`, { headers });
+      console.log('📥 ChatService - Respuesta recibida:', response.data);
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ ChatService - Error al obtener mensajes:', error);
+      console.error('📝 ChatService - Detalles del error:', {
+        mensaje: error.message,
+        respuesta: error.response?.data,
+        estado: error.response?.status
+      });
+      throw new Error(error.response?.data?.message || 'Error al obtener los mensajes');
     }
+  },
 
-    const descriptions: { [key: number]: string } = {
-      1: 'Soy tu asistente para crear publicaciones impactantes. Te ayudaré a redactar contenido atractivo y efectivo.',
-      2: 'Soy tu analista de audiencia. Te ayudaré a entender mejor a tu público objetivo.',
-      3: 'Soy tu experto en tendencias. Te mantendré al día con las últimas tendencias del mercado.',
-      4: 'Soy tu asistente de optimización SEO. Te ayudaré a mejorar el posicionamiento de tu contenido.',
-      5: 'Soy tu estratega de contenido. Te ayudaré a planificar y organizar tu calendario de contenidos.',
-      6: 'Soy tu analista de métricas. Te ayudaré a interpretar y mejorar el rendimiento de tu contenido.',
-      7: 'Soy tu asistente de investigación. Te ayudaré a encontrar información relevante para tu contenido.',
-      8: 'Soy tu experto en engagement. Te ayudaré a aumentar la interacción con tu audiencia.',
-      9: 'Soy tu analista de competencia. Te ayudaré a entender y diferenciarte de tu competencia.',
-    };
-
-    return descriptions[chatId] || 'Soy un asistente general. ¿En qué puedo ayudarte?';
+  async sendMessage(chatId: string, contenido: string): Promise<Message> {
+    console.log('💬 ChatService - Enviando mensaje:', { chatId, contenido });
+    try {
+      const headers = getHeaders();
+      console.log('📤 ChatService - Realizando petición POST para enviar mensaje');
+      
+      const response = await axios.post(
+        `${API_URL}/chats/${chatId}/mensajes`,
+        { contenido },
+        { headers }
+      );
+      console.log('📥 ChatService - Mensaje enviado:', response.data);
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ ChatService - Error al enviar mensaje:', error);
+      console.error('📝 ChatService - Detalles del error:', {
+        mensaje: error.message,
+        respuesta: error.response?.data,
+        estado: error.response?.status
+      });
+      throw new Error(error.response?.data?.message || 'Error al enviar el mensaje');
+    }
   }
 };

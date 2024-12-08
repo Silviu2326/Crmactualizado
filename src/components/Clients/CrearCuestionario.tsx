@@ -10,6 +10,7 @@ interface PreguntaPredefinida {
   id: string;
   texto: string;
   categoria: string;
+  tipo: string;
 }
 
 const preguntasPredefinidas: PreguntaPredefinida[] = [
@@ -17,99 +18,122 @@ const preguntasPredefinidas: PreguntaPredefinida[] = [
     id: '1',
     texto: 'Especifica tu edad en años',
     categoria: 'Datos Personales',
+    tipo: 'numero'
   },
-  { id: '2', texto: 'Selecciona tu género', categoria: 'Datos Personales' },
+  { 
+    id: '2', 
+    texto: 'Selecciona tu género', 
+    categoria: 'Datos Personales',
+    tipo: 'seleccion'
+  },
   {
     id: '3',
     texto: 'Especifica tu peso actual en kilogramos',
     categoria: 'Datos Corporales',
+    tipo: 'numero'
   },
   {
     id: '4',
     texto: 'Especifica tu altura en centímetros',
     categoria: 'Datos Corporales',
+    tipo: 'numero'
   },
   {
     id: '5',
     texto:
       'Detalla cualquier lesión o condición médica que pueda afectar tu entrenamiento',
     categoria: 'Salud',
+    tipo: 'texto'
   },
   {
     id: '6',
     texto: 'Selecciona tu nivel de experiencia en entrenamiento físico',
     categoria: 'Experiencia',
+    tipo: 'seleccion'
   },
   {
     id: '7',
     texto:
       'Selecciona tu nivel de actividad física fuera de las sesiones de entrenamiento',
     categoria: 'Actividad Diaria',
+    tipo: 'seleccion'
   },
   {
     id: '8',
     texto:
       '¿Cuántas horas por semana puedes dedicar al entrenamiento? ¿Cuántas sesiones por semana?',
     categoria: 'Disponibilidad',
+    tipo: 'numero'
   },
   {
     id: '9',
     texto:
       'Selecciona el equipamiento con el que cuentas para tus entrenamientos',
     categoria: 'Equipamiento',
+    tipo: 'multiple'
   },
   {
     id: '10',
     texto: 'Especifica los deportes que has practicado previamente',
     categoria: 'Experiencia',
+    tipo: 'multiple'
   },
   {
     id: '11',
     texto: 'Selecciona tu principal objetivo de entrenamiento',
     categoria: 'Objetivo',
+    tipo: 'seleccion'
   },
   {
     id: '12',
     texto:
       'Si tienes experiencia en el gimnasio, selecciona tus ejercicios favoritos',
     categoria: 'Preferencias',
+    tipo: 'multiple'
   },
   {
     id: '13',
     texto:
       'Indica el peso máximo que puedes levantar en una repetición para ejercicios como sentadilla, press de banca y peso muerto (si lo sabes)',
     categoria: 'Rendimiento',
+    tipo: 'numero'
   },
   {
     id: '14',
     texto:
       'Si lo prefieres, proporciona tus medidas (circunferencia de cintura, cadera, brazos, etc.) o sube una foto de progreso (opcional)',
     categoria: 'Datos Corporales',
+    tipo: 'texto'
   },
   {
     id: '15',
     texto: 'Si conoces tu porcentaje de grasa corporal, por favor indícalo',
     categoria: 'Datos Corporales',
+    tipo: 'numero'
   },
   {
     id: '16',
     texto:
       'En una escala del 1 al 10, ¿cómo describirías tu nivel de estrés actual?',
     categoria: 'Bienestar',
+    tipo: 'rango'
   },
   {
     id: '17',
     texto:
       'En una escala del 1 al 10, ¿qué tan motivado te sientes para entrenar?',
     categoria: 'Motivación',
+    tipo: 'rango'
   },
   {
     id: '18',
     texto:
       'Deja cualquier comentario adicional o información que creas que deberíamos saber para personalizar mejor tu entrenamiento',
     categoria: 'Comentarios',
+    tipo: 'texto'
   },
 ];
+
 interface CuestionarioPlantilla {
   id: string;
   titulo: string;
@@ -123,18 +147,21 @@ const cuestionariosPlantilla: CuestionarioPlantilla[] = [
     preguntas: [
       {
         id: 'p1',
-        texto: '¿Cómo de fatigado te sientes el día de hoy?',
+        texto: '¿Cómo de fatigado te sientes el día de hoy? (escala del 1 a 5)',
         categoria: 'Fatiga',
+        tipo: 'rango'
       },
       {
         id: 'p2',
-        texto: '¿Cómo te sientes el día de hoy? ¿Cómo de motivado te sientes?',
+        texto: '¿Cómo te sientes el día de hoy/ Como de motivado te sientes (escala 1/5)',
         categoria: 'Motivación',
+        tipo: 'rango'
       },
       {
         id: 'p3',
-        texto: '¿Cómo has comido el día de hoy?',
+        texto: '¿Cómo de bien te has alimentado hoy? (escala 1/5)',
         categoria: 'Nutrición',
+        tipo: 'rango'
       },
     ],
   },
@@ -146,11 +173,11 @@ const cuestionariosPlantilla: CuestionarioPlantilla[] = [
         id: 'p4',
         texto: '¿Cómo de intenso has percibido esta sesión de entrenamiento?',
         categoria: 'Intensidad',
+        tipo: 'rango'
       },
     ],
   },
 ];
-
 
 interface CrearCuestionarioProps {
   onClose: () => void;
@@ -161,6 +188,14 @@ interface DecodedToken {
   id: string; // Asegúrate de que este campo coincide con el que contiene el ID del entrenador en tu token
   // Otros campos que puedas tener en el token
 }
+
+const TIPOS_PREGUNTA = [
+  { value: 'rango', label: 'Rango (1-5)' },
+  { value: 'numero', label: 'Número' },
+  { value: 'texto', label: 'Texto libre' },
+  { value: 'seleccion', label: 'Selección única' },
+  { value: 'multiple', label: 'Selección múltiple' }
+];
 
 const CrearCuestionario: React.FC<CrearCuestionarioProps> = ({
   onClose,
@@ -173,6 +208,7 @@ const CrearCuestionario: React.FC<CrearCuestionarioProps> = ({
   const [preguntasSeleccionadas, setPreguntasSeleccionadas] = useState<PreguntaPredefinida[]>([]);
   const [nuevaPregunta, setNuevaPregunta] = useState('');
   const [categoriaNuevaPregunta, setCategoriaNuevaPregunta] = useState('');
+  const [tipoNuevaPregunta, setTipoNuevaPregunta] = useState('');
   const [plantillaSeleccionada, setPlantillaSeleccionada] = useState<CuestionarioPlantilla | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -205,6 +241,7 @@ const CrearCuestionario: React.FC<CrearCuestionarioProps> = ({
         preguntas: preguntasSeleccionadas.map(p => ({
           texto: p.texto,
           categoria: p.categoria,
+          tipo: p.tipo
         })),
         entrenador: entrenadorId,
       };
@@ -240,15 +277,17 @@ const CrearCuestionario: React.FC<CrearCuestionarioProps> = ({
   };
 
   const handleAgregarPreguntaPersonalizada = () => {
-    if (nuevaPregunta.trim() && categoriaNuevaPregunta.trim()) {
+    if (nuevaPregunta.trim() && categoriaNuevaPregunta.trim() && tipoNuevaPregunta.trim()) {
       const nuevaPreguntaObj = {
         id: `custom-${Date.now()}`,
         texto: nuevaPregunta,
         categoria: categoriaNuevaPregunta,
+        tipo: tipoNuevaPregunta
       };
       setPreguntasSeleccionadas([...preguntasSeleccionadas, nuevaPreguntaObj]);
       setNuevaPregunta('');
       setCategoriaNuevaPregunta('');
+      setTipoNuevaPregunta('');
     }
   };
 
@@ -433,6 +472,22 @@ const CrearCuestionario: React.FC<CrearCuestionarioProps> = ({
                       : 'bg-gray-100 text-gray-900'
                   } focus:ring-2 focus:ring-blue-500`}
                 />
+                <select
+                  value={tipoNuevaPregunta}
+                  onChange={(e) => setTipoNuevaPregunta(e.target.value)}
+                  className={`w-40 p-3 rounded-lg ${
+                    theme === 'dark'
+                      ? 'bg-gray-700 text-white'
+                      : 'bg-gray-100 text-gray-900'
+                  } focus:ring-2 focus:ring-blue-500`}
+                >
+                  <option value="">Seleccionar tipo</option>
+                  {TIPOS_PREGUNTA.map((tipo) => (
+                    <option key={tipo.value} value={tipo.value}>
+                      {tipo.label}
+                    </option>
+                  ))}
+                </select>
                 <Button
                   variant="create"
                   onClick={handleAgregarPreguntaPersonalizada}

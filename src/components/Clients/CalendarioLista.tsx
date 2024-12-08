@@ -41,22 +41,46 @@ interface Categoria {
 
 const CATEGORIAS: Categoria[] = [
   {
+    id: 'TAREA_PROPIA',
+    nombre: 'Tarea Propia',
+    color: '#4F46E5',
+    subcategorias: []
+  },
+  {
+    id: 'CITA_CON_CLIENTE',
+    nombre: 'Cita con Cliente',
+    color: '#059669',
+    subcategorias: []
+  },
+  {
+    id: 'RUTINA_CLIENTE',
+    nombre: 'Rutina de Cliente',
+    color: '#DC2626',
+    subcategorias: []
+  },
+  {
+    id: 'PAGO_CLIENTE',
+    nombre: 'Pago de Cliente',
+    color: '#7C3AED',
+    subcategorias: []
+  },
+  {
+    id: 'ALARMA',
+    nombre: 'Alarma',
+    color: '#F59E0B',
+    subcategorias: []
+  },
+  {
+    id: 'GENERAL',
+    nombre: 'General',
+    color: '#6B7280',
+    subcategorias: []
+  },
+  {
     id: 'Training',
     nombre: 'Entrenamiento',
     color: '#4F46E5',
-    subcategorias: [
-      { id: 'personal', nombre: 'Personal' },
-      { id: 'grupo', nombre: 'Grupo' }
-    ]
-  },
-  {
-    id: 'Workshop',
-    nombre: 'Taller',
-    color: '#059669',
-    subcategorias: [
-      { id: 'consulta', nombre: 'Consulta' },
-      { id: 'seguimiento', nombre: 'Seguimiento' }
-    ]
+    subcategorias: []
   }
 ];
 
@@ -76,29 +100,29 @@ export default function CalendarioLista() {
   const [error, setError] = useState<string | null>(null);
 
   // Función para mapear los datos de la API al formato del frontend
-  const mapearEventos = (data: any[]): Evento[] => {
-    console.log("Datos crudos de la API:", data);
-    return data.map(evento => {
-      const start = new Date(evento.date);
-      const end = new Date(start);
-      end.setHours(end.getHours() + 1); // Asignar una duración de 1 hora por defecto
+  const mapearEventos = (eventos: any[]): Evento[] => {
+    console.log("Datos crudos de la API:", eventos);
+    return eventos.map(evento => {
+      // Usar startDate o date según lo que esté disponible
+      const start = new Date(evento.startDate || evento.date);
+      const end = evento.endDate ? new Date(evento.endDate) : new Date(start.getTime() + 60 * 60 * 1000); // 1 hora por defecto
 
-      console.log(`Mapeando evento: ${evento.name}`);
+      console.log(`Mapeando evento: ${evento.title || evento.name}`);
       console.log(`Start: ${start}, End: ${end}`);
 
       return {
         id: evento._id,
-        title: evento.name,
+        title: evento.title || evento.name,
         start: start,
         end: end,
-        descripcion: evento.type,
+        descripcion: evento.description || evento.type,
         color: CATEGORIAS.find(cat => cat.id === evento.type)?.color || '#4F46E5',
         categoria: evento.type,
-        subcategoria: '', // Puedes asignar subcategoría si tienes más información
-        cliente: evento.client ? evento.client.toString() : 'N/A',
-        ubicacion: 'Ubicación por Defecto', // Asigna según tu lógica
-        recordatorios: ['30 minutos antes'], // Valores por defecto o basados en tu lógica
-        notas: 'Notas por defecto' // Valores por defecto o basados en tu lógica
+        subcategoria: '',
+        cliente: evento.client ? `${evento.client.email}` : 'N/A',
+        ubicacion: 'Ubicación por Defecto',
+        recordatorios: evento.alerts?.map((alert: any) => `${alert.timeBeforeEvent} minutos antes`) || [],
+        notas: evento.description || 'Sin notas'
       };
     });
   };
@@ -129,13 +153,16 @@ export default function CalendarioLista() {
           throw new Error(`Error: ${response.status} ${response.statusText}`);
         }
 
-        const data = await response.json();
-        console.log("Datos recibidos de la API:", data);
+        const responseData = await response.json();
+        console.log("Datos recibidos de la API:", responseData);
 
-        const eventosMapeados = mapearEventos(data);
-        console.log("Eventos mapeados:", eventosMapeados);
-
-        setEventos(eventosMapeados);
+        if (responseData.status === 'success' && responseData.data.events) {
+          const eventosMapeados = mapearEventos(responseData.data.events);
+          console.log("Eventos mapeados:", eventosMapeados);
+          setEventos(eventosMapeados);
+        } else {
+          setEventos([]);
+        }
       } catch (err: any) {
         console.error("Error al obtener eventos:", err);
         setError(err.message || 'Ocurrió un error al obtener los eventos.');

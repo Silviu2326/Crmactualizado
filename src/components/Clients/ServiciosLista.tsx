@@ -41,13 +41,12 @@ const categoriasServicios = [
 ];
 
 const ServiciosLista = () => {
-  const [categoriaActiva, setCategoriaActiva] = useState('clases-grupales');
-  const { theme } = useTheme();
-  const isDarkMode = theme === 'dark';
-
-  const [servicios, setServicios] = useState([]);
+  const [categoriaActiva, setCategoriaActiva] = useState('asesorias');
+  const [servicios, setServicios] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
 
   const [isNuevoClaseGrupalOpen, setIsNuevoClaseGrupalOpen] = useState(false);
   const [isNuevaAsesoriaOpen, setIsNuevaAsesoriaOpen] = useState(false);
@@ -91,23 +90,39 @@ const ServiciosLista = () => {
   const fetchServiciosPorTipo = async (tipo: string) => {
     setLoading(true);
     setError(null);
+    console.log('Iniciando fetchServiciosPorTipo para tipo:', tipo);
     try {
       const token = localStorage.getItem('token'); // Obtener el token
+      console.log('Token obtenido:', token ? 'Token presente' : 'Token no encontrado');
+
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
       const encodedTipo = encodeURIComponent(tipo);
       const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services/tipo/${encodedTipo}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
+
+      console.log('Respuesta del servidor:', {
+        status: response.status,
+        statusText: response.statusText
+      });
+
       if (!response.ok) {
-        throw new Error('Error al obtener los servicios');
+        const errorData = await response.json();
+        console.error('Error en la respuesta:', errorData);
+        throw new Error(errorData.mensaje || `Error al obtener servicios de tipo ${tipo}`);
       }
+
       const data = await response.json();
+      console.log('Datos de servicios recibidos:', data);
       setServicios(data);
     } catch (err: any) {
       console.error('Error en fetchServiciosPorTipo:', err);
-      setError(err.message);
-      setServicios([]); // Reset servicios en caso de error
+      setError(err instanceof Error ? err.message : 'Error al obtener los servicios');
     } finally {
       setLoading(false);
     }
@@ -120,14 +135,28 @@ const ServiciosLista = () => {
     }
   }, [categoriaActiva]);
 
+  const handleAddServicio = (nuevoServicio: any) => {
+    console.log('Añadiendo nuevo servicio:', nuevoServicio);
+    setServicios(serviciosActuales => {
+      const nuevosServicios = [...serviciosActuales, nuevoServicio];
+      console.log('Lista actualizada de servicios:', nuevosServicios);
+      return nuevosServicios;
+    });
+  };
+
   const renderTabla = () => {
     const categoria = categoriasServicios.find(c => c.id === categoriaActiva);
     if (!categoria) return null;
 
-    const datos = servicios;
+    if (loading) {
+      return <div className="text-center py-4">Cargando servicios...</div>;
+    }
 
-    // Verificar si los datos están vacíos
-    if (datos.length === 0) {
+    if (error) {
+      return <div className="text-center py-4 text-red-500">{error}</div>;
+    }
+
+    if (!servicios || servicios.length === 0) {
       return (
         <div className="p-8 text-center">
           <span>No hay {categoria.titulo.toLowerCase()}</span>
@@ -137,12 +166,38 @@ const ServiciosLista = () => {
 
     switch (categoria.id) {
       case 'clases-grupales':
-        return <TablaClasesGrupales datos={datos} isDarkMode={isDarkMode} />;
+        return <TablaClasesGrupales datos={servicios} isDarkMode={isDarkMode} />;
       case 'asesorias':
       case 'suscripciones':
-        return <TablaAsesoriaSubscripcion datos={datos} isDarkMode={isDarkMode} />;
+        return (
+          <TablaAsesoriaSubscripcion
+            datos={servicios}
+            isDarkMode={isDarkMode}
+            onServiceUpdated={(servicioActualizado) => {
+              console.log('Servicio actualizado:', servicioActualizado);
+              setServicios(serviciosActuales =>
+                serviciosActuales.map(servicio =>
+                  servicio._id === servicioActualizado._id ? servicioActualizado : servicio
+                )
+              );
+            }}
+            onAddPaymentPlan={(servicioId, nuevoPlan) => {
+              console.log('Nuevo plan de pago añadido:', { servicioId, nuevoPlan });
+              setServicios(serviciosActuales =>
+                serviciosActuales.map(servicio =>
+                  servicio._id === servicioId
+                    ? {
+                        ...servicio,
+                        planDePago: [...(servicio.planDePago || []), nuevoPlan]
+                      }
+                    : servicio
+                )
+              );
+            }}
+          />
+        );
       case 'citas':
-        return <TablaCitas datos={datos} isDarkMode={isDarkMode} />;
+        return <TablaCitas datos={servicios} isDarkMode={isDarkMode} />;
       default:
         return null;
     }
@@ -246,17 +301,7 @@ const ServiciosLista = () => {
               transition={{ duration: 0.3 }}
               className={isDarkMode ? 'text-gray-200' : ''}
             >
-              {loading ? (
-                <div className="p-8 text-center">
-                  <span>Cargando...</span>
-                </div>
-              ) : error ? (
-                <div className="p-8 text-center text-red-500">
-                  <span>Error: {error}</span>
-                </div>
-              ) : (
-                renderTabla()
-              )}
+              {renderTabla()}
             </motion.div>
           </AnimatePresence>
         </motion.div>

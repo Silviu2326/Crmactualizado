@@ -73,9 +73,7 @@ const CuentaBancariaWidget: React.FC<CuentaBancariaWidgetProps> = ({
     header: `flex items-center justify-between mb-4`,
     accountSelector: `relative flex items-center gap-2 cursor-pointer select-none`,
     title: `text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`,
-    iconContainer: `${
-      isDark ? 'bg-gray-700' : 'bg-white'
-    } p-2.5 rounded-full shadow-md`,
+    iconContainer: `${isDark ? 'bg-gray-700' : 'bg-white'} p-2.5 rounded-full shadow-md`,
     icon: `w-6 h-6 ${isDark ? 'text-blue-400' : 'text-blue-500'}`,
     amount: `text-3xl font-bold tracking-tight ${
       isDark ? 'text-gray-100' : 'text-gray-900'

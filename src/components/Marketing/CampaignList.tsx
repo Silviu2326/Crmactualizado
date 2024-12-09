@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Calendar, Mail, BarChart2, Clock, Copy, Filter, ChevronDown } from 'lucide-react';
+import { Calendar, Mail, BarChart2, Clock, Copy, Filter, ChevronDown, Edit, Trash2 } from 'lucide-react';
 import type { Campaign } from '../types/campaign';
 import { useEmailCampaigns } from "../../hooks/useEmailCampaigns";
 import { CampaignMetricsModal } from './CampaignMetricsModal';
 import { motion, AnimatePresence } from 'framer-motion';
+import { campaignService } from '../../services/campaignService';
+
 export function CampaignList() {
   const { campaigns, loading, error } = useEmailCampaigns();
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
@@ -13,6 +15,17 @@ export function CampaignList() {
     if (filter === 'all') return true;
     return campaign.status === filter;
   });
+  const handleDelete = async (id: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar esta campaña?')) {
+      try {
+        await campaignService.deleteCampaign(id);
+        // Recargar las campañas
+        window.location.reload();
+      } catch (error) {
+        console.error('Error al eliminar la campaña:', error);
+      }
+    }
+  };
   if (loading) {
     return (
       <div className="bg-white rounded-xl shadow-sm p-6">
@@ -92,6 +105,7 @@ export function CampaignList() {
                 isExpanded={isExpanded === campaign.id}
                 onToggleExpand={() => setIsExpanded(isExpanded === campaign.id ? null : campaign.id)}
                 onMetricsClick={() => setSelectedCampaign(campaign)}
+                onDelete={() => handleDelete(campaign.id)}
               />
             </motion.div>
           ))}
@@ -106,17 +120,22 @@ export function CampaignList() {
     </motion.div>
   );
 }
-function CampaignCard({ 
-  campaign, 
-  isExpanded,
-  onToggleExpand,
-  onMetricsClick 
-}: { 
+
+interface CampaignCardProps {
   campaign: Campaign;
   isExpanded: boolean;
   onToggleExpand: () => void;
   onMetricsClick: () => void;
-}) {
+  onDelete: () => void;
+}
+
+function CampaignCard({ 
+  campaign, 
+  isExpanded,
+  onToggleExpand,
+  onMetricsClick,
+  onDelete 
+}: CampaignCardProps) {
   const statusConfig = {
     draft: {
       color: 'bg-gray-100 text-gray-800',
@@ -184,6 +203,15 @@ function CampaignCard({
             >
               <ChevronDown className="h-5 w-5" />
             </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onDelete}
+              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              title="Eliminar campaña"
+            >
+              <Trash2 className="h-5 w-5" />
+            </motion.button>
           </div>
         </div>
         <AnimatePresence>
@@ -231,6 +259,7 @@ function CampaignCard({
     </motion.div>
   );
 }
+
 function Stat({ 
   icon, 
   label, 

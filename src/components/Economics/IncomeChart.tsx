@@ -8,7 +8,7 @@ import {
   Title,
   Tooltip,
   Legend,
-} from 'chart.js';
+} from 'chart.js/auto';
 import { Line } from 'react-chartjs-2';
 import { useTheme } from '../../contexts/ThemeContext';
 import { ChevronLeft, ChevronRight } from 'lucide-react';

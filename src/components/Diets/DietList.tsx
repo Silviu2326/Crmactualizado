@@ -1,11 +1,13 @@
 // DietList.tsx
 import React, { useState, useEffect } from 'react'; 
-import { Search, X, Plus, Filter, Download, Salad, Target, Clock, Users, FileText } from 'lucide-react';
+import { Search, X, Plus, Filter, Download, Salad, Target, Clock, Users, FileText, Edit, Trash2 } from 'lucide-react';
 import Button from '../Common/Button';
 import Table from '../Common/Table';
 import { useTheme } from '../../contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { dietService } from '../../services/dietService';
+import { foodService } from '../../services/foodService';
 
 import CrearDietasPopup from './CrearDietasPopup';
 import CrearComidaPopup from './CrearComidaPopup';
@@ -54,7 +56,31 @@ const DietList: React.FC = () => {
     }
   ];
 
-  const renderCell = (key: string, value: any) => {
+  // Función para eliminar una dieta
+  const handleDeleteDiet = async (id: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar esta dieta?')) {
+      try {
+        await dietService.deleteDiet(id);
+        fetchDietas();
+      } catch (error) {
+        console.error('Error al eliminar la dieta:', error);
+      }
+    }
+  };
+
+  // Función para eliminar un alimento
+  const handleDeleteFood = async (id: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este alimento?')) {
+      try {
+        await foodService.deleteFood(id);
+        fetchFoods();
+      } catch (error) {
+        console.error('Error al eliminar el alimento:', error);
+      }
+    }
+  };
+
+  const renderCell = (key: string, value: any, item: any) => {
     switch (key) {
       case 'objetivo':
         return (
@@ -83,7 +109,29 @@ const DietList: React.FC = () => {
           </span>
         );
       case 'acciones':
-        return value; // 'acciones' ya contiene el componente Link
+        return (
+          <div className="flex items-center space-x-2">
+            <Link 
+              to={`/edit-diet/${item._id}`}
+              state={{ dietData: item }} // Pasamos la dieta completa como state
+            >
+              <button className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                theme === 'dark' ? 'text-white' : 'text-gray-600'
+              }`}>
+                <Edit className="w-4 h-4" />
+              </button>
+            </Link>
+            <button
+              onClick={() => handleDeleteDiet(item._id)}
+              className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                theme === 'dark' ? 'text-white' : 'text-gray-600'
+              } hover:text-red-500`}
+              title="Eliminar"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        );
       default:
         return value;
     }
@@ -126,12 +174,27 @@ const DietList: React.FC = () => {
         restricciones: diet.restricciones,
         estado: diet.estado,
         acciones: (
-          <Link 
-            to={`/edit-diet/${diet._id}`}
-            state={{ dietData: diet }} // Pasamos la dieta completa como state
-          >
-            <button className="text-blue-500 hover:underline">Editar</button>
-          </Link>
+          <div className="flex items-center space-x-2">
+            <Link 
+              to={`/edit-diet/${diet._id}`}
+              state={{ dietData: diet }} // Pasamos la dieta completa como state
+            >
+              <button className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                theme === 'dark' ? 'text-white' : 'text-gray-600'
+              }`}>
+                <Edit className="w-4 h-4" />
+              </button>
+            </Link>
+            <button
+              onClick={() => handleDeleteDiet(diet._id)}
+              className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                theme === 'dark' ? 'text-white' : 'text-gray-600'
+              } hover:text-red-500`}
+              title="Eliminar"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
         ),
       }));
 
@@ -177,9 +240,24 @@ const DietList: React.FC = () => {
         grasas: food.grasas,
         categoria: food.categoria,
         acciones: (
-          <Link to={`/edit-food/${food._id}`}>
-            <button className="text-blue-500 hover:underline">Editar</button>
-          </Link>
+          <div className="flex items-center space-x-2">
+            <Link to={`/edit-food/${food._id}`}>
+              <button className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                theme === 'dark' ? 'text-white' : 'text-gray-600'
+              }`}>
+                <Edit className="w-4 h-4" />
+              </button>
+            </Link>
+            <button
+              onClick={() => handleDeleteFood(food._id)}
+              className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                theme === 'dark' ? 'text-white' : 'text-gray-600'
+              } hover:text-red-500`}
+              title="Eliminar"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
         ),
       }));
 
@@ -318,7 +396,7 @@ const DietList: React.FC = () => {
             data={(showFoods ? foodData : dietData).map(item => ({
               ...item,
               ...Object.fromEntries(
-                Object.entries(item).map(([key, value]) => [key, renderCell(key, value)])
+                Object.entries(item).map(([key, value]) => [key, renderCell(key, value, item)])
               )
             }))}
             variant={theme === 'dark' ? 'dark' : 'white'}

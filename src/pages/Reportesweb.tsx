@@ -30,6 +30,7 @@ import {
   Add as AddIcon,
   Refresh as RefreshIcon,
   Edit as EditIcon,
+  Delete as DeleteIcon,
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
   Schedule as ScheduleIcon,
@@ -161,6 +162,16 @@ const Reportesweb = () => {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      await reporteService.eliminarReporte(id);
+      await cargarReportes();
+    } catch (err) {
+      setError('Error al eliminar el reporte');
+      console.error('Error:', err);
+    }
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -214,7 +225,7 @@ const Reportesweb = () => {
                 </TableHead>
                 <TableBody>
                   {reportes.map((reporte) => (
-                    <TableRow key={reporte._id} hover>
+                    <TableRow key={reporte._id}>
                       <TableCell>{reporte.idTicket}</TableCell>
                       <TableCell>{reporte.resumenFeedback}</TableCell>
                       <TableCell>
@@ -240,12 +251,23 @@ const Reportesweb = () => {
                       <TableCell>
                         {format(new Date(reporte.fechaRecibido), 'dd/MM/yyyy HH:mm', { locale: es })}
                       </TableCell>
-                      <TableCell>
-                        <Tooltip title="Editar reporte">
-                          <IconButton size="small">
-                            <EditIcon />
-                          </IconButton>
-                        </Tooltip>
+                      <TableCell align="center">
+                        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                          <Tooltip title="Editar reporte">
+                            <IconButton size="small" color="primary">
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Eliminar reporte">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleDelete(reporte._id)}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))}

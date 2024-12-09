@@ -14,12 +14,14 @@ import {
   Users,
   Clock,
   Target,
+  Trash2,
 } from 'lucide-react';
 import Button from '../Common/Button';
 import Table from '../Common/Table';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { planningService } from '../../services/planningService';
 
 import PopupCrearPlanificacion from './PopupCrearPlanificacion';
 import PopupCrearEsqueleto from './PopupCrearEsqueleto';
@@ -50,7 +52,7 @@ const PlanningList: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
   const [isFormulasModalOpen, setIsFormulasModalOpen] = useState(false);
-  const [isEsqueletoModalOpen, setIsEsqueletoModalOpen] = useState(false);
+  const [showPopupCrearEsqueleto, setShowPopupCrearEsqueleto] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('todos');
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState({
@@ -182,8 +184,18 @@ const PlanningList: React.FC = () => {
               className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
                 theme === 'dark' ? 'text-white' : 'text-gray-600'
               }`}
+              title="Editar"
             >
               <Edit className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => handleDelete(item._id)}
+              className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                theme === 'dark' ? 'text-white' : 'text-gray-600'
+              } hover:text-red-500`}
+              title="Eliminar"
+            >
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
         );
@@ -280,9 +292,23 @@ const PlanningList: React.FC = () => {
       // Aquí implementarás la llamada a la API para crear el esqueleto
       console.log('Datos del esqueleto:', esqueletoData);
       // TODO: Implementar la llamada a la API
-      setIsEsqueletoModalOpen(false);
+      setShowPopupCrearEsqueleto(false);
     } catch (error) {
       console.error('Error al crear el esqueleto:', error);
+    }
+  };
+
+  // Función para eliminar una planificación
+  const handleDelete = async (id: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar esta planificación?')) {
+      try {
+        await planningService.deletePlanning(id);
+        // Actualizar la lista después de eliminar
+        fetchPlannings();
+      } catch (error) {
+        console.error('Error al eliminar la planificación:', error);
+        // Aquí podrías mostrar un mensaje de error al usuario
+      }
     }
   };
 
@@ -354,7 +380,7 @@ const PlanningList: React.FC = () => {
             <FileText className="w-5 h-5 mr-2" />
             Ver Archivos
           </Button>
-          <Button variant="normal" onClick={() => setIsEsqueletoModalOpen(true)}>
+          <Button variant="normal" onClick={() => setShowPopupCrearEsqueleto(true)}>
             <Plus className="w-5 h-5 mr-2" />
             Crear Fórmula
           </Button>
@@ -659,26 +685,14 @@ const PlanningList: React.FC = () => {
 
       {/* Modal para Crear Fórmula */}
       <AnimatePresence>
-        {isFormulasModalOpen && (
-          <motion.div
-            key="modal-crear-formula"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
-          >
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg relative">
-              <button
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                onClick={() => setIsFormulasModalOpen(false)}
-              >
-                <X className="w-5 h-5" />
-              </button>
-              {/* Aquí iría el contenido para crear fórmula */}
-              <h3 className="text-2xl font-bold mb-4">Crear Fórmula</h3>
-              {/* Formularios y otros componentes */}
-            </div>
-          </motion.div>
+        {showPopupCrearEsqueleto && (
+          <PopupCrearEsqueleto
+            onClose={() => setShowPopupCrearEsqueleto(false)}
+            onSubmit={(data) => {
+              console.log('Datos del esqueleto:', data);
+              setShowPopupCrearEsqueleto(false);
+            }}
+          />
         )}
       </AnimatePresence>
 
@@ -724,24 +738,6 @@ const PlanningList: React.FC = () => {
               <h3 className="text-2xl font-bold mb-4">Archivos Asociados</h3>
               {/* Lista de archivos o componentes relacionados */}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Modal para Crear Esqueleto */}
-      <AnimatePresence>
-        {isEsqueletoModalOpen && (
-          <motion.div
-            key="modal-crear-esqueleto"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
-          >
-            <PopupCrearEsqueleto
-              onClose={() => setIsEsqueletoModalOpen(false)}
-              onCrear={handleCrearEsqueleto}
-            />
           </motion.div>
         )}
       </AnimatePresence>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DollarSign, PieChart, FileText, TrendingUp, ChevronRight, Moon, Sun } from 'lucide-react';
 import PanelDeControl from '../components/Economics/PanelDeControl';
 import CashflowPage from '../components/Economics/Cashflow/CashflowPage';
@@ -8,32 +8,73 @@ import FacturasPage from '../components/Economics/Facturas/FacturasPage';
 import ReportesPage from '../components/Economics/Reportes/ReportesPage';
 import { useTheme } from '../contexts/ThemeContext';
 
-
 const EconomicsPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState('panel');
   const { theme, toggleTheme } = useTheme();
-  const [layout, setLayout] = useState('default');
   const [editMode, setEditMode] = useState(false);
   const [isFacturaPopupOpen, setIsFacturaPopupOpen] = useState(false);
   const [isEscanearFacturaPopupOpen, setIsEscanearFacturaPopupOpen] = useState(false);
 
+  // Mock data for testing
+  const [balances, setBalances] = useState({
+    bank: 1250.75,
+    stripe: 850.50,
+    cash: 325.25
+  });
+
+  const [expenses, setExpenses] = useState([
+    {
+      id: '1',
+      description: 'Alquiler',
+      amount: 1200,
+      date: '2024-01-01',
+      category: 'Fijo'
+    },
+    {
+      id: '2',
+      description: 'Luz',
+      amount: 150,
+      date: '2024-01-05',
+      category: 'Variable'
+    }
+  ]);
+
+  const expenseCategories = ['Fijo', 'Variable', 'Marketing', 'Equipamiento', 'Otros'];
+
+  const handleUpdateBalance = (accountType: string, value: number) => {
+    setBalances(prev => ({
+      ...prev,
+      [accountType]: value
+    }));
+  };
+
+  const handleAddExpense = (expense: Omit<typeof expenses[0], 'id'>) => {
+    const newExpense = {
+      ...expense,
+      id: Math.random().toString(36).substr(2, 9)
+    };
+    setExpenses(prev => [...prev, newExpense]);
+  };
+
+  const handleRemoveExpense = (id: string) => {
+    setExpenses(prev => prev.filter(expense => expense.id !== id));
+  };
+
   const sections = [
     { id: 'panel', label: 'Panel de Control', icon: TrendingUp },
-    { id: 'cashflow', label: 'Cashflow', icon: DollarSign, component: CashflowPage },
-    { id: 'planes', label: 'Servicios', icon: PieChart, component: PlanesPage },
-    { id: 'documentos', label: 'Documentos', icon: FileText, component: DocumentosPage },
-    { id: 'facturas', label: 'Facturas', icon: FileText, component: FacturasPage },
-    { id: 'reportes', label: 'Reportes', icon: TrendingUp, component: ReportesPage },
+    { id: 'cashflow', label: 'Cashflow', icon: DollarSign },
+    { id: 'planes', label: 'Servicios', icon: PieChart },
+    { id: 'documentos', label: 'Documentos', icon: FileText },
+    { id: 'facturas', label: 'Facturas', icon: FileText },
+    { id: 'reportes', label: 'Reportes', icon: TrendingUp },
   ];
 
   const handleFacturaSubmit = (formData: any) => {
-    // Lógica para manejar el envío de la factura
     console.log('Nueva factura:', formData);
     setIsFacturaPopupOpen(false);
   };
 
   const handleEscanearFacturaSubmit = (formData: any) => {
-    // Lógica para manejar el escaneo de la factura
     console.log('Archivos para escanear:', formData);
     setIsEscanearFacturaPopupOpen(false);
   };
@@ -45,6 +86,12 @@ const EconomicsPage: React.FC = () => {
           <PanelDeControl
             theme={theme}
             editMode={editMode}
+            balances={balances}
+            expenses={expenses}
+            onUpdateBalance={handleUpdateBalance}
+            onAddExpense={handleAddExpense}
+            onRemoveExpense={handleRemoveExpense}
+            expenseCategories={expenseCategories}
             isFacturaPopupOpen={isFacturaPopupOpen}
             setIsFacturaPopupOpen={setIsFacturaPopupOpen}
             handleFacturaSubmit={handleFacturaSubmit}
@@ -78,11 +125,7 @@ const EconomicsPage: React.FC = () => {
   };
 
   return (
-    <div
-      className={`flex flex-col h-screen ${
-        theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'
-      }`}
-    >
+    <div className={`flex flex-col h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}>
       <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-md p-4`}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold">Gestión Económica</h2>
@@ -102,30 +145,26 @@ const EconomicsPage: React.FC = () => {
             <button
               key={section.id}
               onClick={() => setActiveSection(section.id)}
-              className={`flex items-center px-4 py-2 text-sm font-semibold rounded-lg whitespace-nowrap transition-colors duration-200 ${
+              className={`flex items-center px-4 py-2 rounded-lg transition-colors duration-200 ${
                 activeSection === section.id
                   ? theme === 'dark'
                     ? 'bg-gray-700 text-white'
-                    : 'bg-gray-200 text-gray-900'
+                    : 'bg-blue-500 text-white'
                   : theme === 'dark'
-                  ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                  : 'bg-white text-gray-600 hover:bg-gray-100'
+                  ? 'text-gray-400 hover:text-white hover:bg-gray-700'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
               <section.icon className="w-5 h-5 mr-2" />
               {section.label}
-              <ChevronRight className="w-5 h-5 ml-2" />
+              <ChevronRight className={`w-4 h-4 ml-2 transition-transform duration-200 ${
+                activeSection === section.id ? 'rotate-90' : ''
+              }`} />
             </button>
           ))}
         </nav>
       </div>
-      <div
-        className={`flex-1 overflow-auto p-8 ${
-          theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'
-        }`}
-      >
-        {renderActiveComponent()}
-      </div>
+      <div className="flex-1 overflow-auto p-6">{renderActiveComponent()}</div>
     </div>
   );
 };

@@ -98,5 +98,28 @@ export const reporteService = {
       console.error('Error al actualizar el reporte:', error);
       throw new Error(error.response?.data?.message || error.message || 'Error al actualizar el reporte');
     }
+  },
+
+  eliminarReporte: async (id: string): Promise<void> => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const response = await axios.delete<ApiResponse<void>>(`${API_URL}/reportes/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.data.status !== 'success') {
+        throw new Error('Error al eliminar el reporte');
+      }
+    } catch (error: any) {
+      console.error('Error al eliminar el reporte:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Error al eliminar el reporte');
+    }
   }
 };

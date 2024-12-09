@@ -1,6 +1,6 @@
 // src/components/popups/NuevoPaymentPlanPopup.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
@@ -15,8 +15,11 @@ interface NuevoPaymentPlanPopupProps {
 interface PaymentPlanInput {
   nombre: string;
   precio: number;
+  moneda: string;
   frecuencia: string;
+  duracion: number;
   detalles: string;
+  servicio: string;
 }
 
 const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
@@ -29,36 +32,87 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
   const [formData, setFormData] = useState<PaymentPlanInput>({
     nombre: '',
     precio: 0,
-    frecuencia: 'Mensual', // Opciones: Mensual, Anual, etc.
+    moneda: 'EUR',
+    frecuencia: 'Mensual',
+    duracion: 12,
     detalles: '',
+    servicio: servicioId,
   });
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      servicio: servicioId,
+    }));
+  }, [servicioId]);
+
+  const getFrecuenciaMeses = (frecuencia: string): number => {
+    switch (frecuencia) {
+      case 'Mensual':
+        return 1;
+      case 'Trimestral':
+        return 3;
+      case 'Semestral':
+        return 6;
+      case 'Anual':
+        return 12;
+      default:
+        return 1;
+    }
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === 'precio' ? Number(value) : value,
-    }));
+
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [name]: name === 'precio' || name === 'duracion' ? Number(value) : value,
+      };
+
+      // Si cambia la frecuencia o la duración, actualizar la duración en meses
+      if (name === 'frecuencia' || name === 'duracion') {
+        const mesesPorFrecuencia = getFrecuenciaMeses(newData.frecuencia);
+        newData.duracion = Number(name === 'duracion' ? value : prev.duracion) * mesesPorFrecuencia;
+      }
+
+      return newData;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Implementar la lógica para enviar el payment plan al backend
-    console.log('Creando nuevo Payment Plan para el servicio:', servicioId, formData);
+
+    const dataToSend = {
+      ...formData,
+      servicio: servicioId,
+    };
+
+    // Mostrar los datos que se van a enviar
+    console.log('Datos del plan de pago a enviar:', {
+      ...dataToSend,
+      duracionPeriodos: formData.duracion / getFrecuenciaMeses(formData.frecuencia),
+      duracionMeses: formData.duracion,
+    });
 
     try {
-      // Ejemplo de llamada a la API
-      /*
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/servicios/${servicioId}/paymentplans`, {
+      console.log('Token:', token);
+
+      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/planes-de-pago', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(dataToSend),
+      });
+
+      console.log('Respuesta del servidor:', {
+        status: response.status,
+        ok: response.ok,
       });
 
       if (!response.ok) {
@@ -66,13 +120,10 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
       }
 
       const data = await response.json();
-      */
+      console.log('Datos recibidos del servidor:', data);
 
-      // Simulación exitosa
-      setTimeout(() => {
-        onAdd(formData); // Actualizar la lista de payment plans en el componente padre
-        onClose(); // Cerrar el popup
-      }, 1000);
+      onAdd(data);
+      onClose();
     } catch (error) {
       console.error('Error al crear el Payment Plan:', error);
       // Aquí puedes manejar el error mostrando un mensaje al usuario
@@ -138,7 +189,7 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
                     isDarkMode ? 'text-white' : 'text-black'
                   }`}
                 >
-                  Precio (€)
+                  Precio
                 </label>
                 <input
                   type="number"
@@ -153,6 +204,30 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
                     isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
                   } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
                 />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="moneda"
+                  className={`block text-sm font-medium ${
+                    isDarkMode ? 'text-white' : 'text-black'
+                  }`}
+                >
+                  Moneda
+                </label>
+                <select
+                  name="moneda"
+                  id="moneda"
+                  value={formData.moneda}
+                  onChange={handleChange}
+                  required
+                  className={`mt-1 block w-full px-3 py-2 ${
+                    isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
+                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                >
+                  <option value="EUR">EUR</option>
+                  <option value="USD">USD</option>
+                </select>
               </div>
 
               <div>
@@ -172,19 +247,47 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
                   required
                   className={`mt-1 block w-full px-3 py-2 ${
                     isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
-                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
                 >
                   <option value="Mensual">Mensual</option>
-                  <option value="Anual">Anual</option>
+                  <option value="Trimestral">Trimestral</option>
                   <option value="Semestral">Semestral</option>
-                  {/* Puedes añadir más opciones según tus necesidades */}
+                  <option value="Anual">Anual</option>
                 </select>
               </div>
 
               <div>
                 <label
+                  htmlFor="duracion"
+                  className={`block text-sm font-medium ${
+                    isDarkMode ? 'text-white' : 'text-black'
+                  }`}
+                >
+                  Duración (en periodos de {formData.frecuencia.toLowerCase()})
+                </label>
+                <input
+                  type="number"
+                  name="duracion"
+                  id="duracion"
+                  value={formData.duracion / getFrecuenciaMeses(formData.frecuencia)}
+                  onChange={handleChange}
+                  required
+                  min="1"
+                  className={`mt-1 block w-full px-3 py-2 ${
+                    isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
+                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                />
+                <span className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Total en meses: {formData.duracion}
+                </span>
+              </div>
+
+              <div>
+                <label
                   htmlFor="detalles"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                  className={`block text-sm font-medium ${
+                    isDarkMode ? 'text-white' : 'text-black'
+                  }`}
                 >
                   Detalles
                 </label>
@@ -198,7 +301,7 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
                   className={`mt-1 block w-full px-3 py-2 ${
                     isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
                   } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                ></textarea>
+                />
               </div>
 
               <div className="flex justify-end space-x-2">

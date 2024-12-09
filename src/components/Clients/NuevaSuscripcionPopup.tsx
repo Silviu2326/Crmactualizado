@@ -6,17 +6,27 @@ import { X } from 'lucide-react';
 interface NuevaSuscripcionPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: () => void;
+  onAdd: (newService: any) => void;
   isDarkMode: boolean;
 }
 
+interface FormData {
+  nombre: string;
+  descripcion: string;
+  tipo: string;
+  serviciosAdicionales: ('Pack de Citas' | 'Planificacion' | 'Dietas')[];
+}
+
 const NuevaSuscripcionPopup: React.FC<NuevaSuscripcionPopupProps> = ({ isOpen, onClose, onAdd, isDarkMode }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     nombre: '',
     descripcion: '',
-    precio: '',
-    periodo: 'Mensual', // Opciones: Mensual, Anual
+    tipo: 'Suscripción',
+    serviciosAdicionales: []
   });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -26,39 +36,53 @@ const NuevaSuscripcionPopup: React.FC<NuevaSuscripcionPopupProps> = ({ isOpen, o
     }));
   };
 
+  const handleServicioAdicionalChange = (servicio: 'Pack de Citas' | 'Planificacion' | 'Dietas') => {
+    setFormData(prev => {
+      const servicios = prev.serviciosAdicionales.includes(servicio)
+        ? prev.serviciosAdicionales.filter(s => s !== servicio)
+        : [...prev.serviciosAdicionales, servicio];
+      return { ...prev, serviciosAdicionales: servicios };
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Implementar la lógica para enviar los datos al backend
-    console.log('Creando nueva Suscripción:', formData);
+    setIsLoading(true);
+    setError(null);
 
-    // Simular una llamada a la API
     try {
-      // Ejemplo de llamada a la API
-      /*
-      const response = await fetch('http://localhost:3000/api/suscripciones', {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`, // Si es necesario
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          fechaCreacion: new Date().toISOString()
+        }),
       });
 
       if (!response.ok) {
-        throw new Error('Error al crear la suscripción');
+        const errorData = await response.json();
+        throw new Error(errorData.mensaje || 'Error al crear la suscripción');
       }
 
-      const data = await response.json();
-      */
-
-      // Simulación exitosa
-      setTimeout(() => {
-        onAdd(); // Actualizar la lista de servicios
-        onClose(); // Cerrar el popup
-      }, 1000);
+      const newService = await response.json();
+      console.log('Suscripción creada exitosamente:', newService);
+      
+      onAdd(newService);
+      onClose();
     } catch (error) {
-      console.error(error);
-      // Manejar el error (mostrar un mensaje al usuario, etc.)
+      console.error('Error al crear la suscripción:', error);
+      setError(error instanceof Error ? error.message : 'Error al crear la suscripción');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -78,7 +102,6 @@ const NuevaSuscripcionPopup: React.FC<NuevaSuscripcionPopupProps> = ({ isOpen, o
             exit={{ scale: 0.8 }}
             transition={{ duration: 0.2 }}
           >
-            {/* Botón de cerrar */}
             <button
               onClick={onClose}
               className="absolute top-3 right-3 text-gray-500 dark:text-gray-200 hover:text-gray-700 dark:hover:text-white transition-colors duration-150"
@@ -88,6 +111,12 @@ const NuevaSuscripcionPopup: React.FC<NuevaSuscripcionPopupProps> = ({ isOpen, o
             </button>
 
             <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Nueva Suscripción</h2>
+
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                {error}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -116,27 +145,7 @@ const NuevaSuscripcionPopup: React.FC<NuevaSuscripcionPopupProps> = ({ isOpen, o
                   id="descripcion"
                   value={formData.descripcion}
                   onChange={handleChange}
-                  required
                   rows={3}
-                  className={`mt-1 block w-full px-3 py-2 ${
-                    isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
-                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                ></textarea>
-              </div>
-
-              <div>
-                <label htmlFor="precio" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                  Precio (€)
-                </label>
-                <input
-                  type="number"
-                  name="precio"
-                  id="precio"
-                  value={formData.precio}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  step="0.01"
                   className={`mt-1 block w-full px-3 py-2 ${
                     isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
                   } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
@@ -144,37 +153,40 @@ const NuevaSuscripcionPopup: React.FC<NuevaSuscripcionPopupProps> = ({ isOpen, o
               </div>
 
               <div>
-                <label htmlFor="periodo" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                  Período
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Servicios Adicionales
                 </label>
-                <select
-                  name="periodo"
-                  id="periodo"
-                  value={formData.periodo}
-                  onChange={handleChange}
-                  required
-                  className={`mt-1 block w-full px-3 py-2 ${
-                    isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
-                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                >
-                  <option value="Mensual">Mensual</option>
-                  <option value="Anual">Anual</option>
-                </select>
+                <div className="mt-2 space-y-2">
+                  {(['Pack de Citas', 'Planificacion', 'Dietas'] as const).map((servicio) => (
+                    <label key={servicio} className="inline-flex items-center mr-4">
+                      <input
+                        type="checkbox"
+                        checked={formData.serviciosAdicionales.includes(servicio)}
+                        onChange={() => handleServicioAdicionalChange(servicio)}
+                        className="form-checkbox h-4 w-4 text-blue-600"
+                      />
+                      <span className="ml-2 text-sm text-gray-700 dark:text-gray-200">{servicio}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex justify-end space-x-2">
+              <div className="flex justify-end space-x-3 mt-6">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors duration-150"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-500 dark:hover:text-gray-400"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors duration-150"
+                  disabled={isLoading}
+                  className={`px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                    isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 >
-                  Crear
+                  {isLoading ? 'Creando...' : 'Crear Suscripción'}
                 </button>
               </div>
             </form>

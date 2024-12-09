@@ -1,126 +1,139 @@
-import React, { useState } from 'react';
-import { Search, X, Plus, Filter, Download, Dumbbell, Target, Clock, Users, Calendar, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, X, Plus, Filter, Download, Dumbbell, Target, Clock, Users, Calendar, TrendingUp, Pencil, Trash2 } from 'lucide-react';
 import Button from '../Common/Button';
 import Table from '../Common/Table';
+import CreateRoutineModal from './CreateRoutineModal';
 import { useTheme } from '../../contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import axios from 'axios';
+
+interface Metric {
+  type: string;
+  value: string;
+  _id: string;
+}
+
+interface Exercise {
+  name: string;
+  metrics: Metric[];
+  notes: string;
+  _id: string;
+}
+
+interface Routine {
+  _id: string;
+  name: string;
+  description: string;
+  tags: string[];
+  notes: string;
+  exercises: Exercise[];
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 const WorkoutList: React.FC = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreateAIModalOpen, setIsCreateAIModalOpen] = useState(false);
+  const [routines, setRoutines] = useState<Routine[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedRoutine, setSelectedRoutine] = useState<Routine | null>(null);
 
-  const routinesData = [
-    { 
-      nombre: 'Rutina de Fuerza', 
-      tipo: 'Fuerza', 
-      nivel: 'Intermedio', 
-      duracion: '60 min', 
-      frecuencia: '3x/semana',
-      estado: 'Activa',
-      progreso: '75%',
-      acciones: 'Editar' 
-    },
-    { 
-      nombre: 'Cardio HIIT', 
-      tipo: 'Cardio', 
-      nivel: 'Avanzado', 
-      duracion: '30 min', 
-      frecuencia: '4x/semana',
-      estado: 'Pendiente',
-      progreso: '30%',
-      acciones: 'Editar' 
-    },
-    { 
-      nombre: 'Yoga para principiantes', 
-      tipo: 'Flexibilidad', 
-      nivel: 'Principiante', 
-      duracion: '45 min', 
-      frecuencia: '2x/semana',
-      estado: 'Completada',
-      progreso: '100%',
-      acciones: 'Editar' 
-    },
-  ];
+  useEffect(() => {
+    fetchRoutines();
+  }, []);
 
-  const statsCards = [
-    { 
-      icon: Dumbbell,
-      title: "Rutinas Activas",
-      value: "24",
-      color: "bg-blue-500"
-    },
-    {
-      icon: Target,
-      title: "Objetivos Cumplidos",
-      value: "85%",
-      color: "bg-purple-500"
-    },
-    {
-      icon: Clock,
-      title: "Tiempo Total",
-      value: "1,240h",
-      color: "bg-green-500"
-    },
-    {
-      icon: Users,
-      title: "Clientes Asignados",
-      value: "89",
-      color: "bg-amber-500"
+  const fetchRoutines = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/routines/routines', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.data.status === 'success') {
+        setRoutines(response.data.data);
+      } else {
+        throw new Error('Error al obtener las rutinas');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar las rutinas');
+      console.error('Error fetching routines:', err);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const renderCell = (key: string, value: any) => {
-    switch (key) {
-      case 'tipo':
-        return (
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-            value === 'Fuerza' ? 'bg-purple-100 text-purple-800' :
-            value === 'Cardio' ? 'bg-red-100 text-red-800' :
-            'bg-blue-100 text-blue-800'
-          }`}>
-            {value}
-          </span>
-        );
-      case 'nivel':
-        return (
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-            value === 'Principiante' ? 'bg-green-100 text-green-800' :
-            value === 'Intermedio' ? 'bg-yellow-100 text-yellow-800' :
-            'bg-red-100 text-red-800'
-          }`}>
-            {value}
-          </span>
-        );
-      case 'estado':
-        return (
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-            value === 'Activa' ? 'bg-emerald-100 text-emerald-800' :
-            value === 'Pendiente' ? 'bg-amber-100 text-amber-800' :
-            'bg-blue-100 text-blue-800'
-          }`}>
-            {value}
-          </span>
-        );
-      case 'progreso':
-        return (
-          <div className="flex items-center space-x-2">
-            <div className="flex-grow bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-              <div 
-                className={`h-2.5 rounded-full ${
-                  parseInt(value) === 100 ? 'bg-green-600' :
-                  parseInt(value) > 50 ? 'bg-blue-600' :
-                  'bg-amber-600'
-                }`}
-                style={{ width: value }}
-              ></div>
-            </div>
-            <span className="text-sm font-medium">{value}</span>
-          </div>
-        );
-      default:
-        return value;
+  const handleCreateRoutine = async (routineData: any) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      if (selectedRoutine) {
+        // Si hay una rutina seleccionada, es una edición
+        await axios.put(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/routines/routines/${selectedRoutine._id}`, routineData, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      } else {
+        // Si no hay rutina seleccionada, es una creación
+        await axios.post('https://fitoffice2-f70b52bef77e.herokuapp.com/api/routines/routines', routineData, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      }
+
+      // Actualizar la lista de rutinas
+      fetchRoutines();
+      // Limpiar la rutina seleccionada
+      setSelectedRoutine(null);
+    } catch (err) {
+      console.error('Error saving routine:', err);
+      // Aquí podrías mostrar un mensaje de error al usuario
+    }
+  };
+
+  const handleEditRoutine = (routine: Routine) => {
+    setSelectedRoutine(routine);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleDeleteRoutine = async (routineId: string) => {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar esta rutina?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/routines/routines/${routineId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      // Actualizar la lista de rutinas
+      fetchRoutines();
+    } catch (err) {
+      console.error('Error deleting routine:', err);
+      // Aquí podrías mostrar un mensaje de error al usuario
     }
   };
 
@@ -137,32 +150,6 @@ const WorkoutList: React.FC = () => {
         <p className="text-gray-500 dark:text-gray-400">
           Crea y gestiona rutinas personalizadas para tus clientes
         </p>
-      </motion.div>
-
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
-      >
-        {statsCards.map((card, index) => (
-          <motion.div
-            key={card.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className={`${theme === 'dark' ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg shadow-lg`}
-          >
-            <div className="flex items-center space-x-4">
-              <div className={`${card.color} p-3 rounded-lg`}>
-                <card.icon className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-sm text-gray-500 dark:text-gray-400">{card.title}</h3>
-                <p className="text-2xl font-bold">{card.value}</p>
-              </div>
-            </div>
-          </motion.div>
-        ))}
       </motion.div>
 
       <motion.div 
@@ -214,17 +201,83 @@ const WorkoutList: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden"
       >
-        <Table
-          headers={['Nombre', 'Tipo', 'Nivel', 'Duración', 'Frecuencia', 'Estado', 'Progreso', 'Acciones']}
-          data={routinesData.map(item => ({
-            ...item,
-            ...Object.fromEntries(
-              Object.entries(item).map(([key, value]) => [key, renderCell(key, value)])
-            )
-          }))}
-          variant={theme === 'dark' ? 'dark' : 'white'}
-        />
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-800">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Descripción</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tags/Categorías</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Notas Adicionales</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
+              {routines.map((routine, idx) => (
+                <tr 
+                  key={routine._id}
+                  className={`hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 ${
+                    idx % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'
+                  }`}
+                >
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{routine.name}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{routine.description}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-wrap gap-1">
+                      {routine.tags.map((tag, index) => (
+                        <span key={index} className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          tag.toLowerCase().includes('fuerza') ? 'bg-purple-100 text-purple-800' :
+                          tag.toLowerCase().includes('cardio') ? 'bg-red-100 text-red-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{routine.notes}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex space-x-2 justify-end">
+                      <button 
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                        onClick={() => handleEditRoutine(routine)}
+                      >
+                        <Pencil className="w-5 h-5" />
+                      </button>
+                      <button 
+                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                        onClick={() => handleDeleteRoutine(routine._id)}
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </motion.div>
+
+      {/* Modal de creación/edición */}
+      {isCreateModalOpen && (
+        <CreateRoutineModal
+          isOpen={isCreateModalOpen}
+          onClose={() => {
+            setIsCreateModalOpen(false);
+            setSelectedRoutine(null);
+          }}
+          onSave={handleCreateRoutine}
+          routine={selectedRoutine}
+          theme={theme}
+        />
+      )}
     </div>
   );
 };

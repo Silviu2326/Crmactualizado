@@ -17,6 +17,7 @@ import {
   BookOpen,
   Layout,
   MailPlus,
+  FileText,
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -28,7 +29,8 @@ const Sidebar: React.FC = () => {
   const navItems = [
     { to: '/', icon: Home, label: 'Dashboard' },
     { to: '/clients', icon: Users, label: 'Clientes' },
-    { to: '/services', icon: Layout, label: 'Servicios' },  // Nueva pestaña en el Sidebar
+    { to: '/services', icon: Layout, label: 'Servicios' },
+    { to: '/reportesweb', icon: FileText, label: 'Reportes Web' },
     { to: '/routines', icon: Dumbbell, label: 'Entrenamiento' },
     { to: '/diets', icon: Salad, label: 'Dietas' },
     { to: '/classes', icon: BookOpen, label: 'Clases' },

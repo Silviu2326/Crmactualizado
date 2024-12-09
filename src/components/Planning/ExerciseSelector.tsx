@@ -1,302 +1,316 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Search, X, Plus, Filter, Dumbbell, Target, Clock } from 'lucide-react';
 import Button from '../Common/Button';
 import { motion, AnimatePresence } from 'framer-motion';
+import axios from 'axios';
 
 interface Exercise {
-  id: string;
-  name: string;
-  category: string;
-  muscleGroup: string;
-  defaultSets: {
-    reps: number;
-    weight?: number;
-    rest?: number;
-  }[];
-  difficulty: 'Principiante' | 'Intermedio' | 'Avanzado';
-  equipment: string[];
+  _id: string;
+  nombre: string;
+  tipo?: string;
+  grupoMuscular: string[];
+  descripcion: string;
+  equipo: string[];
+  imgUrl: string;
+  fechaCreacion: string;
 }
-const predefinedExercises: Exercise[] = [
-  {
-    id: 'squat',
-    name: 'Sentadilla',
-    category: 'Compuesto',
-    muscleGroup: 'Piernas',
-    defaultSets: [
-      { reps: 8, weight: 60, rest: 90 },
-      { reps: 8, weight: 65, rest: 90 },
-      { reps: 8, weight: 70, rest: 90 },
-      { reps: 0, weight: 0, rest: 60 }, // Serie adicional para variantes que requieren 4 series
-    ],
-    difficulty: 'Intermedio',
-    equipment: ['Barra', 'Rack'],
-  },
-  {
-    id: 'bench-press',
-    name: 'Press de Banca',
-    category: 'Compuesto',
-    muscleGroup: 'Pecho',
-    defaultSets: [
-      { reps: 8, weight: 40, rest: 90 },
-      { reps: 8, weight: 45, rest: 90 },
-      { reps: 8, weight: 50, rest: 90 },
-      { reps: 0, weight: 0, rest: 60 }, // Serie adicional
-    ],
-    difficulty: 'Intermedio',
-    equipment: ['Barra', 'Banco'],
-  },
-  {
-    id: 'deadlift',
-    name: 'Peso Muerto',
-    category: 'Compuesto',
-    muscleGroup: 'Espalda',
-    defaultSets: [
-      { reps: 6, weight: 80, rest: 120 },
-      { reps: 6, weight: 85, rest: 120 },
-      { reps: 6, weight: 90, rest: 120 },
-      { reps: 0, weight: 0, rest: 60 }, // Serie adicional
-    ],
-    difficulty: 'Avanzado',
-    equipment: ['Barra'],
-  },
-];
+
+interface ExerciseWithSets extends Exercise {
+  sets: {
+    id: string;
+    reps: number;
+    weight: number;
+    rest: number;
+  }[];
+}
 
 interface ExerciseSelectorProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectExercise: (exercise: Exercise) => void;
+  onSelectExercise: (exercise: ExerciseWithSets) => void;
+  planningId: string;
+  weekNumber: number;
+  selectedDay: string;
+  sessionId: string;
 }
 
 const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   isOpen,
   onClose,
   onSelectExercise,
+  planningId,
+  weekNumber,
+  selectedDay,
+  sessionId,
 }) => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedType, setSelectedType] = useState<string>('');
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string>('');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('');
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const categories = Array.from(
-    new Set(predefinedExercises.map((e) => e.category))
+  useEffect(() => {
+    console.log('ExerciseSelector: Iniciando fetchExercises');
+    fetchExercises();
+  }, []);
+
+  const fetchExercises = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      console.log('ExerciseSelector: Realizando petición a la API de ejercicios');
+      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/exercises', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.data.data) {
+        console.log('ExerciseSelector: Ejercicios obtenidos exitosamente:', response.data.data.length);
+        setExercises(response.data.data);
+      } else {
+        throw new Error('Error al obtener los ejercicios');
+      }
+    } catch (err) {
+      console.error('ExerciseSelector: Error en fetchExercises:', err);
+      setError(err instanceof Error ? err.message : 'Error al cargar los ejercicios');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addExerciseToSession = async (exerciseId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      console.log('ExerciseSelector: Agregando ejercicio a la sesión', {
+        planningId,
+        weekNumber,
+        day: selectedDay,
+        sessionId,
+        exerciseId
+      });
+
+      const url = `https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${planningId}/weeks/${weekNumber}/days/${selectedDay}/sessions/${sessionId}/exercises`;
+      
+      const response = await axios.post(
+        url,
+        { exerciseId },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.data) {
+        throw new Error('Error al agregar el ejercicio a la sesión');
+      }
+
+      console.log('ExerciseSelector: Ejercicio agregado exitosamente:', response.data);
+      return response;
+    } catch (err) {
+      console.error('ExerciseSelector: Error al agregar ejercicio:', err);
+      throw err;
+    }
+  };
+
+  const handleSelectExercise = async (exercise: Exercise) => {
+    try {
+      console.log('ExerciseSelector: Ejercicio seleccionado:', exercise);
+      
+      // Hacer la petición al backend para añadir el ejercicio
+      const response = await addExerciseToSession(exercise._id);
+      
+      // Extraer la información de los sets y renderConfig de la respuesta
+      const { sets } = response.data.data;
+      
+      // Crear el ejercicio con los sets de la API
+      const exerciseWithSets: ExerciseWithSets = {
+        ...exercise,
+        sets: sets.map(set => ({
+          id: set._id,
+          // Usar solo los campos especificados en renderConfig
+          ...Object.fromEntries(
+            Object.entries(set)
+              .filter(([key]) => 
+                set.renderConfig[`campo1`] === key ||
+                set.renderConfig[`campo2`] === key ||
+                set.renderConfig[`campo3`] === key
+              )
+          )
+        }))
+      };
+
+      console.log('ExerciseSelector: Ejercicio con sets:', exerciseWithSets);
+      onSelectExercise(exerciseWithSets);
+      onClose();
+    } catch (error) {
+      console.error('Error al agregar el ejercicio:', error);
+      setError('Error al agregar el ejercicio a la sesión');
+    }
+  };
+
+  // Obtener tipos y grupos musculares únicos de los ejercicios
+  const types = Array.from(
+    new Set(exercises.map((e) => e.tipo).filter(Boolean))
   );
+  
   const muscleGroups = Array.from(
-    new Set(predefinedExercises.map((e) => e.muscleGroup))
-  );
-  const difficulties = Array.from(
-    new Set(predefinedExercises.map((e) => e.difficulty))
+    new Set(exercises.flatMap((e) => e.grupoMuscular))
   );
 
-  const filteredExercises = predefinedExercises.filter((exercise) => {
-    const matchesSearch = exercise.name
+  const filteredExercises = exercises.filter((exercise) => {
+    const matchesSearch = exercise.nombre
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
-    const matchesCategory =
-      !selectedCategory || exercise.category === selectedCategory;
+    const matchesType =
+      !selectedType || exercise.tipo === selectedType;
     const matchesMuscleGroup =
-      !selectedMuscleGroup || exercise.muscleGroup === selectedMuscleGroup;
-    const matchesDifficulty =
-      !selectedDifficulty || exercise.difficulty === selectedDifficulty;
-    return (
-      matchesSearch &&
-      matchesCategory &&
-      matchesMuscleGroup &&
-      matchesDifficulty
-    );
+      !selectedMuscleGroup || exercise.grupoMuscular.includes(selectedMuscleGroup);
+
+    return matchesSearch && matchesType && matchesMuscleGroup;
   });
 
+  if (!isOpen) return null;
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={onClose}
-        >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            onClick={(e) => e.stopPropagation()}
-            className={`w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden
-              ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className={`w-full max-w-4xl ${
+          theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+        } rounded-lg shadow-2xl overflow-hidden`}
+      >
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+          <h2 className="text-2xl font-semibold">Seleccionar Ejercicio</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
           >
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-                  Seleccionar Ejercicio
-                </h2>
-                <Button
-                  variant="normal"
-                  onClick={onClose}
-                  className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-                >
-                  <X className="w-6 h-6" />
-                </Button>
-              </div>
+            <X className="w-6 h-6" />
+          </button>
+        </div>
 
-              <div className="space-y-4 mb-6">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Buscar ejercicios..."
-                    className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-500 transition-all
-                      ${
-                        theme === 'dark'
-                          ? 'bg-gray-700 border-gray-600'
-                          : 'bg-white border-gray-300'
-                      }`}
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className={`px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 transition-all
-                      ${
-                        theme === 'dark'
-                          ? 'bg-gray-700 border-gray-600'
-                          : 'bg-white border-gray-300'
-                      }`}
-                  >
-                    <option value="">Todas las categorías</option>
-                    {categories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={selectedMuscleGroup}
-                    onChange={(e) => setSelectedMuscleGroup(e.target.value)}
-                    className={`px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 transition-all
-                      ${
-                        theme === 'dark'
-                          ? 'bg-gray-700 border-gray-600'
-                          : 'bg-white border-gray-300'
-                      }`}
-                  >
-                    <option value="">Todos los grupos musculares</option>
-                    {muscleGroups.map((group) => (
-                      <option key={group} value={group}>
-                        {group}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={selectedDifficulty}
-                    onChange={(e) => setSelectedDifficulty(e.target.value)}
-                    className={`px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 transition-all
-                      ${
-                        theme === 'dark'
-                          ? 'bg-gray-700 border-gray-600'
-                          : 'bg-white border-gray-300'
-                      }`}
-                  >
-                    <option value="">Todas las dificultades</option>
-                    {difficulties.map((difficulty) => (
-                      <option key={difficulty} value={difficulty}>
-                        {difficulty}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid gap-4 max-h-[60vh] overflow-y-auto pr-2">
-                {filteredExercises.map((exercise) => (
-                  <motion.div
-                    key={exercise.id}
-                    whileHover={{ scale: 1.02 }}
-                    className={`p-6 rounded-xl cursor-pointer transition-all duration-300
-                      ${
-                        theme === 'dark'
-                          ? 'bg-gray-700 hover:bg-gray-650'
-                          : 'bg-gray-50 hover:bg-gray-100'
-                      }`}
-                    onClick={() => {
-                      onSelectExercise(exercise);
-                      onClose();
-                    }}
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div
-                          className={`p-2 rounded-lg ${
-                            theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'
-                          }`}
-                        >
-                          <Dumbbell className="w-5 h-5 text-blue-500" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-lg">
-                            {exercise.name}
-                          </h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {exercise.category} · {exercise.muscleGroup}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="create"
-                        className="flex items-center space-x-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        <span>Añadir</span>
-                      </Button>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
-                      <div
-                        className={`p-3 rounded-lg
-                        ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'}`}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <Target className="w-4 h-4 text-green-500" />
-                          <span className="text-sm">
-                            {exercise.defaultSets.length} series
-                          </span>
-                        </div>
-                      </div>
-                      <div
-                        className={`p-3 rounded-lg
-                        ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'}`}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <Clock className="w-4 h-4 text-purple-500" />
-                          <span className="text-sm">
-                            {exercise.defaultSets[0].rest}s descanso
-                          </span>
-                        </div>
-                      </div>
-                      <div
-                        className={`p-3 rounded-lg
-                        ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'}`}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <Filter className="w-4 h-4 text-blue-500" />
-                          <span className="text-sm">{exercise.difficulty}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
+        <div className="p-6">
+          {/* Barra de búsqueda y filtros */}
+          <div className="flex flex-wrap gap-4 mb-6">
+            <div className="flex-1 min-w-[200px]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Buscar ejercicio..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className={`w-full pl-10 pr-4 py-2 rounded-lg border ${
+                    theme === 'dark'
+                      ? 'bg-gray-700 border-gray-600 text-white'
+                      : 'bg-white border-gray-300'
+                  } focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all`}
+                />
               </div>
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className={`px-4 py-2 rounded-lg border ${
+                theme === 'dark'
+                  ? 'bg-gray-700 border-gray-600 text-white'
+                  : 'bg-white border-gray-300'
+              } focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all`}
+            >
+              <option value="">Todos los tipos</option>
+              {types.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={selectedMuscleGroup}
+              onChange={(e) => setSelectedMuscleGroup(e.target.value)}
+              className={`px-4 py-2 rounded-lg border ${
+                theme === 'dark'
+                  ? 'bg-gray-700 border-gray-600 text-white'
+                  : 'bg-white border-gray-300'
+              } focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all`}
+            >
+              <option value="">Todos los músculos</option>
+              {muscleGroups.map((group) => (
+                <option key={group} value={group}>
+                  {group}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Lista de ejercicios */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-2">
+            {loading ? (
+              <div className="col-span-2 text-center py-8">Cargando ejercicios...</div>
+            ) : error ? (
+              <div className="col-span-2 text-center py-8 text-red-500">{error}</div>
+            ) : filteredExercises.length === 0 ? (
+              <div className="col-span-2 text-center py-8">No se encontraron ejercicios</div>
+            ) : (
+              filteredExercises.map((exercise) => (
+                <motion.div
+                  key={exercise._id}
+                  whileHover={{ scale: 1.02 }}
+                  className={`p-4 rounded-lg cursor-pointer ${
+                    theme === 'dark'
+                      ? 'bg-gray-700 hover:bg-gray-600'
+                      : 'bg-gray-50 hover:bg-gray-100'
+                  } transition-all shadow-md`}
+                  onClick={() => handleSelectExercise(exercise)}
+                >
+                  <div className="flex items-start gap-4">
+                    {exercise.imgUrl && (
+                      <img
+                        src={exercise.imgUrl}
+                        alt={exercise.nombre}
+                        className="w-20 h-20 object-cover rounded-lg"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg mb-1">{exercise.nombre}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                        {exercise.descripcion}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {exercise.grupoMuscular.map((muscle) => (
+                          <span
+                            key={muscle}
+                            className="px-2 py-1 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100"
+                          >
+                            {muscle}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </div>
   );
 };
 

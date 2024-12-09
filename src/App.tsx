@@ -21,6 +21,7 @@ import ProfilePage from './pages/ProfilePage';
 import AjustesPage from './pages/AjustesPage';
 import Publications from './pages/Publications';
 import EditPlanningPage from './pages/EditPlanningPage';
+import PlantillaPage from './components/Routines/plantillas/PlantillaPage';
 import ClassesPage from './pages/ClassesPage';
 import PageEdicionDieta from './pages/PageEdicionDieta';
 import LoginPage from './pages/LoginPage';
@@ -29,6 +30,7 @@ import CommandAssister from './components/CommandAssister/CommandAssister';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useTheme } from './contexts/ThemeContext';
+import Reportesweb from './pages/Reportesweb';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -206,10 +208,26 @@ function AppContent() {
                 }
               />
               <Route
+                path="/plantilla/:id"
+                element={
+                  <PrivateRoute>
+                    <PlantillaPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
                 path="/edit-diet/:id"
                 element={
                   <PrivateRoute>
                     <PageEdicionDieta />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/reportesweb"
+                element={
+                  <PrivateRoute>
+                    <Reportesweb />
                   </PrivateRoute>
                 }
               />

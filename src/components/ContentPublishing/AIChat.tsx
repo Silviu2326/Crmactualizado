@@ -10,9 +10,11 @@ import {
   Wand2,
   Rocket,
   Brain,
-  Target
+  Target,
+  BarChart,
+  Mail,
+  Search
 } from 'lucide-react';
-import Button from '../Common/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Message {
@@ -23,16 +25,78 @@ interface Message {
 }
 
 interface AIChatProps {
-  toolId: string;
+  onSendMessage: (message: string) => Promise<string>;
+  chatDescription: string;
+  theme: string;
 }
 
-const AIChat: React.FC<AIChatProps> = ({ toolId }) => {
-  const { theme } = useTheme();
+const AIChat: React.FC<AIChatProps> = ({ onSendMessage, chatDescription, theme }) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [isThinking, setIsThinking] = useState(false);
+  const [newMessage, setNewMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<null | HTMLDivElement>(null);
+
+  useEffect(() => {
+    console.log('AIChat - Componente montado/actualizado');
+    if (chatDescription) {
+      setMessages([
+        {
+          id: '1',
+          type: 'bot',
+          content: `¡https://fitoffice2-f70b52bef77e.herokuapp.com/! 👋 ${chatDescription}. Describe tu consulta y te ayudaré a resolverla.`,
+          timestamp: new Date(),
+        }
+      ]);
+    }
+  }, [chatDescription]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('AIChat - handleSubmit llamado');
+
+    if (!newMessage.trim() || isLoading) {
+      console.log('AIChat - Mensaje vacío o cargando, no se envía');
+      return;
+    }
+
+    // Crear el mensaje del usuario
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: newMessage.trim(),
+      timestamp: new Date(),
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setNewMessage('');
+    setIsLoading(true);
+
+    try {
+      console.log('AIChat - Enviando query:', newMessage.trim());
+      const response = await onSendMessage(newMessage.trim());
+      console.log('AIChat - Respuesta recibida:', response);
+      
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'bot',
+        content: response,
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, botMessage]);
+    } catch (error) {
+      console.error('AIChat - Error al enviar mensaje:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'bot',
+        content: 'Lo siento, ha ocurrido un error al procesar tu consulta. Por favor, intenta nuevamente.',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -42,286 +106,107 @@ const AIChat: React.FC<AIChatProps> = ({ toolId }) => {
     scrollToBottom();
   }, [messages]);
 
-  useEffect(() => {
-    const initialMessage = {
-      id: '1',
-      type: 'bot' as const,
-      content: `¡Hola! 👋 Soy tu asistente de IA para ${getToolName(
-        toolId
-      )}. ¿En qué puedo ayudarte hoy?`,
-      timestamp: new Date(),
-    };
-    setMessages([initialMessage]);
-  }, [toolId]);
-
-  const getToolName = (id: string) => {
-    const toolNames: { [key: string]: string } = {
-      posts: 'Creación de Posts',
-      stories: 'Creación de Historias',
-      'image-gen': 'Generación de Imágenes',
-      audience: 'Análisis de Audiencia',
-      trends: 'Detección de Tendencias',
-      competitor: 'Análisis de Competencia',
-      instagram: 'Gestión de Instagram',
-      facebook: 'Gestión de Facebook',
-      global: 'Publicación Global',
-    };
-    return toolNames[id] || id;
-  };
-
-  const getToolIcon = () => {
-    const icons: { [key: string]: React.ElementType } = {
-      posts: Sparkles,
-      stories: ImageIcon,
-      'image-gen': Wand2,
-      audience: User,
-      trends: Target,
-      competitor: Brain,
-      instagram: ImageIcon,
-      facebook: Target,
-      global: Rocket,
-    };
-    return icons[toolId] || Sparkles;
-  };
-
-  const ToolIcon = getToolIcon();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isThinking) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: input,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInput('');
-    setIsThinking(true);
-    setIsTyping(true);
-
-    setTimeout(() => {
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: `He analizado tu solicitud para ${getToolName(
-          toolId
-        )}: "${input}". Aquí está mi respuesta personalizada basada en las últimas tendencias y mejores prácticas de marketing digital.`,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, botMessage]);
-      setIsTyping(false);
-      setIsThinking(false);
-    }, Math.random() * 1000 + 1500);
-  };
-
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      {/* Encabezado del chat */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`p-6 ${
-          theme === 'dark'
-            ? 'bg-gradient-to-r from-gray-800 to-gray-900'
-            : 'bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600'
-        } border-b flex items-center space-x-4`}
+        className={`p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}
       >
-        <div className="flex items-center space-x-4 flex-1">
-          <motion.div
-            whileHover={{ scale: 1.1, rotate: 360 }}
-            transition={{ duration: 0.5 }}
-            className={`p-3 rounded-xl ${
-              theme === 'dark' 
-                ? 'bg-gradient-to-br from-purple-500 to-pink-600' 
-                : 'bg-white bg-opacity-20 backdrop-blur-lg'
-            } shadow-lg`}
-          >
-            <ToolIcon className="w-7 h-7 text-white" />
-          </motion.div>
-          <div>
-            <motion.h2 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="text-2xl font-bold text-white"
-            >
-              {getToolName(toolId)}
-            </motion.h2>
-            <motion.p 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-sm text-gray-200 font-medium"
-            >
-              Asistente IA Especializado
-            </motion.p>
-          </div>
-        </div>
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          <Bot className="w-6 h-6 text-blue-500" />
+          Asistente IA
+        </h2>
+        <p className={`mt-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+          {chatDescription}
+        </p>
       </motion.div>
 
-      {/* Messages */}
-      <div
-        className={`flex-1 overflow-y-auto p-6 space-y-6 ${
-          theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'
-        }`}
-      >
-        <AnimatePresence>
+      {/* Área de mensajes */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <AnimatePresence initial={false}>
           {messages.map((message) => (
             <motion.div
               key={message.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className={`flex ${
-                message.type === 'user' ? 'justify-end' : 'justify-start'
-              }`}
+              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`flex items-start space-x-3 max-w-[80%] ${
+                className={`max-w-[80%] rounded-lg p-3 ${
                   message.type === 'user'
-                    ? 'flex-row-reverse space-x-reverse'
-                    : ''
+                    ? `${theme === 'dark' ? 'bg-blue-600' : 'bg-blue-500'} text-white`
+                    : `${
+                        theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+                      } ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`
                 }`}
               >
-                <motion.div
-                  whileHover={{ scale: 1.1 }}
-                  className={`p-2.5 rounded-xl ${
-                    message.type === 'user'
-                      ? 'bg-gradient-to-br from-blue-500 to-blue-600'
-                      : theme === 'dark'
-                      ? 'bg-gradient-to-br from-purple-600 to-pink-600'
-                      : 'bg-gradient-to-br from-indigo-500 to-purple-600'
-                  } shadow-lg`}
-                >
-                  {message.type === 'user' ? (
-                    <User className="w-5 h-5 text-white" />
-                  ) : (
-                    <Bot className="w-5 h-5 text-white" />
+                <div className="flex items-start gap-2">
+                  {message.type === 'bot' && (
+                    <Bot className="w-5 h-5 mt-1 text-blue-500" />
                   )}
-                </motion.div>
-                <motion.div
-                  whileHover={{ scale: 1.01 }}
-                  className={`p-4 rounded-2xl ${
-                    message.type === 'user'
-                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
-                      : theme === 'dark'
-                      ? 'bg-gray-800 text-white border border-gray-700'
-                      : 'bg-white text-gray-800 shadow-md'
-                  } shadow-lg backdrop-blur-lg`}
-                >
-                  <p className="text-sm md:text-base leading-relaxed">
-                    {message.content}
-                  </p>
-                  <p className="text-xs opacity-70 mt-2 font-medium">
-                    {message.timestamp.toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
-                  </p>
-                </motion.div>
+                  <div className="flex-1">
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                    <span
+                      className={`text-xs ${
+                        message.type === 'user'
+                          ? 'text-blue-100'
+                          : theme === 'dark'
+                          ? 'text-gray-400'
+                          : 'text-gray-500'
+                      } block mt-1`}
+                    >
+                      {message.timestamp.toLocaleTimeString()}
+                    </span>
+                  </div>
+                  {message.type === 'user' && (
+                    <User className="w-5 h-5 mt-1 text-blue-100" />
+                  )}
+                </div>
               </div>
             </motion.div>
           ))}
         </AnimatePresence>
-        {isTyping && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center space-x-3"
-          >
-            <div
-              className={`p-2.5 rounded-xl ${
-                theme === 'dark'
-                  ? 'bg-gradient-to-br from-purple-600 to-pink-600'
-                  : 'bg-gradient-to-br from-indigo-500 to-purple-600'
-              } shadow-lg`}
-            >
-              <Bot className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex space-x-2 p-3 rounded-xl bg-gradient-to-r from-gray-500/10 to-gray-500/20 backdrop-blur-lg">
-              <motion.div
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.5, 1, 0.5]
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  delay: 0
-                }}
-                className="w-2.5 h-2.5 rounded-full bg-current"
-              />
-              <motion.div
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.5, 1, 0.5]
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  delay: 0.2
-                }}
-                className="w-2.5 h-2.5 rounded-full bg-current"
-              />
-              <motion.div
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.5, 1, 0.5]
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  delay: 0.4
-                }}
-                className="w-2.5 h-2.5 rounded-full bg-current"
-              />
-            </div>
-          </motion.div>
-        )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
+      {/* Área de entrada de texto */}
       <motion.form
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         onSubmit={handleSubmit}
-        className={`p-6 border-t ${
-          theme === 'dark'
-            ? 'bg-gray-800/95 border-gray-700'
-            : 'bg-white/95 border-gray-200'
-        } backdrop-blur-lg`}
+        className="p-4 border-t border-gray-200 dark:border-gray-700"
       >
-        <div className="flex space-x-4">
+        <div className="flex gap-2">
           <input
             type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={`Escribe tu mensaje para ${getToolName(toolId)}...`}
-            className={`flex-1 p-4 rounded-xl ${
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Escribe tu mensaje aquí..."
+            className={`flex-1 p-2 rounded-lg border ${
               theme === 'dark'
-                ? 'bg-gray-700 text-white placeholder-gray-400 border-gray-600'
-                : 'bg-gray-100 text-gray-900 placeholder-gray-500 border-gray-200'
-            } border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300`}
-            disabled={isThinking}
+                ? 'bg-gray-700 border-gray-600 text-white'
+                : 'bg-white border-gray-300 text-gray-900'
+            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+            disabled={isLoading}
           />
-          <Button
+          <button
             type="submit"
-            disabled={!input.trim() || isThinking}
-            className={`px-6 rounded-xl ${
-              theme === 'dark'
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
-                : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
-            } text-white font-medium transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100`}
+            disabled={isLoading || !newMessage.trim()}
+            className={`p-2 rounded-lg ${
+              isLoading || !newMessage.trim()
+                ? 'bg-gray-300 cursor-not-allowed'
+                : 'bg-blue-500 hover:bg-blue-600'
+            } text-white transition-colors duration-200`}
           >
-            {isThinking ? (
+            {isLoading ? (
               <Loader className="w-5 h-5 animate-spin" />
             ) : (
               <Send className="w-5 h-5" />
             )}
-          </Button>
+          </button>
         </div>
       </motion.form>
     </div>

@@ -1,11 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Star } from 'lucide-react';
-import { useTheme } from '../../contexts/ThemeContext';
 
 interface ToolCardProps {
   tool: {
     id: string;
+    chatId: number;
     name: string;
     icon: React.ElementType;
     description: string;
@@ -13,25 +13,24 @@ interface ToolCardProps {
     features: string[];
     comingSoon?: boolean;
   };
-  index: number;
-  onToolClick: (toolId: string) => void;
+  onClick: () => void;
+  theme: string;
 }
 
-const ToolCard: React.FC<ToolCardProps> = ({ tool, index, onToolClick }) => {
-  const { theme } = useTheme();
+const ToolCard: React.FC<ToolCardProps> = ({ tool, onClick, theme }) => {
   const Icon = tool.icon;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
+      transition={{ duration: 0.3 }}
       layout
       layoutId={tool.id}
       className={`p-6 rounded-xl ${
         theme === 'dark' ? 'bg-gray-800' : 'bg-white'
       } shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer relative overflow-hidden group`}
-      onClick={() => !tool.comingSoon && onToolClick(tool.id)}
+      onClick={() => !tool.comingSoon && onClick()}
     >
       {tool.comingSoon && (
         <div className="absolute top-3 right-3">
@@ -54,7 +53,9 @@ const ToolCard: React.FC<ToolCardProps> = ({ tool, index, onToolClick }) => {
         {tool.features.map((feature, idx) => (
           <div key={idx} className="flex items-center space-x-2">
             <Star className="w-4 h-4 text-yellow-500" />
-            <span className="text-sm">{feature}</span>
+            <span className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+              {feature}
+            </span>
           </div>
         ))}
       </div>

@@ -4,18 +4,15 @@ import type { Campaign } from '../types/campaign';
 import { useEmailCampaigns } from "../../hooks/useEmailCampaigns";
 import { CampaignMetricsModal } from './CampaignMetricsModal';
 import { motion, AnimatePresence } from 'framer-motion';
-
 export function CampaignList() {
   const { campaigns, loading, error } = useEmailCampaigns();
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [filter, setFilter] = useState<string>('all');
   const [isExpanded, setIsExpanded] = useState<string | null>(null);
-
   const filteredCampaigns = campaigns.filter(campaign => {
     if (filter === 'all') return true;
     return campaign.status === filter;
   });
-
   if (loading) {
     return (
       <div className="bg-white rounded-xl shadow-sm p-6">
@@ -29,7 +26,6 @@ export function CampaignList() {
       </div>
     );
   }
-
   if (error) {
     return (
       <div className="bg-white rounded-xl shadow-sm p-6">
@@ -37,7 +33,6 @@ export function CampaignList() {
       </div>
     );
   }
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -47,7 +42,6 @@ export function CampaignList() {
       }
     }
   };
-
   const itemVariants = {
     hidden: { opacity: 0, x: -20 },
     visible: {
@@ -56,7 +50,6 @@ export function CampaignList() {
       transition: { duration: 0.3 }
     }
   };
-
   return (
     <motion.div 
       initial="hidden"
@@ -113,7 +106,6 @@ export function CampaignList() {
     </motion.div>
   );
 }
-
 function CampaignCard({ 
   campaign, 
   isExpanded,
@@ -147,14 +139,11 @@ function CampaignCard({
       label: 'Fallida'
     }
   };
-
   const status = statusConfig[campaign.status];
-
   const handleDuplicate = (e: React.MouseEvent) => {
     e.stopPropagation();
     // Implementar lógica de duplicación
   };
-
   return (
     <motion.div 
       className="group hover:bg-gray-50 transition-all duration-300 cursor-pointer"
@@ -197,7 +186,6 @@ function CampaignCard({
             </motion.button>
           </div>
         </div>
-
         <AnimatePresence>
           {isExpanded && (
             <motion.div
@@ -243,7 +231,6 @@ function CampaignCard({
     </motion.div>
   );
 }
-
 function Stat({ 
   icon, 
   label, 

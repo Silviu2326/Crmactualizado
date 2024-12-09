@@ -28,29 +28,73 @@ const ReportesPage: React.FC = () => {
     estado: [],
   });
 
+  // Datos de ejemplo para reportes
+  const sampleReportes: Reporte[] = [
+    {
+      id: 1,
+      titulo: 'Reporte Mensual de Ingresos - Enero 2024',
+      fecha: '2024-01-31',
+      tipo: 'Mensual',
+      estado: 'Generado'
+    },
+    {
+      id: 2,
+      titulo: 'Reporte Trimestral Q4 2023',
+      fecha: '2023-12-31',
+      tipo: 'Trimestral',
+      estado: 'Generado'
+    },
+    {
+      id: 3,
+      titulo: 'Reporte Anual 2023',
+      fecha: '2023-12-31',
+      tipo: 'Anual',
+      estado: 'Generado'
+    },
+    {
+      id: 4,
+      titulo: 'Reporte Mensual de Ingresos - Febrero 2024',
+      fecha: '2024-02-29',
+      tipo: 'Mensual',
+      estado: 'En Proceso'
+    },
+    {
+      id: 5,
+      titulo: 'Reporte de Gastos Q1 2024',
+      fecha: '2024-03-31',
+      tipo: 'Trimestral',
+      estado: 'Pendiente'
+    },
+    {
+      id: 6,
+      titulo: 'Reporte de KPIs - Enero 2024',
+      fecha: '2024-01-31',
+      tipo: 'Mensual',
+      estado: 'Generado'
+    },
+    {
+      id: 7,
+      titulo: 'Reporte de Ventas por Región - Q4 2023',
+      fecha: '2023-12-31',
+      tipo: 'Trimestral',
+      estado: 'Generado'
+    },
+    {
+      id: 8,
+      titulo: 'Análisis de Rendimiento 2023',
+      fecha: '2023-12-31',
+      tipo: 'Anual',
+      estado: 'Generado'
+    }
+  ];
+
   useEffect(() => {
     const fetchReportes = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setError('No se encontró el token de autenticación');
-          setLoading(false);
-          return;
-        }
-
-        const response = await fetch('http://localhost:3000/api/reports', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Error al obtener los reportes');
-        }
-
-        const data = await response.json();
-        setReportesData(data);
+        setLoading(true);
+        // Simulamos una llamada a la API
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Simula delay de red
+        setReportesData(sampleReportes);
         setLoading(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error al cargar los reportes');
@@ -111,6 +155,38 @@ const ReportesPage: React.FC = () => {
         return 'bg-indigo-200 text-indigo-800';
       default:
         return 'bg-gray-200 text-gray-800';
+    }
+  };
+
+  const handleDownloadReport = async (reporteId: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/reports/${reporteId}/download`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al descargar el reporte');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reporte-${reporteId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error al descargar el reporte:', error);
+      // Aquí podrías mostrar un mensaje de error al usuario
     }
   };
 
@@ -221,10 +297,17 @@ const ReportesPage: React.FC = () => {
               </span>
             ),
             Acciones: (
-              <Button variant="normal" onClick={() => console.log(`Descargando reporte ${reporte.id}`)}>
-                <Download className="w-4 h-4 mr-2" />
-                Descargar
-              </Button>
+              <div className="flex space-x-2">
+                <Button
+                  variant="normal"
+                  onClick={() => handleDownloadReport(reporte.id)}
+                  className="px-2 py-1 text-sm flex items-center"
+                  disabled={reporte.estado !== 'Generado'}
+                >
+                  <Download className="w-4 h-4 mr-1" />
+                  Descargar PDF
+                </Button>
+              </div>
             )
           }))}
           variant={theme === 'dark' ? 'dark' : 'white'}

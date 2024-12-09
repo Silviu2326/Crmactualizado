@@ -1,46 +1,249 @@
 // src/components/Economics/Cashflow/GastoWidget.tsx
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Plus, Copy, Link, X, ChevronDown, ChevronRight, DollarSign } from 'lucide-react';
+import { Search, Filter, Plus, Edit2, Trash2, CheckCircle, DollarSign } from 'lucide-react';
 import Table from '../../Common/Table';
 import Button from '../../Common/Button';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import GastoPopup from '../../modals/GastoPopup';
 
 interface GastoWidgetProps { }
 
 interface Gasto {
   _id: string;
   entrenador: string;
-  concepto: string;        // Mapeado desde 'categoria'
+  importe?: number;
+  monto?: number;
+  moneda: string;
   fecha: string;
-  estado: string;          // Asignado como 'Pendiente'
-  importe: number;         // Mapeado desde 'monto' o 'importe'
-  tipoDeGasto: 'fijo' | 'variable'; // Asignado como 'fijo'
-  descripcion?: string;    // Opcional
-}
-
-interface Servicio {
-  id: number;
-  nombre: string;
-  planes: Plan[];
-}
-
-interface Plan {
-  id: number;
-  nombre: string;
+  descripcion: string;
+  categoria: string;
+  tipo: 'fijo' | 'variable';
+  estado?: string;
 }
 
 const GastoWidget: React.FC<GastoWidgetProps> = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedGastoId, setSelectedGastoId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [expandedServices, setExpandedServices] = useState<number[]>([]);
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const { theme } = useTheme();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const servicios: Servicio[] = [
+  // Función para obtener el token del localStorage
+  const getToken = (): string | null => {
+    return localStorage.getItem('token'); // Asegúrate de que la clave sea correcta
+  };
+
+  // Función para obtener el importe independientemente de si viene como monto o importe
+  const getImporte = (gasto: any): number => {
+    if (!gasto) return 0;
+    // Intentar obtener el valor de importe o monto, convertir a número y validar
+    const valor = gasto.importe !== undefined ? gasto.importe : gasto.monto;
+    const numeroValor = Number(valor);
+    return isNaN(numeroValor) ? 0 : numeroValor;
+  };
+
+  // Función para formatear el importe
+  const formatImporte = (importe: number | undefined, moneda: string): string => {
+    if (importe === undefined || isNaN(Number(importe))) {
+      return `0 ${moneda || 'EUR'}`;
+    }
+    try {
+      return `${Number(importe).toLocaleString('es-ES')} ${moneda || 'EUR'}`;
+    } catch (error) {
+      console.error('Error al formatear importe:', error);
+      return `${importe} ${moneda || 'EUR'}`;
+    }
+  };
+
+  // Función para obtener los gastos desde la API
+  const fetchGastos = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = getToken();
+      if (!token) {
+        throw new Error('Token no encontrado. Por favor, inicia sesión nuevamente.');
+      }
+
+      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al obtener los gastos');
+      }
+
+      const data = await response.json();
+      console.log('Datos recibidos del servidor:', data);
+
+      // Mapear los datos recibidos a la interfaz Gasto
+      const gastosFormateados = data.map((gasto: any) => {
+        const importeValor = getImporte(gasto);
+        console.log('Procesando gasto:', gasto, 'Importe calculado:', importeValor);
+        
+        return {
+          _id: gasto._id || '',
+          entrenador: gasto.entrenador || '',
+          importe: importeValor,
+          moneda: gasto.moneda || 'EUR',
+          fecha: gasto.fecha || new Date().toISOString(),
+          descripcion: gasto.descripcion || '',
+          categoria: gasto.categoria || 'Sin categoría',
+          tipo: gasto.tipo || 'fijo',
+          estado: gasto.estado || 'pendiente'
+        };
+      });
+
+      console.log('Gastos formateados:', gastosFormateados);
+      setGastos(gastosFormateados);
+    } catch (err) {
+      console.error('Error al obtener gastos:', err);
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGastos();
+  }, []);
+
+  // Función de búsqueda y filtrado
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleFilter = () => {
+    console.log('Filtrar gastos');
+    // Implementa aquí la lógica de filtrado avanzada si es necesario
+  };
+
+  const handleEdit = async (gasto: Gasto) => {
+    setSelectedGastoId(gasto._id);
+    setIsEditing(true);
+    setIsPopupOpen(true);
+  };
+
+  const handleDelete = async (gastoId: string) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este gasto?')) {
+      return;
+    }
+
+    try {
+      const token = getToken();
+      if (!token) {
+        throw new Error('Token no encontrado');
+      }
+
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos/${gastoId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar el gasto');
+      }
+
+      setGastos(gastos.filter(gasto => gasto._id !== gastoId));
+    } catch (error) {
+      console.error('Error al eliminar:', error);
+      setError(error instanceof Error ? error.message : 'Error al eliminar el gasto');
+    }
+  };
+
+  const handleConfirmPayment = async (gastoId: string) => {
+    try {
+      const token = getToken();
+      if (!token) {
+        throw new Error('Token no encontrado');
+      }
+
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos/${gastoId}/confirm`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ estado: 'pagado' }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al confirmar el pago');
+      }
+
+      // Actualizar el estado del gasto en la lista
+      setGastos(gastos.map(gasto => 
+        gasto._id === gastoId ? { ...gasto, estado: 'pagado' } : gasto
+      ));
+    } catch (error) {
+      console.error('Error al confirmar:', error);
+      setError(error instanceof Error ? error.message : 'Error al confirmar el pago');
+    }
+  };
+
+  const handleAddOrUpdateGasto = async (formData: any) => {
+    try {
+      const token = getToken();
+      if (!token) {
+        throw new Error('Token no encontrado');
+      }
+
+      const gastoData = {
+        monto: formData.importe,
+        moneda: formData.moneda,
+        descripcion: formData.descripcion,
+        categoria: formData.categoria,
+        tipo: formData.tipo,
+        estado: formData.estado || 'pendiente'
+      };
+
+      const url = isEditing && selectedGastoId
+        ? `https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos/${selectedGastoId}`
+        : 'https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos';
+
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(gastoData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error al ${isEditing ? 'actualizar' : 'crear'} el gasto`);
+      }
+
+      await fetchGastos();
+      handleClosePopup();
+    } catch (err) {
+      console.error('Error:', err);
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+    }
+  };
+
+  const handleClosePopup = () => {
+    setIsPopupOpen(false);
+    setSelectedGastoId(null);
+    setIsEditing(false);
+  };
+
+  const servicios: any[] = [
     {
       id: 1,
       nombre: 'Entrenamiento Personal',
@@ -67,98 +270,6 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
       ]
     },
   ];
-
-  // Función para obtener el token del localStorage
-  const getToken = (): string | null => {
-    return localStorage.getItem('token'); // Asegúrate de que la clave sea correcta
-  };
-
-  // Función para formatear el importe
-  const formatImporte = (importe: number): string => {
-    return importe.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
-  };
-
-  // Función para obtener los gastos desde la API
-  useEffect(() => {
-    const fetchGastos = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = getToken();
-        if (!token) {
-          throw new Error('Token no encontrado. Por favor, inicia sesión nuevamente.');
-        }
-
-        const response = await fetch('http://localhost:3000/api/gastos', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Error al obtener los gastos.');
-        }
-
-        const data: any[] = await response.json();
-        console.log('Datos obtenidos de la API:', data); // Log para depuración
-
-        // Mapear los datos recibidos a la interfaz Gasto
-        const dataMapped: Gasto[] = data.map((gasto: any) => ({
-          _id: gasto._id,
-          entrenador: gasto.entrenador,
-          concepto: gasto.categoria || 'N/A',        // Mapear 'categoria' a 'concepto'
-          fecha: gasto.fecha,
-          estado: 'Pendiente',                       // Asignar valor predeterminado
-          importe: gasto.monto !== undefined ? gasto.monto : (gasto.importe || 0), // Mapeo flexible
-          tipoDeGasto: 'fijo',                        // Asignar valor predeterminado
-          descripcion: gasto.descripcion,
-        }));
-
-        setGastos(dataMapped);
-      } catch (err: any) {
-        console.error('Error al obtener gastos:', err);
-        setError(err.message || 'Error desconocido.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchGastos();
-  }, []);
-
-  // Función de búsqueda y filtrado
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const handleFilter = () => {
-    console.log('Filtrar gastos');
-    // Implementa aquí la lógica de filtrado avanzada si es necesario
-  };
-
-  const handleAddGasto = () => {
-    console.log('Añadir nuevo gasto');
-    // Implementa aquí la lógica para añadir un nuevo gasto (e.g., abrir un formulario)
-  };
-
-  const handleCopyGasto = (id: string) => {
-    console.log(`Copiar gasto con ID: ${id}`);
-    // Implementa aquí la lógica para copiar el gasto (e.g., copiar al portapapeles)
-  };
-
-  const handleAsociarGasto = (id: string) => {
-    setSelectedGastoId(id);
-    setIsPopupOpen(true);
-  };
-
-  const handleClosePopup = () => {
-    setIsPopupOpen(false);
-    setSelectedGastoId(null);
-    setExpandedServices([]);
-  };
 
   const toggleServiceExpansion = (serviceId: number) => {
     setExpandedServices(prev =>
@@ -195,16 +306,16 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
   const filteredGastos = gastos.filter((gasto) => {
     console.log('Procesando gasto:', gasto); // Log para depuración
 
-    if (!gasto.concepto) {
-      console.warn('Gasto sin concepto:', gasto);
+    if (!gasto.categoria) {
+      console.warn('Gasto sin categoría:', gasto);
       return false;
     }
 
     const search = searchTerm.toLowerCase();
-    const conceptoMatch = gasto.concepto.toLowerCase().includes(search);
+    const categoriaMatch = gasto.categoria.toLowerCase().includes(search);
     const descripcionMatch = gasto.descripcion ? gasto.descripcion.toLowerCase().includes(search) : false;
 
-    return conceptoMatch || descripcionMatch;
+    return categoriaMatch || descripcionMatch;
   });
 
   return (
@@ -236,7 +347,7 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
           <Filter className="w-5 h-5 mr-2" />
           Filtrar
         </Button>
-        <Button variant="create" onClick={handleAddGasto} className="px-4 py-2">
+        <Button variant="create" onClick={() => setIsPopupOpen(true)} className="px-4 py-2">
           <Plus className="w-5 h-5 mr-2" />
           Añadir Gasto
         </Button>
@@ -248,56 +359,61 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
           <p className="text-red-500">{error}</p>
         ) : (
           <Table
-            headers={['Concepto', 'Descripción', 'Importe', 'Estado', 'Fecha', 'Tipo de Gasto', 'Acciones']}
-            data={filteredGastos.map(gasto => ({
-              Concepto: gasto.concepto,
-              Descripción: gasto.descripcion || 'N/A',
-              Importe: (
-                <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
-                  {formatImporte(gasto.importe)}
-                </span>
-              ),
-              Estado: (
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                  gasto.estado === 'Pagado' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'
-                }`}>
-                  {gasto.estado}
-                </span>
-              ),
-              Fecha: new Date(gasto.fecha).toLocaleDateString('es-ES'),
-              'Tipo de Gasto': (
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                  gasto.tipoDeGasto === 'fijo' ? 'bg-blue-200 text-blue-800' : 'bg-purple-200 text-purple-800'
-                }`}>
-                  {gasto.tipoDeGasto.charAt(0).toUpperCase() + gasto.tipoDeGasto.slice(1)}
-                </span>
-              ),
-              Acciones: (
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleCopyGasto(gasto._id)}
-                    className={`p-1 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} transition-colors duration-200`}
-                    title="Copiar gasto"
-                  >
-                    <Copy className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleAsociarGasto(gasto._id)}
-                    className={`p-1 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} transition-colors duration-200`}
-                    title="Asociar gasto"
-                  >
-                    <Link className="w-5 h-5" />
-                  </button>
-                </div>
-              ),
-            }))}
+            headers={['Fecha', 'Categoría', 'Descripción', 'Tipo', 'Importe', 'Estado', 'Acciones']}
+            data={filteredGastos.map(gasto => {
+              const importeValor = getImporte(gasto);
+              console.log('Renderizando gasto:', gasto, 'Importe calculado:', importeValor);
+              
+              return {
+                'Fecha': new Date(gasto.fecha).toLocaleDateString(),
+                'Categoría': gasto.categoria || 'Sin categoría',
+                'Descripción': gasto.descripcion || '-',
+                'Tipo': gasto.tipo || 'fijo',
+                'Importe': formatImporte(importeValor, gasto.moneda),
+                'Estado': (gasto.estado || 'pendiente').charAt(0).toUpperCase() + 
+                         (gasto.estado || 'pendiente').slice(1),
+                'Acciones': (
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleEdit(gasto)}
+                      className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                        theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
+                      }`}
+                      title="Modificar"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(gasto._id)}
+                      className={`p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors ${
+                        theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                      }`}
+                      title="Eliminar"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                    {(!gasto.estado || gasto.estado !== 'pagado') && (
+                      <button
+                        onClick={() => handleConfirmPayment(gasto._id)}
+                        className={`p-1.5 rounded-full hover:bg-green-100 dark:hover:bg-green-900 transition-colors ${
+                          theme === 'dark' ? 'text-green-400' : 'text-green-600'
+                        }`}
+                        title="Confirmar pago"
+                      >
+                        <CheckCircle size={16} />
+                      </button>
+                    )}
+                  </div>
+                )
+              };
+            })}
             variant={theme === 'dark' ? 'dark' : 'white'}
           />
         )}
       </div>
 
       <AnimatePresence>
-        {isPopupOpen && selectedGastoId && (
+        {isPopupOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -312,126 +428,19 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
               className={`${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} p-8 rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-y-auto`}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 text-transparent bg-clip-text">Asociar Gasto</h3>
-                <button onClick={handleClosePopup} className={`${theme === 'dark' ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'} transition-colors duration-200`}>
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <h4 className="text-xl font-semibold mb-4 bg-gradient-to-r from-green-400 to-blue-500 text-transparent bg-clip-text">Servicios</h4>
-                  <div className="space-y-4">
-                    {servicios.map((servicio) => (
-                      <motion.div
-                        key={servicio.id}
-                        className={`border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} rounded-lg p-4 transition-all duration-300 hover:shadow-md`}
-                        whileHover={{ scale: 1.02 }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <button
-                            className="flex items-center w-full text-left"
-                            onClick={() => toggleServiceExpansion(servicio.id)}
-                          >
-                            {expandedServices.includes(servicio.id) ? (
-                              <ChevronDown className="w-5 h-5 mr-2" />
-                            ) : (
-                              <ChevronRight className="w-5 h-5 mr-2" />
-                            )}
-                            <span className="font-medium">{servicio.nombre}</span>
-                          </button>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="normal"
-                              onClick={() => handleAsociar('Servicio', servicio.id, servicio.nombre)}
-                              className="text-sm py-1 px-3"
-                            >
-                              Asociar
-                            </Button>
-                            <Button
-                              variant="create"
-                              onClick={() => handleAddPlan(servicio.id)}
-                              className="text-sm py-1 px-2"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <AnimatePresence>
-                          {expandedServices.includes(servicio.id) && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="mt-4 ml-6 space-y-2"
-                            >
-                              {servicio.planes.map((plan) => (
-                                <motion.div
-                                  key={plan.id}
-                                  className="flex items-center justify-between p-2 rounded-md bg-opacity-50 hover:bg-opacity-100 transition-all duration-200"
-                                  whileHover={{ scale: 1.02 }}
-                                >
-                                  <span>{plan.nombre}</span>
-                                  <Button
-                                    variant="normal"
-                                    onClick={() => handleAsociar('Plan', plan.id, `${servicio.nombre} - ${plan.nombre}`)}
-                                    className="text-xs py-1 px-2"
-                                  >
-                                    Asociar
-                                  </Button>
-                                </motion.div>
-                              ))}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </motion.div>
-                    ))}
-                  </div>
-                  <Button
-                    variant="create"
-                    onClick={handleAddServicio}
-                    className="mt-4 w-full"
-                  >
-                    <Plus className="w-5 h-5 mr-2" />
-                    Añadir Servicio
-                  </Button>
-                </div>
-                <div>
-                  <h4 className="text-xl font-semibold mb-4 bg-gradient-to-r from-yellow-400 to-red-500 text-transparent bg-clip-text">Planes</h4>
-                  <div className="space-y-4">
-                    {servicios.flatMap((servicio) =>
-                      servicio.planes.map((plan) => (
-                        <motion.div
-                          key={plan.id}
-                          className={`border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} rounded-lg p-4 transition-all duration-300 hover:shadow-md`}
-                          whileHover={{ scale: 1.02 }}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{servicio.nombre}</span>
-                              <p className="font-medium">{plan.nombre}</p>
-                            </div>
-                            <Button
-                              variant="normal"
-                              onClick={() => handleAsociar('Plan', plan.id, `${servicio.nombre} - ${plan.nombre}`)}
-                              className="text-sm py-1 px-3"
-                            >
-                              Asociar
-                            </Button>
-                          </div>
-                        </motion.div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
+              <GastoPopup
+                isOpen={isPopupOpen}
+                onClose={handleClosePopup}
+                onSubmit={handleAddOrUpdateGasto}
+                initialData={isEditing ? gastos.find(g => g._id === selectedGastoId) : undefined}
+                isEditing={isEditing}
+              />
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
-
 };
 
 export default GastoWidget;

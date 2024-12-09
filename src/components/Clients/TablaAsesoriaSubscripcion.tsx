@@ -1,21 +1,41 @@
 // TablaAsesoriaSubscripcion.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Edit, Trash, ChevronRight, X, Plus } from 'lucide-react'; // Importar Plus para el botón de Payment Plan
 import TablaPlanesServicio from './TablaPlanesServicio';
 import NuevoPaymentPlanPopup from './NuevoPaymentPlanPopup'; // Importar el nuevo popup
 import type { ServicioAsesoriaSubscripcion } from '../types/servicios';
 
-interface Props {
-  datos: ServicioAsesoriaSubscripcion[];
+interface TablaAsesoriaSubscripcionProps {
+  datos: any[];
   isDarkMode: boolean;
+  onServiceUpdated: (servicio: any) => void;
+  onAddPaymentPlan: (servicioId: string, nuevoPlan: any) => void;
 }
 
-const TablaAsesoriaSubscripcion = ({ datos, isDarkMode }: Props) => {
+const TablaAsesoriaSubscripcion: React.FC<TablaAsesoriaSubscripcionProps> = ({
+  datos = [],
+  isDarkMode,
+  onServiceUpdated,
+  onAddPaymentPlan
+}) => {
+  console.log('TablaAsesoriaSubscripcion - Datos recibidos:', datos);
+  console.log('TablaAsesoriaSubscripcion - Cantidad de servicios:', datos.length);
+
   const [servicioExpandido, setServicioExpandido] = useState<string | null>(null);
   const [servicioEditando, setServicioEditando] = useState<ServicioAsesoriaSubscripcion | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    console.log('TablaAsesoriaSubscripcion - Datos actualizados:', datos);
+    // Mostrar la estructura de los planes para cada servicio
+    datos.forEach(servicio => {
+      console.log('Servicio:', servicio._id);
+      console.log('planDePago:', servicio.planDePago);
+      console.log('planesDePago:', servicio.planesDePago);
+    });
+  }, [datos]);
 
   const [formData, setFormData] = useState<{
     nombre: string;
@@ -32,6 +52,7 @@ const TablaAsesoriaSubscripcion = ({ datos, isDarkMode }: Props) => {
   const [servicioParaPaymentPlan, setServicioParaPaymentPlan] = useState<string | null>(null); // ID del servicio seleccionado
 
   const handleEditClick = (servicio: ServicioAsesoriaSubscripcion) => {
+    console.log('Editando servicio:', servicio);
     setServicioEditando(servicio);
     setFormData({
       nombre: servicio.nombre,
@@ -58,10 +79,9 @@ const TablaAsesoriaSubscripcion = ({ datos, isDarkMode }: Props) => {
     e.preventDefault();
     // Aquí debes implementar la lógica para actualizar el servicio, posiblemente una llamada a una API
     console.log('Actualizando servicio:', servicioEditando?._id, formData);
-    // Después de la actualización exitosa, puedes cerrar el modal y actualizar el estado si es necesario
+    onServiceUpdated({ ...servicioEditando, ...formData });
     setIsModalOpen(false);
     setServicioEditando(null);
-    // Implementa la actualización del estado local o vuelve a obtener los datos
   };
 
   // Función para abrir el Popup de Payment Plan
@@ -71,136 +91,138 @@ const TablaAsesoriaSubscripcion = ({ datos, isDarkMode }: Props) => {
   };
 
   // Función para manejar la adición de un nuevo Payment Plan
-  const handleAddPaymentPlan = (paymentPlan: PaymentPlanInput) => {
-    // Aquí debes implementar la lógica para agregar el Payment Plan al servicio
-    // Por ejemplo, una llamada a la API para actualizar el servicio con el nuevo Payment Plan
-    console.log('Agregando Payment Plan al servicio:', servicioParaPaymentPlan, paymentPlan);
-
-    // Simulación exitosa: Aquí deberías actualizar el estado o re-fetch los datos
-    // Por ejemplo:
-    // fetchServiciosPorTipo(tipoActual)
-
-    // Puedes llamar a una función prop para re-fetch los datos o actualizar localmente
+  const handleAddPaymentPlan = (nuevoPlan: any) => {
+    if (servicioParaPaymentPlan) {
+      onAddPaymentPlan(servicioParaPaymentPlan, nuevoPlan);
+      setIsNuevoPaymentPlanOpen(false);
+      setServicioParaPaymentPlan(null);
+    }
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className={`min-w-full divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+    <div className="w-full">
+      <table className={`min-w-full ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
         <thead>
-          <tr className={`${isDarkMode ? 'bg-gray-700' : 'bg-[#BFCEFF]'} `}>
-            <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-white' : 'text-black'}`}>
-              Nombre
-            </th>
-            <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-white' : 'text-black'}`}>
-              Descripción
-            </th>
-            <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider`}>
-              Servicios Adicionales
-            </th>
-            <th className={`px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider`}>
-              Acciones
-            </th>
+          <tr>
+            <th className="py-2">Nombre del Cliente</th>
+            <th className="py-2">Fecha de Creación</th>
+            <th className="py-2">Tipo de Servicio</th>
+            <th className="py-2">Servicios Adicionales</th>
+            <th className="py-2">Acciones</th>
           </tr>
         </thead>
-        <tbody className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-100'}`}>
-          {datos.map((servicio, index) => (
-            <React.Fragment key={servicio._id}>
-              <motion.tr
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-blue-50'} transition-colors duration-200`}
-              >
-                <td className="px-6 py-4">
-                  <motion.button
-                    onClick={() =>
-                      setServicioExpandido(servicioExpandido === servicio._id ? null : servicio._id)
-                    }
-                    className="flex items-center space-x-2 text-sm font-medium text-gray-200 dark:text-gray-900 group"
-                    whileHover={{ x: 5 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <motion.span
-                      animate={{
-                        rotate: servicioExpandido === servicio._id ? 90 : 0,
-                      }}
-                      className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}
-                    >
-                      <ChevronRight className="w-5 h-5" />
-                    </motion.span>
-                    <span className={`px-6 py-4 text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>
-                      {servicio.nombre}
-                    </span>
-                  </motion.button>
-                </td>
-                <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>
-                  {servicio.descripcion}
-                </td>
-                <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>
-                  {servicio.serviciosAdicionales.join(', ')}
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex space-x-3 items-center">
+        <tbody>
+          {datos && datos.length > 0 ? (
+            datos.map((servicio) => (
+              <React.Fragment key={servicio._id}>
+                <motion.tr
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05 }}
+                  className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-blue-50'} transition-colors duration-200`}
+                >
+                  <td className="px-6 py-4">
                     <motion.button
-                      whileHover={{ scale: 1.1 }}
+                      onClick={() =>
+                        setServicioExpandido(servicioExpandido === servicio._id ? null : servicio._id)
+                      }
+                      className="flex items-center space-x-2 text-sm font-medium text-gray-200 dark:text-gray-900 group"
+                      whileHover={{ x: 5 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => handleEditClick(servicio)}
-                      className="text-blue-400 hover:text-blue-300 transition-colors duration-150"
-                      aria-label={`Editar ${servicio.nombre}`}
                     >
-                      <Edit className="w-5 h-5" />
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => {
-                        // Implementar lógica para eliminar el servicio
-                        console.log('Eliminar servicio:', servicio._id);
-                      }}
-                      className="text-red-400 hover:text-red-300 transition-colors duration-150"
-                      aria-label={`Eliminar ${servicio.nombre}`}
-                    >
-                      <Trash className="w-5 h-5" />
-                    </motion.button>
-                    {/* Botón para agregar Payment Plan */}
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleAddPaymentPlanClick(servicio._id)}
-                      className="text-green-400 hover:text-green-300 transition-colors duration-150"
-                      aria-label={`Agregar Payment Plan a ${servicio.nombre}`}
-                    >
-                      <Plus className="w-5 h-5" />
-                    </motion.button>
-                  </div>
-                </td>
-              </motion.tr>
-              <AnimatePresence>
-                {servicioExpandido === servicio._id && (
-                  <motion.tr
-                    key={`expanded-${servicio._id}`}
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <td colSpan={4} className={`${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} border-t border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                      <motion.div
-                        initial={{ y: -20 }}
-                        animate={{ y: 0 }}
-                        className="p-4"
+                      <motion.span
+                        animate={{
+                          rotate: servicioExpandido === servicio._id ? 90 : 0,
+                        }}
+                        className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}
                       >
-                        <TablaPlanesServicio
-                          planes={servicio.planDePago || []}
-                          isDarkMode={isDarkMode}
-                        />
-                      </motion.div>
-                    </td>
-                  </motion.tr>
-                )}
-              </AnimatePresence>
-            </React.Fragment>
-          ))}
+                        <ChevronRight className="w-5 h-5" />
+                      </motion.span>
+                      <span className={`px-6 py-4 text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                        {servicio.nombre}
+                      </span>
+                    </motion.button>
+                  </td>
+                  <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                    {servicio.descripcion}
+                  </td>
+                  <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                    {servicio.serviciosAdicionales.join(', ')}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex space-x-3 items-center">
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => handleEditClick(servicio)}
+                        className="text-blue-400 hover:text-blue-300 transition-colors duration-150"
+                        aria-label={`Editar ${servicio.nombre}`}
+                      >
+                        <Edit className="w-5 h-5" />
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          // Implementar lógica para eliminar el servicio
+                          console.log('Eliminar servicio:', servicio._id);
+                        }}
+                        className="text-red-400 hover:text-red-300 transition-colors duration-150"
+                        aria-label={`Eliminar ${servicio.nombre}`}
+                      >
+                        <Trash className="w-5 h-5" />
+                      </motion.button>
+                      {/* Botón para agregar Payment Plan */}
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => handleAddPaymentPlanClick(servicio._id)}
+                        className="text-green-400 hover:text-green-300 transition-colors duration-150"
+                        aria-label={`Agregar Payment Plan a ${servicio.nombre}`}
+                      >
+                        <Plus className="w-5 h-5" />
+                      </motion.button>
+                    </div>
+                  </td>
+                </motion.tr>
+                <AnimatePresence>
+                  {servicioExpandido === servicio._id && (
+                    <motion.tr
+                      key={`expanded-${servicio._id}`}
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <td colSpan={4} className={`${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} border-t border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                        <motion.div
+                          initial={{ y: -20 }}
+                          animate={{ y: 0 }}
+                          className="p-4"
+                        >
+                          {console.log('Servicio expandido:', servicio)}
+                          {console.log('planDePago:', servicio.planDePago)}
+                          {console.log('planesDePago:', servicio.planesDePago)}
+                          <TablaPlanesServicio
+                            planes={Array.isArray(servicio.planesDePago) ? servicio.planesDePago : 
+                                   servicio.planDePago ? [servicio.planDePago] : []}
+                            isDarkMode={isDarkMode}
+                            servicioId={servicio._id}
+                          />
+                        </motion.div>
+                      </td>
+                    </motion.tr>
+                  )}
+                </AnimatePresence>
+              </React.Fragment>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={5} className="text-center py-4">
+                No hay servicios disponibles
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
 
@@ -301,7 +323,7 @@ const TablaAsesoriaSubscripcion = ({ datos, isDarkMode }: Props) => {
         }}
         onAdd={handleAddPaymentPlan}
         isDarkMode={isDarkMode}
-        servicioId={servicioParaPaymentPlan || ''}
+        servicioId={servicioParaPaymentPlan}
       />
     </div>
   );

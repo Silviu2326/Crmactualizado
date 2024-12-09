@@ -14,12 +14,21 @@ const PopupCrearPlanificacion: React.FC<PopupCrearPlanificacionProps> = ({
 }) => {
   const { theme } = useTheme();
 
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaInicio, setFechaInicio] = useState(formatDate(new Date()));
   const [meta, setMeta] = useState('');
+  const [otraMeta, setOtraMeta] = useState('');
   const [semanas, setSemanas] = useState(1);
   const [clienteId, setClienteId] = useState('');
+  const [tipo, setTipo] = useState('Planificacion');
 
   const [clientes, setClientes] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -34,7 +43,7 @@ const PopupCrearPlanificacion: React.FC<PopupCrearPlanificacionProps> = ({
           throw new Error('No se encontró el token de autenticación');
         }
 
-        const response = await fetch('http://localhost:3000/api/clientes', {
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -71,7 +80,7 @@ const PopupCrearPlanificacion: React.FC<PopupCrearPlanificacionProps> = ({
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch('http://localhost:3000/api/plannings', {
+      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,9 +90,10 @@ const PopupCrearPlanificacion: React.FC<PopupCrearPlanificacionProps> = ({
           nombre,
           descripcion,
           fechaInicio,
-          meta,
+          meta: meta === 'Otra' ? otraMeta : meta,
           semanas,
-          clienteId: clienteId || null, // Enviar null si no se selecciona un cliente
+          tipo,
+          clienteId: clienteId || null,
         }),
       });
 
@@ -171,15 +181,52 @@ const PopupCrearPlanificacion: React.FC<PopupCrearPlanificacionProps> = ({
           <label htmlFor="meta" className="block mb-1 font-medium">
             Meta
           </label>
-          <input
-            type="text"
+          <select
             id="meta"
             value={meta}
-            onChange={(e) => setMeta(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
+            onChange={(e) => {
+              setMeta(e.target.value);
+              if (e.target.value !== 'Otra') {
+                setOtraMeta('');
+              }
+            }}
+            className={`w-full px-3 py-2 border rounded ${
+              theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
+            }`}
             required
-          />
+          >
+            <option value="">Selecciona una meta</option>
+            <option value="Cardio">Cardio</option>
+            <option value="Fuerza">Fuerza</option>
+            <option value="Hipertrofia">Hipertrofia</option>
+            <option value="Resistencia">Resistencia</option>
+            <option value="Movilidad">Movilidad</option>
+            <option value="Coordinación">Coordinación</option>
+            <option value="Definición">Definición</option>
+            <option value="Recomposición">Recomposición</option>
+            <option value="Rehabilitación">Rehabilitación</option>
+            <option value="Otra">Otra</option>
+          </select>
         </div>
+
+        {meta === 'Otra' && (
+          <div className="mb-4">
+            <label htmlFor="otraMeta" className="block mb-1 font-medium">
+              Especifica la meta
+            </label>
+            <input
+              type="text"
+              id="otraMeta"
+              value={otraMeta}
+              onChange={(e) => setOtraMeta(e.target.value)}
+              className={`w-full px-3 py-2 border rounded ${
+                theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
+              }`}
+              required
+              placeholder="Describe la meta específica"
+            />
+          </div>
+        )}
 
         <div className="mb-4">
           <label htmlFor="semanas" className="block mb-1 font-medium">
@@ -197,23 +244,44 @@ const PopupCrearPlanificacion: React.FC<PopupCrearPlanificacionProps> = ({
         </div>
 
         <div className="mb-4">
-          <label htmlFor="clienteId" className="block mb-1 font-medium">
-            Cliente (opcional)
+          <label htmlFor="tipo" className="block mb-1 font-medium">
+            Tipo
           </label>
           <select
-            id="clienteId"
-            value={clienteId}
-            onChange={(e) => setClienteId(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
+            id="tipo"
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value)}
+            className={`w-full px-3 py-2 border rounded ${
+              theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
+            }`}
           >
-            <option value="">Sin cliente</option>
-            {clientes.map((cliente) => (
-              <option key={cliente._id} value={cliente._id}>
-                {cliente.nombre} ({cliente.email})
-              </option>
-            ))}
+            <option value="Planificacion">Planificación</option>
+            <option value="Plantilla">Plantilla</option>
           </select>
         </div>
+
+        {tipo === 'Planificacion' && (
+          <div className="mb-4">
+            <label htmlFor="clienteId" className="block mb-1 font-medium">
+              Cliente (opcional)
+            </label>
+            <select
+              id="clienteId"
+              value={clienteId}
+              onChange={(e) => setClienteId(e.target.value)}
+              className={`w-full px-3 py-2 border rounded ${
+                theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
+              }`}
+            >
+              <option value="">Sin cliente</option>
+              {clientes.map((cliente) => (
+                <option key={cliente._id} value={cliente._id}>
+                  {cliente.nombre} ({cliente.email})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="flex justify-end">
           <Button

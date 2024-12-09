@@ -17,40 +17,41 @@ interface Filters {
 }
 
 interface Cliente {
-  id: string;
+  _id: string;
   nombre: string;
   apellido: string;
-  estado: string;
-  telefono: string;
   email: string;
+  telefono: string;
+  estado: string;
   tag: string;
-  tipoPlan: string;
-  ultimoCheckIn: string;
-  clase: string;
-  cumplimiento: string;
-  alertas: string;
-  servicio: string;
-  direccion: string;
-  fechaInicio: string;
-  objetivo: string;
-  peso: string;
-  altura: string;
-  imc: number;
-  ultimaVisita: string;
-  proximaCita: string;
-  planActual: string;
-  progreso: number;
-  pagosAlDia: boolean;
+  fechaRegistro: string;
+  trainer: string;
+  planesDePago: {
+    nombre: string;
+    estado: string;
+  }[];
+  servicios: {
+    nombre: string;
+    estado: string;
+  }[];
+  ultimoCheckin: string;
+  alertas: {
+    tipo: string;
+    mensaje: string;
+    fecha: string;
+  }[];
+  transacciones: any[];
+  __v: number;
 }
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api';
 
 const ClientList: React.FC = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedClient, setSelectedClient] = useState<string | null>(null);
-  const [filterOpen, setFilterOpen] = useState(false);
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
+  const [openPanels, setOpenPanels] = useState<string[]>([]); // Nuevo estado para paneles abiertos
+  const [filterOpen, setFilterOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'simple'>('table');
   const [filters, setFilters] = useState<Filters>({
     estado: '',
@@ -75,7 +76,16 @@ const ClientList: React.FC = () => {
     setLoading(true);
     console.log('🚀 Realizando petición GET a la API para obtener clientes...');
     try {
-      const response = await axios.get(`${API_URL}/clientes`);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const response = await axios.get(`${API_URL}/clientes`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       setClientesData(response.data);
       console.log('🎉 Clientes obtenidos exitosamente:', response.data);
     } catch (error) {
@@ -87,9 +97,32 @@ const ClientList: React.FC = () => {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const handleRowClick = (clientId: string) => {
     console.log(`👆 Fila de cliente con ID ${clientId} clickeada.`);
-    setSelectedClient(selectedClient === clientId ? null : clientId);
+    setOpenPanels(prevOpenPanels => {
+      if (prevOpenPanels.includes(clientId)) {
+        return prevOpenPanels.filter(id => id !== clientId);
+      } else {
+        return [...prevOpenPanels, clientId];
+      }
+    });
+  };
+
+  const handlePanelClose = (clientId: string) => {
+    setOpenPanels(prevOpenPanels => 
+      prevOpenPanels.filter(id => id !== clientId)
+    );
   };
 
   const toggleClientSelection = (
@@ -110,11 +143,11 @@ const ClientList: React.FC = () => {
   };
 
   const toggleSelectAll = () => {
-    if (selectedClients.length === filteredClients.length) {
+    if (selectedClients.length === clientesData.length) {
       setSelectedClients([]);
       console.log('❌ Todos los clientes han sido deseleccionados.');
     } else {
-      const allClientIds = filteredClients.map((c) => c.id);
+      const allClientIds = clientesData.map((c) => c._id);
       setSelectedClients(allClientIds);
       console.log('✅ Todos los clientes han sido seleccionados.');
     }
@@ -140,213 +173,62 @@ const ClientList: React.FC = () => {
     );
   }, [searchTerm, filters, clientesData]);
 
-  const renderCell = (key: string, value: any) => {
+  const renderCell = (key: string, value: any, client: Cliente) => {
     switch (key) {
+      case 'nombre':
+        return `${client.nombre} ${client.apellido}`;
+      case 'email':
+        return value;
+      case 'telefono':
+        return value || '-';
       case 'estado':
         return (
-          <span
-            className={`px-3 py-1 rounded-full text-sm font-medium ${
-              value === 'Activo'
-                ? 'bg-green-100 text-green-800'
-                : 'bg-red-100 text-red-800'
-            }`}
-          >
-            {value}
+          <span className={`px-2 py-1 rounded-full text-xs ${
+            value === 'Activo' ? 'bg-green-500 text-white' :
+            value === 'Inactivo' ? 'bg-red-500 text-white' :
+            'bg-yellow-500 text-white'
+          }`}>
+            {value || 'Sin estado'}
           </span>
         );
       case 'tag':
         return (
-          <span
-            className={`px-3 py-1 rounded-full text-sm font-medium ${
-              value === 'Premium'
-                ? 'bg-purple-100 text-purple-800'
-                : 'bg-blue-100 text-blue-800'
-            }`}
-          >
-            {value}
+          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+            {value || 'Sin etiqueta'}
           </span>
         );
-      case 'cumplimiento':
-        return (
-          <div className="flex items-center space-x-2">
-            <div className="flex-grow bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-              <div
-                className={`h-2.5 rounded-full ${
-                  parseInt(value) > 80
-                    ? 'bg-green-600'
-                    : parseInt(value) > 50
-                    ? 'bg-yellow-600'
-                    : 'bg-red-600'
-                }`}
-                style={{ width: value }}
-              ></div>
-            </div>
-            <span className="text-sm font-medium">{value}%</span>
-          </div>
-        );
+      case 'planDePago':
+        return client.planesDePago[0]?.nombre || '-';
+      case 'servicio':
+        return client.servicios[0]?.nombre || '-';
+      case 'ultimoCheckin':
+        return formatDate(client.ultimoCheckin);
       case 'alertas':
-        return (
-          <div className="flex items-center space-x-1">
-            <AlertTriangle
-              className={`w-4 h-4 ${
-                parseInt(value) > 0 ? 'text-red-500' : 'text-green-500'
-              }`}
-            />
-            <span>{value}</span>
+        return client.alertas && client.alertas.length > 0 ? (
+          <div className="flex items-center text-yellow-500">
+            <AlertTriangle size={16} className="mr-1" />
+            {client.alertas.length}
           </div>
-        );
+        ) : '-';
+      case 'fechaRegistro':
+        return formatDate(value);
       default:
-        return value;
+        return value || '-';
     }
   };
 
-  const renderTableView = () => (
-    <div
-      className={`${
-        theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-      } rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl`}
-    >
-      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead className={theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'}>
-          <tr>
-            <th className="px-6 py-3 text-left">
-              <input
-                type="checkbox"
-                checked={selectedClients.length === filteredClients.length}
-                onChange={toggleSelectAll}
-                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-              />
-            </th>
-            {[
-              'Nombre',
-              'Apellido',
-              'Estado',
-              'Teléfono',
-              'Email',
-              'Tag',
-              'Tipo de Plan',
-              'Último Check-in',
-              'Clase',
-              '% Cumplimiento',
-              'Alertas',
-              'Servicio',
-            ].map((header) => (
-              <th
-                key={header}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-              >
-                {header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody
-          className={`divide-y divide-gray-200 dark:divide-gray-700 ${
-            theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-          }`}
-        >
-          {filteredClients.map((cliente, index) => (
-            <React.Fragment key={cliente.id}>
-              <motion.tr
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-                onClick={() => handleRowClick(cliente.id)}
-                className={`cursor-pointer group transition-all duration-300 ${
-                  selectedClient === cliente.id
-                    ? theme === 'dark'
-                      ? 'bg-blue-900/30 hover:bg-blue-900/40'
-                      : 'bg-blue-50 hover:bg-blue-100'
-                    : theme === 'dark'
-                    ? 'hover:bg-gray-800'
-                    : 'hover:bg-gray-50'
-                }`}
-              >
-                <td className="px-6 py-4">
-                  <input
-                    type="checkbox"
-                    checked={selectedClients.includes(cliente.id)}
-                    onChange={(e) =>
-                      toggleClientSelection(cliente.id, e as any)
-                    }
-                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                  />
-                </td>
-                {Object.entries({
-                  Nombre: cliente.nombre,
-                  Apellido: cliente.apellido,
-                  Estado: cliente.estado,
-                  Teléfono: cliente.telefono,
-                  Email: cliente.email,
-                  Tag: cliente.tag,
-                  'Tipo de Plan': cliente.tipoPlan,
-                  'Último Check-in': cliente.ultimoCheckIn,
-                  Clase: cliente.clase,
-                  '% Cumplimiento': cliente.cumplimiento,
-                  Alertas: cliente.alertas,
-                  Servicio: cliente.servicio,
-                }).map(([key, value]) => (
-                  <td
-                    key={key}
-                    className="px-6 py-4 whitespace-nowrap group-hover:transform group-hover:scale-[1.02] transition-all duration-300"
-                  >
-                    {renderCell(key.toLowerCase().replace(/ /g, ''), value)}
-                  </td>
-                ))}
-              </motion.tr>
-              {selectedClient === cliente.id && (
-                <tr>
-                  <td colSpan={13}>
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        initial={{ opacity: 0, height: 0, scale: 0.95 }}
-                        animate={{
-                          opacity: 1,
-                          height: 'auto',
-                          scale: 1,
-                          transition: {
-                            height: { duration: 0.4 },
-                            opacity: { duration: 0.3 },
-                            scale: {
-                              duration: 0.3,
-                              type: 'spring',
-                              stiffness: 300,
-                              damping: 25,
-                            },
-                          },
-                        }}
-                        exit={{
-                          opacity: 0,
-                          height: 0,
-                          scale: 0.95,
-                          transition: {
-                            height: { duration: 0.3 },
-                            opacity: { duration: 0.2 },
-                            scale: { duration: 0.2 },
-                          },
-                        }}
-                        className="overflow-hidden"
-                      >
-                        <PanelCliente
-                          clienteId={selectedClient}
-                          onClose={() => {
-                            console.log(
-                              `🔒 Cerrar detalles del cliente con ID ${selectedClient}.`
-                            );
-                            setSelectedClient(null);
-                          }}
-                        />
-                      </motion.div>
-                    </AnimatePresence>
-                  </td>
-                </tr>
-              )}
-            </React.Fragment>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+  const columns = [
+    'Nombre',
+    'Email',
+    'Teléfono',
+    'Estado',
+    'Tag',
+    'Plan de Pago',
+    'Servicio',
+    'Último Checkin',
+    'Alertas',
+    'Fecha Registro'
+  ];
 
   return (
     <div
@@ -369,10 +251,9 @@ const ClientList: React.FC = () => {
         onCreateClient={() => {
           console.log('🆕 Abriendo formulario para crear un nuevo cliente.');
           setShowCreateClient(true);
-        }} // Pasamos la función para abrir el formulario
+        }}
       />
 
-      {/* Mostrar CreateClient si showCreateClient es true */}
       {showCreateClient && (
         <div className="mt-6">
           <CreateClient
@@ -383,35 +264,140 @@ const ClientList: React.FC = () => {
             onClientCreated={() => {
               console.log('🎉 Cliente creado exitosamente.');
               setShowCreateClient(false);
-              fetchClientes(); // Actualizamos la lista de clientes
+              fetchClientes();
             }}
           />
         </div>
       )}
 
       {loading ? (
-        <div>⏳ Cargando...</div>
+        <div className="flex items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
       ) : error ? (
-        <div className="text-red-500">❗️ {error}</div>
+        <div className="text-red-500 p-4">{error}</div>
+      ) : viewMode === 'table' ? (
+        <div className="mt-6 overflow-x-auto">
+          <div className="inline-block min-w-full align-middle">
+            <div className={`overflow-hidden border border-opacity-20 ${
+              theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+            } rounded-lg shadow-sm`}>
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className={`${
+                  theme === 'dark' ? 'bg-gray-800' : 'bg-gray-50'
+                }`}>
+                  <tr>
+                    <th scope="col" className="relative px-6 py-3">
+                      <input
+                        type="checkbox"
+                        className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        checked={selectedClients.length === clientesData.length}
+                        onChange={toggleSelectAll}
+                      />
+                    </th>
+                    {columns.map((column) => (
+                      <th
+                        key={column}
+                        scope="col"
+                        className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`}
+                      >
+                        {column}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className={`divide-y ${
+                  theme === 'dark' ? 'divide-gray-700' : 'divide-gray-200'
+                }`}>
+                  {filteredClients.map((cliente) => (
+                    <React.Fragment key={cliente._id}>
+                      <motion.tr
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        whileHover={{ scale: 1.01 }}
+                        onClick={() => handleRowClick(cliente._id)}
+                        className={`cursor-pointer transition-colors duration-150 ${
+                          theme === 'dark'
+                            ? 'hover:bg-gray-700/50'
+                            : 'hover:bg-gray-50'
+                        } ${
+                          selectedClients.includes(cliente._id)
+                            ? theme === 'dark'
+                              ? 'bg-gray-700/30'
+                              : 'bg-blue-50'
+                            : ''
+                        }`}
+                      >
+                        <td className="relative px-6 py-4">
+                          <input
+                            type="checkbox"
+                            className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            checked={selectedClients.includes(cliente._id)}
+                            onChange={(e) =>
+                              toggleClientSelection(cliente._id, e)
+                            }
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </td>
+                        {Object.entries({
+                          nombre: cliente.nombre,
+                          email: cliente.email,
+                          telefono: cliente.telefono,
+                          estado: cliente.estado,
+                          tag: cliente.tag,
+                          planDePago: cliente.planesDePago[0]?.nombre,
+                          servicio: cliente.servicios[0]?.nombre,
+                          ultimoCheckin: cliente.ultimoCheckin,
+                          alertas: cliente.alertas,
+                          fechaRegistro: cliente.fechaRegistro
+                        }).map(([key, value]) => (
+                          <td
+                            key={key}
+                            className={`px-6 py-4 whitespace-nowrap ${
+                              theme === 'dark' ? 'text-gray-300' : 'text-gray-900'
+                            } ${
+                              key === 'nombre' ? 'font-medium' : 'text-sm'
+                            }`}
+                          >
+                            {renderCell(key, value, cliente)}
+                          </td>
+                        ))}
+                      </motion.tr>
+                      <AnimatePresence mode="wait">
+                        {openPanels.includes(cliente._id) && (
+                          <motion.tr
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className={`${
+                              theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+                            }`}
+                          >
+                            <td colSpan={columns.length + 1}>
+                              <PanelCliente
+                                clienteId={cliente._id}
+                                onClose={() => handlePanelClose(cliente._id)}
+                              />
+                            </td>
+                          </motion.tr>
+                        )}
+                      </AnimatePresence>
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          {viewMode === 'table' ? (
-            renderTableView()
-          ) : (
-            <ClientListViewSimple
-              clients={filteredClients}
-              onClientSelect={(id) => {
-                console.log(`👆 Seleccionando cliente con ID ${id}.`);
-                handleRowClick(id);
-              }}
-              selectedClients={selectedClients}
-              onClientCheckboxToggle={toggleClientSelection}
-            />
-          )}
-        </motion.div>
+        <ClientListViewSimple
+          clientes={filteredClients}
+          selectedClients={selectedClients}
+          toggleClientSelection={toggleClientSelection}
+        />
       )}
     </div>
   );

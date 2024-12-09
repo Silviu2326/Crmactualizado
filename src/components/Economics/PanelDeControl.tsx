@@ -26,7 +26,6 @@ import EconomicPage from '../../pages/EconomicsPage';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-// Definimos el tipo para el tema
 type Theme = 'light' | 'dark';
 
 interface PanelDeControlProps {
@@ -71,6 +70,13 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
     stripe: 850.50,
     cash: 325.25
   });
+  const [totalClientes, setTotalClientes] = useState(0);
+  const [clientesNuevos, setClientesNuevos] = useState(0);
+  const [ingresoTotal, setIngresoTotal] = useState(0);
+  const [ingresoMensual, setIngresoMensual] = useState(0);
+  const [gastoMensual, setGastoMensual] = useState(0);
+  const [proyeccionMensual, setProyeccionMensual] = useState(0);
+
   const handleRemove = () => {
     // In a real app, you might want to show a confirmation dialog
     console.log('Widget removed');
@@ -98,135 +104,144 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
   };
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchClientes = async () => {
       try {
-        // Obtener gastos mensuales
-        const gastosResponse = await fetch('http://localhost:3001/api/gastos/mensual');
-        if (!gastosResponse.ok) {
-          throw new Error('Error al obtener gastos');
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.error('No se encontró el token');
+          return;
         }
-        const gastosData = await gastosResponse.json();
-        const totalGastos = gastosData.total || 0;
-        setGastoMensual(totalGastos);
 
-        // Obtener ingresos mensuales
-        const ingresosResponse = await fetch('http://localhost:3001/api/ingresos/mensual');
-        if (!ingresosResponse.ok) {
-          throw new Error('Error al obtener ingresos');
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al obtener los clientes');
         }
-        const ingresosData = await ingresosResponse.json();
-        const totalIngresos = ingresosData.total || 0;
-        setIngresoMensual(totalIngresos);
 
-        // Calcular proyección (Ingresos - Gastos)
-        setProyeccionMensual(totalIngresos - totalGastos);
+        const clientes = await response.json();
+        
+        // Total de clientes
+        setTotalClientes(clientes.length);
 
-        // Obtener documentos
-        const documentosResponse = await fetch('http://localhost:3001/api/documentos');
-        if (!documentosResponse.ok) {
-          throw new Error('Error al obtener documentos');
-        }
-        const documentosData = await documentosResponse.json();
-        setDocumentos(documentosData);
+        // Clientes nuevos del mes actual
+        const ahora = new Date();
+        const primerDiaMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+        const clientesDelMes = clientes.filter((cliente: any) => {
+          const fechaRegistro = new Date(cliente.fechaRegistro);
+          return fechaRegistro >= primerDiaMes;
+        });
 
-        // Obtener facturas
-        const facturasResponse = await fetch('http://localhost:3001/api/facturas');
-        if (!facturasResponse.ok) {
-          throw new Error('Error al obtener facturas');
-        }
-        const facturasData = await facturasResponse.json();
-        setFacturas(facturasData);
-
-        // Obtener bonos
-        const bonosResponse = await fetch('http://localhost:3001/api/bonos');
-        if (!bonosResponse.ok) {
-          throw new Error('Error al obtener bonos');
-        }
-        const bonosData = await bonosResponse.json();
-        setBonos(bonosData);
-
-        // Obtener servicios
-        const serviciosResponse = await fetch('http://localhost:3001/api/servicios');
-        if (!serviciosResponse.ok) {
-          throw new Error('Error al obtener servicios');
-        }
-        const serviciosData = await serviciosResponse.json();
-        setServicios(serviciosData);
+        setClientesNuevos(clientesDelMes.length);
       } catch (error) {
-        console.error('Error al obtener datos:', error);
+        console.error('Error al obtener los clientes:', error);
       }
     };
 
-    fetchData();
+    fetchClientes();
   }, []);
 
-  const handleRemoveDocumento = async (id: number) => {
-    try {
-      const response = await fetch(`http://localhost:3001/api/documentos/${id}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Error al eliminar documento');
+  useEffect(() => {
+    const fetchIngresos = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.error('No se encontró el token');
+          return;
+        }
+
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al obtener los ingresos');
+        }
+
+        const ingresos = await response.json();
+        
+        // Calcular ingreso total
+        const total = ingresos.reduce((sum: number, ingreso: any) => {
+          return sum + (ingreso.monto || ingreso.importe || 0);
+        }, 0);
+        setIngresoTotal(total);
+
+        // Calcular ingreso mensual
+        const ahora = new Date();
+        const primerDiaMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+        const ingresosMes = ingresos.filter((ingreso: any) => {
+          const fechaIngreso = new Date(ingreso.fecha);
+          return fechaIngreso >= primerDiaMes;
+        });
+
+        const totalMes = ingresosMes.reduce((sum: number, ingreso: any) => {
+          return sum + (ingreso.monto || ingreso.importe || 0);
+        }, 0);
+        setIngresoMensual(totalMes);
+
+      } catch (error) {
+        console.error('Error al obtener los ingresos:', error);
       }
+    };
 
-      // Actualizar la lista de documentos después de eliminar
-      setDocumentos(documentos.filter(doc => doc.id !== id));
-    } catch (error) {
-      console.error('Error al eliminar documento:', error);
-    }
-  };
+    fetchIngresos();
+  }, []);
 
-  const handleRemoveFactura = async (id: number) => {
-    try {
-      const response = await fetch(`http://localhost:3001/api/facturas/${id}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Error al eliminar factura');
+  useEffect(() => {
+    const fetchGastos = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.error('No se encontró el token');
+          return;
+        }
+
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al obtener los gastos');
+        }
+
+        const gastos = await response.json();
+        
+        // Calcular gastos del mes actual
+        const ahora = new Date();
+        const primerDiaMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+        const gastosMes = gastos.filter((gasto: any) => {
+          const fechaGasto = new Date(gasto.fecha);
+          return fechaGasto >= primerDiaMes && fechaGasto <= ahora;
+        });
+
+        const totalGastosMes = gastosMes.reduce((sum: number, gasto: any) => {
+          return sum + (gasto.monto || gasto.importe || 0);
+        }, 0);
+
+        setGastoMensual(totalGastosMes);
+
+      } catch (error) {
+        console.error('Error al obtener los gastos:', error);
       }
+    };
 
-      // Actualizar la lista de facturas después de eliminar
-      setFacturas(facturas.filter(factura => factura.id !== id));
-    } catch (error) {
-      console.error('Error al eliminar factura:', error);
-    }
-  };
+    fetchGastos();
+  }, []);
 
-  const handleRemoveBono = async (id: number) => {
-    try {
-      const response = await fetch(`http://localhost:3001/api/bonos/${id}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Error al eliminar bono');
-      }
-
-      // Actualizar la lista de bonos después de eliminar
-      setBonos(bonos.filter(bono => bono.id !== id));
-    } catch (error) {
-      console.error('Error al eliminar bono:', error);
-    }
-  };
-
-  const handleRemoveServicio = async (id: number) => {
-    try {
-      const response = await fetch(`http://localhost:3001/api/servicios/${id}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Error al eliminar servicio');
-      }
-
-      // Actualizar la lista de servicios después de eliminar
-      setServicios(servicios.filter(servicio => servicio.id !== id));
-    } catch (error) {
-      console.error('Error al eliminar servicio:', error);
-    }
-  };
+  useEffect(() => {
+    const proyeccion = ingresoMensual - gastoMensual;
+    setProyeccionMensual(proyeccion);
+  }, [ingresoMensual, gastoMensual]);
 
   function generateInitialLayout() {
     return [
@@ -298,6 +313,7 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
         </div>
       </div>
 
+
       <ResponsiveGridLayout
   className="layout"
   layouts={{ lg: layout }}
@@ -313,9 +329,9 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
         <div key="proyeccionMes">
           <SmallWidget 
             title="Proyección del Mes" 
-            value={`$${proyeccionMensual.toFixed(2)}`} 
+            value={`$${Math.abs(proyeccionMensual).toFixed(2)}`}
             icon={TrendingUp} 
-            subtitle={proyeccionMensual >= 0 ? "Balance positivo" : "Balance negativo"} 
+            subtitle={`${proyeccionMensual >= 0 ? 'Ganancia' : 'Pérdida'} proyectada`}
           />
         </div>
         <div key="ingresoMensual">
@@ -323,7 +339,7 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
             title="Ingreso Mensual" 
             value={`$${ingresoMensual.toFixed(2)}`} 
             icon={DollarSign} 
-            subtitle="Ingreso mensual actual" 
+            subtitle={`Ingreso en ${new Date().toLocaleString('es-ES', { month: 'long' })}`} 
           />
         </div>
         <div key="gastoMensual">
@@ -331,23 +347,38 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
             title="Gasto Mensual" 
             value={`$${gastoMensual.toFixed(2)}`} 
             icon={DollarSign} 
-            subtitle="Gasto mensual" 
+            subtitle={`Gastos en ${new Date().toLocaleString('es-ES', { month: 'long' })}`} 
           />
         </div>
         <div key="planesVendidos">
           <SmallWidget title="Planes Vendidos" value="0" icon={FileText} subtitle="Total planes vendidos" />
         </div>
         <div key="clientesActuales">
-          <SmallWidget title="Clientes Actuales" value="0" icon={Users} subtitle="Total clientes actuales" />
+        <SmallWidget
+          title="Clientes Actuales"
+          value={totalClientes.toString()}
+          icon={Users}
+          subtitle="Total clientes actuales"
+        />
         </div>
         <div key="ingresosTotales">
-          <SmallWidget title="Ingreso Total" value="$0.00" icon={DollarSign} subtitle="Ingresos historico en la plataforma" />
+          <SmallWidget 
+            title="Ingreso Total" 
+            value={`$${ingresoTotal.toFixed(2)}`} 
+            icon={DollarSign} 
+            subtitle="Ingresos históricos en la plataforma" 
+          />
         </div>
         <div key="margenGanancia">
           <SmallWidget title="Margen de Ganancia" value="0.00%" icon={PieChart} subtitle="Margen de ganancia" />
         </div>
         <div key="clientesNuevos">
-          <SmallWidget title="Clientes Nuevos" value="0" icon={UserPlus} subtitle="Clientes nuevos" />
+        <SmallWidget
+          title="Clientes Nuevos"
+          value={clientesNuevos.toString()}
+          icon={UserPlus}
+          subtitle={`Clientes nuevos en ${new Date().toLocaleString('es-ES', { month: 'long' })}`}
+        />
         </div>
 
         <div key="gastoWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
@@ -360,10 +391,7 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
         </div>
         <div key="alertasWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
           <AlertasWidget
-            alertas={[
-              { id: 1, mensaje: "Gasto elevado en marketing este mes", tipo: "warning" },
-              { id: 2, mensaje: "Ingresos por debajo del objetivo trimestral", tipo: "error" },
-            ]}
+　　 　 　 　
             isEditMode={isEditMode}
             onRemove={() => {}}
           />
@@ -403,6 +431,7 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
         </div>
         <div key="serviciosWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
           <ServiciosWidget
+          
             servicios={servicios}
             isEditMode={isEditMode}
             onRemove={handleRemoveServicio}
@@ -411,6 +440,7 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
         </div>
         <div key="bonosWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
           <BonosWidget
+           
             bonos={bonos}
             isEditMode={isEditMode}
             onRemove={handleRemoveBono}

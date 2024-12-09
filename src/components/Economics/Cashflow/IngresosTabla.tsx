@@ -1,14 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import Table from '../../Common/Table';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, Plus, Edit2, Trash2, CheckCircle } from 'lucide-react';
 import Button from '../../Common/Button';
+import NuevoIngresoPopup from './NuevoIngresoPopup';
+import FiltroIngresosPopup from './FiltroIngresosPopup';
+
+interface Cliente {
+  _id: string;
+  nombre: string;
+  email: string;
+}
+
+interface PlanDePago {
+  _id: string;
+  nombre: string;
+  precio: number;
+}
 
 interface Ingreso {
   _id: string;
   entrenador: string;
+  cliente: Cliente;
+  planDePago: PlanDePago;
   monto: number;
   moneda: string;
+  estado: string;
+  metodoPago: string;
   fecha: string;
   descripcion: string;
 }
@@ -19,6 +37,11 @@ const IngresosTabla: React.FC = () => {
   const [ingresos, setIngresos] = useState<Ingreso[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [selectedIngreso, setSelectedIngreso] = useState<Ingreso | null>(null);
+  const [activeFilters, setActiveFilters] = useState<any>(null);
 
   const getToken = () => localStorage.getItem('token');
 
@@ -33,7 +56,7 @@ const IngresosTabla: React.FC = () => {
         }
 
         console.log('Iniciando petición a la API de ingresos...');
-        const response = await fetch('http://localhost:3000/api/ingresos', {
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -53,8 +76,12 @@ const IngresosTabla: React.FC = () => {
           console.log(`Ingreso ${index + 1}:`, {
             id: ingreso._id,
             entrenador: ingreso.entrenador,
+            cliente: ingreso.cliente,
+            planDePago: ingreso.planDePago,
             monto: ingreso.monto,
             moneda: ingreso.moneda,
+            estado: ingreso.estado,
+            metodoPago: ingreso.metodoPago,
             fecha: ingreso.fecha,
             descripcion: ingreso.descripcion
           });
@@ -78,15 +105,138 @@ const IngresosTabla: React.FC = () => {
   };
 
   const handleFilter = () => {
-    // Implementar lógica de filtrado
-    console.log('Filtrar ingresos');
+    setShowFilterModal(true);
   };
 
-  const filteredIngresos = ingresos.filter(ingreso =>
-    ingreso.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ingreso.moneda.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ingreso.monto.toString().includes(searchTerm)
-  );
+  const handleApplyFilters = (filters: any) => {
+    setActiveFilters(filters);
+  };
+
+  const handleAdd = () => {
+    setShowAddModal(true);
+  };
+
+  const handleAddSubmit = async (formData: any) => {
+    try {
+      const token = getToken();
+      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al crear el ingreso');
+      }
+
+      const newIngreso = await response.json();
+      setIngresos([...ingresos, newIngreso]);
+      setShowAddModal(false);
+    } catch (error) {
+      console.error('Error al crear ingreso:', error);
+    }
+  };
+
+  const handleEdit = (ingreso: Ingreso) => {
+    setSelectedIngreso(ingreso);
+    setShowEditModal(true);
+  };
+
+  const handleDelete = async (ingresoId: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este ingreso?')) {
+      try {
+        const token = getToken();
+        const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos/${ingresoId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al eliminar el ingreso');
+        }
+
+        setIngresos(ingresos.filter(ing => ing._id !== ingresoId));
+      } catch (error) {
+        console.error('Error al eliminar:', error);
+      }
+    }
+  };
+
+  const handleConfirm = async (ingresoId: string) => {
+    try {
+      const token = getToken();
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos/${ingresoId}/confirm`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ estado: 'pagado' }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al confirmar el pago');
+      }
+
+      // Actualizar el estado del ingreso en la lista
+      setIngresos(ingresos.map(ing => 
+        ing._id === ingresoId ? { ...ing, estado: 'pagado' } : ing
+      ));
+    } catch (error) {
+      console.error('Error al confirmar:', error);
+    }
+  };
+
+  const filteredIngresos = ingresos.filter(ingreso => {
+    // First apply search term filter
+    const matchesSearch = 
+      ingreso.descripcion?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ingreso.moneda?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ingreso.monto?.toString().includes(searchTerm) ||
+      ingreso.cliente?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ingreso.planDePago?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ingreso.estado?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ingreso.metodoPago?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // If there are no active filters or search term doesn't match, return early
+    if (!activeFilters || !matchesSearch) return matchesSearch;
+
+    // Then apply active filters
+    const {
+      fechaInicio,
+      fechaFin,
+      estado,
+      planDePago,
+      metodoPago,
+      montoMinimo,
+      montoMaximo
+    } = activeFilters;
+
+    // Date filter
+    const ingresoDate = new Date(ingreso.fecha);
+    if (fechaInicio && new Date(fechaInicio) > ingresoDate) return false;
+    if (fechaFin && new Date(fechaFin) < ingresoDate) return false;
+
+    // Estado filter
+    if (estado && ingreso.estado !== estado) return false;
+
+    // Plan de pago filter
+    if (planDePago && ingreso.planDePago?._id !== planDePago) return false;
+
+    // Método de pago filter
+    if (metodoPago && ingreso.metodoPago !== metodoPago) return false;
+
+    // Monto filter
+    if (montoMinimo && ingreso.monto < parseFloat(montoMinimo)) return false;
+    if (montoMaximo && ingreso.monto > parseFloat(montoMaximo)) return false;
+
+    return true;
+  });
 
   if (loading) {
     return <div className="text-center py-4">Cargando ingresos...</div>;
@@ -117,16 +267,81 @@ const IngresosTabla: React.FC = () => {
           <Filter className="w-4 h-4" />
         </Button>
       </div>
+
       <Table
-        headers={['Fecha', 'Descripción', 'Monto', 'Moneda']}
+        headers={['Fecha', 'Descripción', 'Importe', 'Estado de pago', 'Cliente', 'Plan', 'Método de pago', 'Acciones']}
         data={filteredIngresos.map(ingreso => ({
           Fecha: new Date(ingreso.fecha).toLocaleDateString(),
-          Descripción: ingreso.descripcion,
-          Monto: ingreso.monto.toLocaleString(),
-          Moneda: ingreso.moneda
+          Descripción: ingreso.descripcion || 'Sin descripción',
+          Importe: `${ingreso.monto.toLocaleString()} ${ingreso.moneda}`,
+          'Estado de pago': (ingreso.estado || 'pendiente').charAt(0).toUpperCase() + 
+                          (ingreso.estado || 'pendiente').slice(1),
+          Cliente: ingreso.cliente?.nombre || 'Cliente no especificado',
+          Plan: ingreso.planDePago?.nombre || 'Plan no especificado',
+          'Método de pago': (ingreso.metodoPago || 'No especificado').charAt(0).toUpperCase() + 
+                          (ingreso.metodoPago || 'No especificado').slice(1),
+          Acciones: (
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => handleEdit(ingreso)}
+                className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                  theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
+                }`}
+                title="Modificar"
+              >
+                <Edit2 size={16} />
+              </button>
+              <button
+                onClick={() => handleDelete(ingreso._id)}
+                className={`p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors ${
+                  theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                }`}
+                title="Eliminar"
+              >
+                <Trash2 size={16} />
+              </button>
+              {(!ingreso.metodoPago || ingreso.metodoPago.toLowerCase() === 'efectivo') && 
+               (!ingreso.estado || ingreso.estado !== 'pagado') && (
+                <button
+                  onClick={() => handleConfirm(ingreso._id)}
+                  className={`p-1.5 rounded-full hover:bg-green-100 dark:hover:bg-green-900 transition-colors ${
+                    theme === 'dark' ? 'text-green-400' : 'text-green-600'
+                  }`}
+                  title="Confirmar pago"
+                >
+                  <CheckCircle size={16} />
+                </button>
+              )}
+            </div>
+          )
         }))}
         variant={theme === 'dark' ? 'dark' : 'white'}
       />
+
+      <div className="mt-4">
+        <Button
+          variant="primary"
+          onClick={handleAdd}
+          className="flex items-center space-x-2"
+        >
+          <Plus size={16} />
+          <span>Añadir Ingreso</span>
+        </Button>
+      </div>
+
+      {showAddModal && (
+        <NuevoIngresoPopup
+          onClose={() => setShowAddModal(false)}
+          onSubmit={handleAddSubmit}
+        />
+      )}
+
+      {showFilterModal && (
+        <FiltroIngresosPopup
+          onClose={() => setShowFilterModal(false)}
+          onApplyFilters={handleApplyFilters}
+        />
+      )}
     </div>
   );
 };

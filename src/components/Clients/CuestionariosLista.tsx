@@ -99,7 +99,7 @@ const CuestionariosLista: React.FC = () => {
     console.log('[fetchCuestionarios] Token encontrado:', token);
 
     try {
-      const response = await fetch('http://localhost:3000/api/cuestionarios/', {
+      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/cuestionarios/', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -159,7 +159,7 @@ const CuestionariosLista: React.FC = () => {
     console.log('[handleSaveCuestionario] Token encontrado:', token);
 
     try {
-      const response = await fetch('http://localhost:3000/api/cuestionarios/', {
+      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/cuestionarios/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -217,7 +217,7 @@ const CuestionariosLista: React.FC = () => {
     console.log('[handleDeleteCuestionario] Token encontrado:', token);
 
     try {
-      const response = await fetch(`http://localhost:3000/api/cuestionarios/${selectedCuestionario.id}`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/cuestionarios/${selectedCuestionario.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -262,7 +262,7 @@ const CuestionariosLista: React.FC = () => {
     console.log('[handleUpdateCuestionario] Token encontrado:', token);
 
     try {
-      const response = await fetch(`http://localhost:3000/api/cuestionarios/${updatedCuestionario._id}`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/cuestionarios/${updatedCuestionario._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -400,6 +400,7 @@ const CuestionariosLista: React.FC = () => {
         {selectedCuestionario && (
           <VistaCuestionario
             cuestionario={selectedCuestionario}
+            cuestionarioId={selectedCuestionario.id}
             onClose={() => {
               console.log('[VistaCuestionario] Cerrar vista del cuestionario.');
               setSelectedCuestionario(null);

@@ -5,6 +5,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { Planning, WeekPlan, DayPlan, Session } from '../types/planning';
 import { defaultPlanning } from '../data/defaultWorkout';
+import { planningService } from '../services/planningService';
 import EditPlanningPageCalendario from '../components/Planning/EditPlanningPageCalendario';
 import VistaSimplificada from '../components/Planning/VistaSimplificada';
 import VistaCompleja from '../components/Planning/VistaCompleja';
@@ -65,45 +66,42 @@ const EditPlanningPage: React.FC = () => {
 
   const isHomeRoute = location.pathname === '/';
 
-  useEffect(() => {
+  const fetchPlanning = async () => {
     if (!id) return;
-
-    const fetchPlanning = async () => {
-      try {
-        // Obtener el token JWT
-        const token = localStorage.getItem('token'); // O usa tu método para obtener el token
-
-        if (!token) {
-          throw new Error('No se encontró el token de autenticación');
-        }
-
-        const response = await fetch(`http://localhost:3000/api/plannings/${id}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`, // Incluir el token en los headers
-          },
-        });
-
-        if (!response.ok) {
-          // Manejar errores HTTP
-          const errorData = await response.json();
-          throw new Error(errorData.mensaje || 'Error al obtener la planificación');
-        }
-
-        const data: Planning = await response.json();
-        console.log('Datos recibidos del backend:', data); // <-- Log de datos recibidos
-
-        setPlanning(data);
-        setPlanSemanal(data.plan[semanaActual - 1].days); // Pasar solo 'days'
-      } catch (err: any) {
-        console.error('Error al obtener la planificación:', err); // <-- Log de errores
-        setError(err.message);
-      } finally {
-        setLoading(false);
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
       }
-    };
 
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.mensaje || 'Error al obtener la planificación');
+      }
+
+      const data: Planning = await response.json();
+      console.log('Datos recibidos del backend:', data);
+
+      setPlanning(data);
+      setPlanSemanal(data.plan[semanaActual - 1].days);
+    } catch (err: any) {
+      console.error('Error al obtener la planificación:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchPlanning();
   }, [id, semanaActual]);
 
@@ -113,100 +111,30 @@ const EditPlanningPage: React.FC = () => {
     }
   }, [semanaActual, planning]);
 
-  const handleAddWeek = () => {
+  const handleAddWeek = async () => {
     if (!planning) return;
 
-    const newWeekNumber = planning.semanas + 1;
-    const lastWeek = planning.plan[planning.plan.length - 1];
-    const lastStartDate = new Date(lastWeek.startDate);
-    const newStartDate = new Date(lastStartDate.getTime() + 7 * 24 * 60 * 60 * 1000); // Añadir 7 días
+    try {
+      const newWeek = await planningService.addWeekToPlan(planning._id);
+      
+      // Actualizar el estado local con la nueva semana
+      setPlanning(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          plan: [...prev.plan, newWeek]
+        };
+      });
 
-    const newWeek: WeekPlan = {
-      _id: uuidv4(),
-      weekNumber: newWeekNumber,
-      startDate: newStartDate.toISOString(),
-      days: {
-        Lunes: {
-          _id: uuidv4(),
-          day: 'Lunes',
-          fecha: newStartDate.toISOString(),
-          sessions: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          __v: 0,
-        },
-        Martes: {
-          _id: uuidv4(),
-          day: 'Martes',
-          fecha: new Date(newStartDate.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString(),
-          sessions: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          __v: 0,
-        },
-        Miércoles: {
-          _id: uuidv4(),
-          day: 'Miércoles',
-          fecha: new Date(newStartDate.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-          sessions: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          __v: 0,
-        },
-        Jueves: {
-          _id: uuidv4(),
-          day: 'Jueves',
-          fecha: new Date(newStartDate.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-          sessions: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          __v: 0,
-        },
-        Viernes: {
-          _id: uuidv4(),
-          day: 'Viernes',
-          fecha: new Date(newStartDate.getTime() + 4 * 24 * 60 * 60 * 1000).toISOString(),
-          sessions: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          __v: 0,
-        },
-        Sábado: {
-          _id: uuidv4(),
-          day: 'Sábado',
-          fecha: new Date(newStartDate.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-          sessions: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          __v: 0,
-        },
-        Domingo: {
-          _id: uuidv4(),
-          day: 'Domingo',
-          fecha: new Date(newStartDate.getTime() + 6 * 24 * 60 * 60 * 1000).toISOString(),
-          sessions: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          __v: 0,
-        },
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      __v: 0,
-    };
+      // Cambiar a la nueva semana
+      setSemanaActual(newWeek.weekNumber);
 
-    setPlanning((prev) => {
-      if (!prev) return prev;
-
-      return {
-        ...prev,
-        semanas: newWeekNumber,
-        plan: [...prev.plan, newWeek],
-        updatedAt: new Date().toISOString(),
-      };
-    });
-
-    setSemanaActual(newWeekNumber); // Cambiar a la nueva semana
+      // Mostrar mensaje de éxito si lo deseas
+      console.log('Semana añadida con éxito');
+    } catch (error) {
+      console.error('Error al añadir nueva semana:', error);
+      // Aquí podrías mostrar un mensaje de error al usuario
+    }
   };
 
   const updatePlan = (updatedDays: { [key: string]: DayPlan }) => {
@@ -237,7 +165,7 @@ const EditPlanningPage: React.FC = () => {
         throw new Error('No se encontró el token de autenticación');
       }
   
-      const response = await fetch(`http://localhost:3000/api/plannings/${planning._id}`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${planning._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -275,7 +203,15 @@ const EditPlanningPage: React.FC = () => {
       case 'simplificada':
         return <VistaSimplificada {...props} />;
       case 'compleja':
-        return <VistaCompleja {...props} />;
+        return (
+          <VistaCompleja
+            semanaActual={semanaActual}
+            planSemanal={planSemanal}
+            updatePlan={updatePlan}
+            onReload={fetchPlanning}
+            planningId={id || ''}
+          />
+        );
       case 'excel':
         return <VistaExcel {...props} />;
       case 'resumen':
@@ -289,7 +225,7 @@ const EditPlanningPage: React.FC = () => {
       case 'notas':
         return <VistaNotas {...props} />;
       case 'rutinas':
-        return <VistaRutinasPredefinidas {...props} />;
+        return <VistaRutinasPredefinidas {...props} planning={planning} />;
       case 'configuracion':
         return (
           <VistaConfiguracion planning={planning} setPlanning={setPlanning} />
@@ -457,10 +393,11 @@ const EditPlanningPage: React.FC = () => {
                 className="mb-12"
               >
                 <EditPlanningPageCalendario
-                  weeks={planning.plan}
+                  weeks={planning.plan || []}
                   semanaActual={semanaActual}
                   setSemanaActual={setSemanaActual}
                   onAddWeek={handleAddWeek}
+                  totalWeeks={planning.semanas}
                 />
               </motion.div>
 

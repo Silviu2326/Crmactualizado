@@ -53,7 +53,7 @@ const FacturasWidget: React.FC<FacturasWidgetProps> = ({ isEditMode, onRemove })
         }
 
         // Realizar la petición GET al backend incluyendo el token en los encabezados
-        const response = await fetch('http://localhost:3000/api/invoice', {
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/invoice', {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,

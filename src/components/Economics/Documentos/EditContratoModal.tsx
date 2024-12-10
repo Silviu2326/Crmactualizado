@@ -39,7 +39,7 @@ const EditContratoModal: React.FC<EditContratoModalProps> = ({
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `http://localhost:3000/api/contratos/${contrato?._id}`,
+        `https://fitoffice2-f70b52bef77e.herokuapp.com/api/contratos/${contrato?._id}`,
         {
           nombre,
           fechaInicio,

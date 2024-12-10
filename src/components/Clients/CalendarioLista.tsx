@@ -139,7 +139,7 @@ export default function CalendarioLista() {
       }
 
       try {
-        const response = await fetch('http://localhost:3000/api/events', {
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/events', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

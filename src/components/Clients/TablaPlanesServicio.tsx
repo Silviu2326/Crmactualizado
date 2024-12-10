@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronUp, Edit, Trash, X } from 'lucide-react';
 import TablaClientes from './TablaClientes';
 import TablaClienteEnPlanServicio from './TablaClienteEnPlanServicio';
+import AsociarPlanClientePopup from './AsociarPlanClientePopup';
 import type { PlanPago } from '../types/servicios';
 
 interface Props {
@@ -39,6 +40,8 @@ const TablaPlanesServicio: React.FC<Props> = ({ planes, isDarkMode, servicioId }
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [showClientesPopup, setShowClientesPopup] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [showAsociarPopup, setShowAsociarPopup] = useState(false);
+  const [selectedPlanForAsociar, setSelectedPlanForAsociar] = useState<any>(null);
 
   const [formData, setFormData] = useState<{
     nombre: string;
@@ -95,6 +98,28 @@ const TablaPlanesServicio: React.FC<Props> = ({ planes, isDarkMode, servicioId }
     setIsModalOpen(false);
     setPlanEditando(null);
     // Actualizar el estado local o volver a obtener los datos
+  };
+
+  const handleAsociarPlan = (planId: string) => {
+    setSelectedPlanForAsociar(planId);
+    setShowAsociarPopup(true);
+  };
+
+  const handleAsociarCliente = async (clienteId: string, metodoPago: string) => {
+    try {
+      // Aquí implementarías la lógica para asociar el plan al cliente
+      console.log('Asociando plan:', selectedPlanForAsociar, 'a cliente:', clienteId, 'con método de pago:', metodoPago);
+      // Ejemplo de llamada a API:
+      // await axios.post('https://fitoffice2-f70b52bef77e.herokuapp.com/api/asociar-plan', {
+      //   planId: selectedPlanForAsociar,
+      //   clienteId,
+      //   metodoPago
+      // });
+      
+      // Actualizar la UI según sea necesario
+    } catch (error) {
+      console.error('Error al asociar plan:', error);
+    }
   };
 
   return (
@@ -193,6 +218,16 @@ const TablaPlanesServicio: React.FC<Props> = ({ planes, isDarkMode, servicioId }
                             }`}
                           >
                             <Trash className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleAsociarPlan(plan._id)}
+                            className={`p-2 rounded-lg transition-all duration-200 ${
+                              isDarkMode
+                                ? 'bg-green-900/90 hover:bg-green-800 text-green-100 hover:shadow-md hover:shadow-green-900/20'
+                                : 'bg-green-100 hover:bg-green-200 text-green-900 hover:shadow-md hover:shadow-green-200/50'
+                            }`}
+                          >
+                            Asociar Cliente
                           </button>
                         </div>
                       </td>
@@ -435,6 +470,12 @@ const TablaPlanesServicio: React.FC<Props> = ({ planes, isDarkMode, servicioId }
           </motion.div>
         </AnimatePresence>
       )}
+      <AsociarPlanClientePopup
+        isOpen={showAsociarPopup}
+        onClose={() => setShowAsociarPopup(false)}
+        onAsociar={handleAsociarCliente}
+        isDarkMode={isDarkMode}
+      />
     </div>
   );
 };

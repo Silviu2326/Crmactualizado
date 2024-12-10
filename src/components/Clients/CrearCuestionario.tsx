@@ -248,7 +248,7 @@ const CrearCuestionario: React.FC<CrearCuestionarioProps> = ({
 
       // Realizar la solicitud POST al backend
       const response = await axios.post(
-        'http://localhost:3000/api/cuestionarios/',
+        'https://fitoffice2-f70b52bef77e.herokuapp.com/api/cuestionarios/',
         cuestionario,
         {
           headers: {

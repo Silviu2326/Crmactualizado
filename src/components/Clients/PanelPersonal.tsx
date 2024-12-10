@@ -138,7 +138,7 @@ const PanelPersonal: React.FC<PanelPersonalProps> = ({ cliente, onEdit }) => {
     setLoadingSection('infoBasica');
     try {
       const success = await apiRequest(
-        `http://localhost:3000/api/clientes/${cliente._id}/info-basica`,
+        `https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes/${cliente._id}/info-basica`,
         infoBasica
       );
 
@@ -165,7 +165,7 @@ const PanelPersonal: React.FC<PanelPersonalProps> = ({ cliente, onEdit }) => {
     setLoadingSection('infoFisica');
     try {
       const success = await apiRequest(
-        `http://localhost:3000/api/clientes/${cliente._id}/info-fisica`,
+        `https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes/${cliente._id}/info-fisica`,
         infoFisica
       );
 
@@ -185,7 +185,7 @@ const PanelPersonal: React.FC<PanelPersonalProps> = ({ cliente, onEdit }) => {
     setLoadingSection('condicionesMedicas');
     try {
       const success = await apiRequest(
-        `http://localhost:3000/api/clientes/${cliente._id}/condiciones-medicas`,
+        `https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes/${cliente._id}/condiciones-medicas`,
         { condicionesMedicas }
       );
 
@@ -205,7 +205,7 @@ const PanelPersonal: React.FC<PanelPersonalProps> = ({ cliente, onEdit }) => {
     setLoadingSection('redesSociales');
     try {
       const success = await apiRequest(
-        `http://localhost:3000/api/clientes/${cliente._id}/redes-sociales`,
+        `https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes/${cliente._id}/redes-sociales`,
         { redesSociales }
       );
 
@@ -225,7 +225,7 @@ const PanelPersonal: React.FC<PanelPersonalProps> = ({ cliente, onEdit }) => {
     setLoadingSection('contacto');
     try {
       const success = await apiRequest(
-        `http://localhost:3000/api/clientes/${cliente._id}/contacto`,
+        `https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes/${cliente._id}/contacto`,
         contacto
       );
 

@@ -25,7 +25,7 @@ const FiltroIngresosPopup: React.FC<FiltroIngresosPopupProps> = ({ onClose, onAp
     const fetchPlanes = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:3000/api/planes', {
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/planes', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();

@@ -47,7 +47,7 @@ export const ExerciseTable: React.FC<ExerciseTableProps> = ({
 
   const fetchExercises = async () => {
     try {
-      const response = await axios.get<APIResponse>('http://localhost:3000/api/exercises');
+      const response = await axios.get<APIResponse>('https://fitoffice2-f70b52bef77e.herokuapp.com/api/exercises');
       setApiExercises(response.data.data);
     } catch (error) {
       console.error('Error fetching exercises:', error);

@@ -35,7 +35,7 @@ export default function MacrosEditModal({
 
     try {
       console.log('\n🎯 ACTUALIZANDO MACROS:');
-      console.log('URL:', `http://localhost:3000/api/dietas/${dietId}/dias/${date}/macros`);
+      console.log('URL:', `https://fitoffice2-f70b52bef77e.herokuapp.com/api/dietas/${dietId}/dias/${date}/macros`);
       console.log('Macros a enviar:', {
         calorias: `${macros.calorias} kcal (${typeof macros.calorias})`,
         proteinas: `${macros.proteinas} g (${typeof macros.proteinas})`,
@@ -49,7 +49,7 @@ export default function MacrosEditModal({
       }
 
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/dietas/${dietId}/dias/${date}/macros`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/dietas/${dietId}/dias/${date}/macros`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

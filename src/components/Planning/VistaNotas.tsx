@@ -36,7 +36,7 @@ const VistaNotas: React.FC<VistaNotasProps> = ({ planningId }) => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch(`http://localhost:3000/api/notas-planning/planning/${planningId}`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/notas-planning/planning/${planningId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -67,7 +67,7 @@ const VistaNotas: React.FC<VistaNotasProps> = ({ planningId }) => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch('http://localhost:3000/api/notas-planning', {
+      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/notas-planning', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -10,15 +10,16 @@ interface Cliente {
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onAsociar: (clienteId: string, metodoPago: string) => void;
+  paymentPlanId: string;
   isDarkMode: boolean;
 }
 
-const AsociarPlanClientePopup: React.FC<Props> = ({ isOpen, onClose, onAsociar, isDarkMode }) => {
+const AsociarPlanClientePopup: React.FC<Props> = ({ isOpen, onClose, paymentPlanId, isDarkMode }) => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [selectedCliente, setSelectedCliente] = useState<string>('');
-  const [metodoPago, setMetodoPago] = useState<string>('efectivo');
+  const [metodoPago, setMetodoPago] = useState<string>('stripe');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -37,11 +38,41 @@ const AsociarPlanClientePopup: React.FC<Props> = ({ isOpen, onClose, onAsociar, 
     setIsLoading(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedCliente) {
-      onAsociar(selectedCliente, metodoPago);
-      onClose();
+      setIsLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No se encontró el token de autenticación');
+        }
+
+        const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/paymentplans/${paymentPlanId}/associate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            clientId: selectedCliente,
+            metodoPago: metodoPago
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al asociar el plan al cliente');
+        }
+
+        onClose();
+      } catch (err: any) {
+        setError(err.message);
+        console.error('Error al asociar el plan:', err);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -64,6 +95,12 @@ const AsociarPlanClientePopup: React.FC<Props> = ({ isOpen, onClose, onAsociar, 
         </button>
 
         <h2 className="text-xl font-bold mb-4">Asociar Plan a Cliente</h2>
+
+        {error && (
+          <div className="mb-4 p-2 bg-red-200 text-red-800 rounded">
+            {error}
+          </div>
+        )}
 
         {isLoading ? (
           <div className="flex justify-center items-center py-8">

@@ -42,6 +42,9 @@ const TablaPlanesServicio: React.FC<Props> = ({ planes, isDarkMode, servicioId }
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [showAsociarPopup, setShowAsociarPopup] = useState(false);
   const [selectedPlanForAsociar, setSelectedPlanForAsociar] = useState<any>(null);
+  const [clientesDetalles, setClientesDetalles] = useState<{ [key: string]: any }>({});
+  const [loadingClientes, setLoadingClientes] = useState<{ [key: string]: boolean }>({});
+  const [clientesError, setClientesError] = useState<{ [key: string]: string | null }>({});
 
   const [formData, setFormData] = useState<{
     nombre: string;
@@ -55,8 +58,64 @@ const TablaPlanesServicio: React.FC<Props> = ({ planes, isDarkMode, servicioId }
     detalles: '',
   });
 
-  const toggleExpand = (planId: string) => {
-    setExpandedPlanId(expandedPlanId === planId ? null : planId);
+  const fetchClienteDetalles = async (clienteId: string, planId: string) => {
+    console.log(`TablaPlanesServicio - Iniciando fetchClienteDetalles para cliente ${clienteId} en plan ${planId}`);
+    
+    setLoadingClientes(prev => ({ ...prev, [clienteId]: true }));
+    setClientesError(prev => ({ ...prev, [clienteId]: null }));
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      console.log(`TablaPlanesServicio - Realizando petición para cliente ${clienteId}`);
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes/${clienteId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        console.error(`TablaPlanesServicio - Error en la respuesta del cliente ${clienteId}:`, response.status);
+        throw new Error('Error al obtener detalles del cliente');
+      }
+
+      const data = await response.json();
+      console.log(`TablaPlanesServicio - Detalles recibidos para cliente ${clienteId}:`, data);
+      
+      setClientesDetalles(prev => ({
+        ...prev,
+        [clienteId]: data
+      }));
+    } catch (err) {
+      console.error(`TablaPlanesServicio - Error al obtener detalles del cliente ${clienteId}:`, err);
+      setClientesError(prev => ({
+        ...prev,
+        [clienteId]: err instanceof Error ? err.message : 'Error desconocido'
+      }));
+    } finally {
+      setLoadingClientes(prev => ({ ...prev, [clienteId]: false }));
+    }
+  };
+
+  const toggleExpand = async (planId: string) => {
+    console.log('TablaPlanesServicio - Toggle expand para plan:', planId);
+    if (expandedPlanId === planId) {
+      setExpandedPlanId(null);
+    } else {
+      setExpandedPlanId(planId);
+      const plan = planesArray.find(p => p._id === planId);
+      if (plan && plan.clientes && plan.clientes.length > 0) {
+        console.log(`TablaPlanesServicio - Cargando detalles para ${plan.clientes.length} clientes del plan ${planId}`);
+        plan.clientes.forEach(clienteId => {
+          if (!clientesDetalles[clienteId]) {
+            fetchClienteDetalles(clienteId, planId);
+          }
+        });
+      }
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -103,23 +162,6 @@ const TablaPlanesServicio: React.FC<Props> = ({ planes, isDarkMode, servicioId }
   const handleAsociarPlan = (planId: string) => {
     setSelectedPlanForAsociar(planId);
     setShowAsociarPopup(true);
-  };
-
-  const handleAsociarCliente = async (clienteId: string, metodoPago: string) => {
-    try {
-      // Aquí implementarías la lógica para asociar el plan al cliente
-      console.log('Asociando plan:', selectedPlanForAsociar, 'a cliente:', clienteId, 'con método de pago:', metodoPago);
-      // Ejemplo de llamada a API:
-      // await axios.post('https://fitoffice2-f70b52bef77e.herokuapp.com/api/asociar-plan', {
-      //   planId: selectedPlanForAsociar,
-      //   clienteId,
-      //   metodoPago
-      // });
-      
-      // Actualizar la UI según sea necesario
-    } catch (error) {
-      console.error('Error al asociar plan:', error);
-    }
   };
 
   return (
@@ -281,37 +323,81 @@ const TablaPlanesServicio: React.FC<Props> = ({ planes, isDarkMode, servicioId }
                                   isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
                                 }`}>
                                   {plan.clientes && plan.clientes.length > 0 ? (
-                                    plan.clientes.map((cliente, clienteIndex) => (
-                                      <tr key={clienteIndex} className={`${
-                                        isDarkMode
-                                          ? 'hover:bg-gray-700/80 bg-gray-800/95'
-                                          : 'hover:bg-blue-50/90 bg-white'
-                                      } transition-all duration-200 ease-in-out`}>
-                                        <td className={`px-6 py-4 text-sm font-medium whitespace-nowrap ${
-                                          isDarkMode ? 'text-gray-200' : 'text-gray-900'
-                                        }`}>
-                                          {cliente}
-                                        </td>
-                                        <td className={`px-6 py-4 text-sm whitespace-nowrap ${
-                                          isDarkMode ? 'text-gray-200' : 'text-gray-900'
-                                        }`}>
-                                          {/* Email */}
-                                        </td>
-                                        <td className={`px-6 py-4 text-sm whitespace-nowrap ${
-                                          isDarkMode ? 'text-gray-200' : 'text-gray-900'
-                                        }`}>
-                                          {/* Teléfono */}
-                                        </td>
-                                        <td className={`px-6 py-4 text-sm whitespace-nowrap ${
-                                          isDarkMode ? 'text-gray-200' : 'text-gray-900'
-                                        }`}>
-                                          {/* Fecha Inicio */}
-                                        </td>
-                                        <td className={`px-6 py-4 text-sm whitespace-nowrap`}>
-                                          {/* Estado */}
-                                        </td>
-                                      </tr>
-                                    ))
+                                    plan.clientes.map((clienteId) => {
+                                      const clienteDetalle = clientesDetalles[clienteId];
+                                      const isLoading = loadingClientes[clienteId];
+                                      const error = clientesError[clienteId];
+
+                                      if (error) {
+                                        return (
+                                          <tr key={clienteId} className={`${
+                                            isDarkMode
+                                              ? 'bg-red-900/20'
+                                              : 'bg-red-50'
+                                          }`}>
+                                            <td colSpan={5} className="px-6 py-4 text-sm text-red-500">
+                                              Error al cargar cliente: {error}
+                                            </td>
+                                          </tr>
+                                        );
+                                      }
+
+                                      if (isLoading) {
+                                        return (
+                                          <tr key={clienteId} className={`${
+                                            isDarkMode
+                                              ? 'bg-gray-800/95'
+                                              : 'bg-white'
+                                          }`}>
+                                            <td colSpan={5} className="px-6 py-4">
+                                              <div className="flex items-center justify-center">
+                                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                                                <span className="ml-2">Cargando detalles del cliente...</span>
+                                              </div>
+                                            </td>
+                                          </tr>
+                                        );
+                                      }
+
+                                      return (
+                                        <tr key={clienteId} className={`${
+                                          isDarkMode
+                                            ? 'hover:bg-gray-700/80 bg-gray-800/95'
+                                            : 'hover:bg-blue-50/90 bg-white'
+                                          } transition-all duration-200 ease-in-out`}>
+                                          <td className={`px-6 py-4 text-sm font-medium whitespace-nowrap ${
+                                            isDarkMode ? 'text-gray-200' : 'text-gray-900'
+                                          }`}>
+                                            {clienteDetalle?.nombre || 'Nombre no disponible'}
+                                          </td>
+                                          <td className={`px-6 py-4 text-sm whitespace-nowrap ${
+                                            isDarkMode ? 'text-gray-200' : 'text-gray-900'
+                                          }`}>
+                                            {clienteDetalle?.email || 'Email no disponible'}
+                                          </td>
+                                          <td className={`px-6 py-4 text-sm whitespace-nowrap ${
+                                            isDarkMode ? 'text-gray-200' : 'text-gray-900'
+                                          }`}>
+                                            {clienteDetalle?.planningActivo?.nombre || 'Sin plan activo'}
+                                          </td>
+                                          <td className={`px-6 py-4 text-sm whitespace-nowrap ${
+                                            isDarkMode ? 'text-gray-200' : 'text-gray-900'
+                                          }`}>
+                                            {clienteDetalle?.planningActivo?.fechaInicio 
+                                              ? formatDate(clienteDetalle.planningActivo.fechaInicio)
+                                              : 'N/A'}
+                                          </td>
+                                          <td className={`px-6 py-4 text-sm whitespace-nowrap`}>
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                              ${clienteDetalle?.estado === 'Activo'
+                                                ? 'bg-green-100 text-green-800'
+                                                : 'bg-red-100 text-red-800'}`}>
+                                              {clienteDetalle?.estado || 'Estado desconocido'}
+                                            </span>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })
                                   ) : (
                                     <tr>
                                       <td colSpan={5} className={`px-6 py-4 text-sm text-center ${
@@ -473,7 +559,7 @@ const TablaPlanesServicio: React.FC<Props> = ({ planes, isDarkMode, servicioId }
       <AsociarPlanClientePopup
         isOpen={showAsociarPopup}
         onClose={() => setShowAsociarPopup(false)}
-        onAsociar={handleAsociarCliente}
+        paymentPlanId={selectedPlanForAsociar}
         isDarkMode={isDarkMode}
       />
     </div>

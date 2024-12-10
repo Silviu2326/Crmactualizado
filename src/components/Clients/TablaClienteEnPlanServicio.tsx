@@ -10,13 +10,20 @@ interface TablaClienteEnPlanServicioProps {
 }
 
 interface Cliente {
-  id: string;
+  _id: string;
   nombre: string;
-  apellido: string;
   email: string;
-  telefono: string;
-  fechaInicio: string;
   estado: string;
+  planningActivo?: {
+    _id: string;
+    nombre: string;
+    fechaInicio: string;
+  };
+  dietaActiva?: {
+    _id: string;
+    nombre: string;
+    fechaInicio: string;
+  };
 }
 
 const TablaClienteEnPlanServicio: React.FC<TablaClienteEnPlanServicioProps> = ({
@@ -25,34 +32,82 @@ const TablaClienteEnPlanServicio: React.FC<TablaClienteEnPlanServicioProps> = ({
   planId,
   isDarkMode
 }) => {
+  console.log('TablaClienteEnPlanServicio - Props recibidas:', { isOpen, planId, isDarkMode });
+  
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [clientesDetalles, setClientesDetalles] = useState<{ [key: string]: Cliente }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchClientes = async () => {
+      console.log('TablaClienteEnPlanServicio - Iniciando fetchClientes para planId:', planId);
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/planes-servicio/${planId}/clientes`, {
+        if (!token) {
+          throw new Error('No se encontró el token de autenticación');
+        }
+
+        console.log('TablaClienteEnPlanServicio - Obteniendo clientes del plan...');
+        // Primero obtenemos la lista de clientes del plan
+        const responsePlan = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/planes-servicio/${planId}/clientes`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
 
-        if (!response.ok) {
-          throw new Error('Error al cargar los clientes');
+        if (!responsePlan.ok) {
+          console.error('TablaClienteEnPlanServicio - Error en la respuesta del plan:', responsePlan.status);
+          throw new Error('Error al cargar los clientes del plan');
         }
 
-        const data = await response.json();
-        setClientes(data.data);
+        const dataPlan = await responsePlan.json();
+        console.log('TablaClienteEnPlanServicio - Datos del plan recibidos:', dataPlan);
+        const clientesDelPlan = dataPlan.data || [];
+        setClientes(clientesDelPlan);
+
+        console.log('TablaClienteEnPlanServicio - Obteniendo detalles de clientes...');
+        // Luego obtenemos los detalles de cada cliente
+        const detallesPromises = clientesDelPlan.map(async (cliente: any) => {
+          console.log('TablaClienteEnPlanServicio - Solicitando detalles para cliente:', cliente._id);
+          const responseCliente = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes/${cliente._id}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (!responseCliente.ok) {
+            console.error(`TablaClienteEnPlanServicio - Error al obtener detalles del cliente ${cliente._id}:`, responseCliente.status);
+            return null;
+          }
+
+          const clienteDetalle = await responseCliente.json();
+          console.log(`TablaClienteEnPlanServicio - Detalles recibidos para cliente ${cliente._id}:`, clienteDetalle);
+          return { id: cliente._id, data: clienteDetalle };
+        });
+
+        const detallesResults = await Promise.all(detallesPromises);
+        console.log('TablaClienteEnPlanServicio - Todos los detalles de clientes recibidos:', detallesResults);
+        
+        const detallesMap = detallesResults.reduce((acc, result) => {
+          if (result) {
+            acc[result.id] = result.data;
+          }
+          return acc;
+        }, {});
+
+        console.log('TablaClienteEnPlanServicio - Mapa de detalles de clientes:', detallesMap);
+        setClientesDetalles(detallesMap);
         setLoading(false);
       } catch (err) {
+        console.error('TablaClienteEnPlanServicio - Error en fetchClientes:', err);
         setError(err instanceof Error ? err.message : 'Error desconocido');
         setLoading(false);
       }
     };
 
     if (isOpen) {
+      console.log('TablaClienteEnPlanServicio - Componente abierto, iniciando fetch...');
       fetchClientes();
     }
   }, [planId, isOpen]);
@@ -65,6 +120,13 @@ const TablaClienteEnPlanServicio: React.FC<TablaClienteEnPlanServicioProps> = ({
       year: 'numeric'
     });
   };
+
+  console.log('TablaClienteEnPlanServicio - Estado actual:', {
+    loading,
+    error,
+    clientesCount: clientes.length,
+    detallesCount: Object.keys(clientesDetalles).length
+  });
 
   return (
     <AnimatePresence>
@@ -106,36 +168,41 @@ const TablaClienteEnPlanServicio: React.FC<TablaClienteEnPlanServicioProps> = ({
                     <tr>
                       <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Nombre</th>
                       <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Email</th>
-                      <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Teléfono</th>
+                      <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Plan Activo</th>
                       <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Fecha Inicio</th>
                       <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Estado</th>
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                    {clientes.map((cliente) => (
-                      <tr key={cliente.id} className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>
-                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                          {cliente.nombre} {cliente.apellido}
-                        </td>
-                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                          {cliente.email}
-                        </td>
-                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                          {cliente.telefono}
-                        </td>
-                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                          {formatDate(cliente.fechaInicio)}
-                        </td>
-                        <td className={`px-6 py-4 whitespace-nowrap text-sm`}>
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                            ${cliente.estado === 'Activo' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'}`}>
-                            {cliente.estado}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {clientes.map((cliente) => {
+                      const detallesCliente = clientesDetalles[cliente._id];
+                      return (
+                        <tr key={cliente._id} className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>
+                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                            {detallesCliente?.nombre || 'Cargando...'}
+                          </td>
+                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                            {detallesCliente?.email || 'Cargando...'}
+                          </td>
+                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                            {detallesCliente?.planningActivo?.nombre || 'Sin plan activo'}
+                          </td>
+                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                            {detallesCliente?.planningActivo?.fechaInicio 
+                              ? formatDate(detallesCliente.planningActivo.fechaInicio)
+                              : 'N/A'}
+                          </td>
+                          <td className={`px-6 py-4 whitespace-nowrap text-sm`}>
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                              ${detallesCliente?.estado === 'Activo' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'}`}>
+                              {detallesCliente?.estado || 'Desconocido'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
-import { ClientInfo } from './ClientInfo';
 import { WeekSelector } from './WeekSelector';
 import { ExercisePeriod } from './ExercisePeriod';
 import { NavigationButtons } from './NavigationButtons';
@@ -11,31 +10,80 @@ interface WeekRange {
   end: number;
 }
 
+interface RenderConfig {
+  campo1: string;
+  campo2: string;
+  campo3: string;
+}
+
+interface Set {
+  reps: number;
+  weight: number;
+  weightType: 'absolute' | 'relative';
+  rest: number;
+  rpe: number;
+  renderConfig: RenderConfig;
+}
+
 interface Exercise {
-  id: string;
-  name: string;
-  conditional?: boolean;
-  disabled?: boolean;
+  exercise: string;
+  orden: number;
+  sets: Set[];
+  notas: string;
+}
+
+interface Session {
+  nombre: string;
+  descripcion: string;
+  exercises: Exercise[];
+}
+
+interface Variant {
+  nombre: string;
+  descripcion: string;
+  sessions: Session[];
+}
+
+interface Day {
+  dayNumber: number;
+  variants: Variant[];
+}
+
+interface Plan {
+  semanas: number;
+  days: Day[];
+}
+
+interface Skeleton {
+  nombre: string;
+  descripcion: string;
+  tipo: string;
+  dificultad: string;
+  plan: Plan;
 }
 
 interface PopupCrearEsqueletoProps {
   onClose: () => void;
-  onSubmit?: (data: any) => void;
+  onSubmit?: (data: Skeleton) => void;
 }
 
 const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onSubmit }) => {
   const [step, setStep] = useState(1);
+  const [skeletonData, setSkeletonData] = useState<Skeleton>({
+    nombre: '',
+    descripcion: '',
+    tipo: '',
+    dificultad: '',
+    plan: {
+      semanas: 4,
+      days: []
+    }
+  });
+
   const [selectedWeeks, setSelectedWeeks] = useState<WeekRange[]>([]);
   const [selectionStart, setSelectionStart] = useState<number | null>(null);
   const [hoveredWeek, setHoveredWeek] = useState<number | null>(null);
-
-  // Ejemplo de ejercicios
-  const [exercises, setExercises] = useState<Exercise[]>([
-    { id: "1", name: "Press de Banca", conditional: false, disabled: false },
-    { id: "2", name: "Sentadillas", conditional: false, disabled: false },
-    { id: "3", name: "Peso Muerto", conditional: false, disabled: false },
-    { id: "4", name: "Pull-ups", conditional: false, disabled: false },
-  ]);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
 
   const handleWeekSelect = (weekNumber: number) => {
     if (!selectionStart) {
@@ -44,13 +92,20 @@ const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onSu
       const start = Math.min(selectionStart, weekNumber);
       const end = Math.max(selectionStart, weekNumber);
       
-      // Verificar si el rango se superpone con alguno existente
       const overlaps = selectedWeeks.some(range => 
         (start <= range.end && end >= range.start)
       );
 
       if (!overlaps) {
         setSelectedWeeks([...selectedWeeks, { start, end }]);
+        // Actualizar el plan con las semanas seleccionadas
+        setSkeletonData(prev => ({
+          ...prev,
+          plan: {
+            ...prev.plan,
+            semanas: Math.max(...selectedWeeks.map(w => w.end), end)
+          }
+        }));
       }
       
       setSelectionStart(null);
@@ -70,12 +125,47 @@ const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onSu
   };
 
   const handleNext = () => {
+    if (step === 1) {
+      if (!skeletonData.nombre.trim() || !skeletonData.descripcion.trim() || !skeletonData.tipo || !skeletonData.dificultad) {
+        alert('Por favor, complete todos los campos obligatorios');
+        return;
+      }
+    }
+
+    if (step === 2 && selectedWeeks.length === 0) {
+      alert('Por favor, seleccione al menos un período de semanas');
+      return;
+    }
+
     if (step === 3 && onSubmit) {
-      // Aquí puedes preparar los datos para enviar
-      onSubmit({
-        selectedWeeks,
-        exercises
+      // Convertir los períodos seleccionados a la estructura del plan
+      const days: Day[] = [];
+      selectedWeeks.forEach(week => {
+        for (let i = week.start; i <= week.end; i++) {
+          days.push({
+            dayNumber: i,
+            variants: [{
+              nombre: "Variante A",
+              descripcion: "Entrenamiento principal",
+              sessions: [{
+                nombre: "Sesión Principal",
+                descripcion: "Entrenamiento del día",
+                exercises: exercises
+              }]
+            }]
+          });
+        }
       });
+
+      const finalData = {
+        ...skeletonData,
+        plan: {
+          ...skeletonData.plan,
+          days
+        }
+      };
+
+      onSubmit(finalData);
       onClose();
     } else {
       setStep(step + 1);
@@ -88,27 +178,6 @@ const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onSu
     } else {
       onClose();
     }
-  };
-
-  const handleModifyExercise = (exercise: Exercise) => {
-    // Implementar lógica de modificación
-    console.log('Modificar ejercicio:', exercise);
-  };
-
-  const handleMakeConditional = (exercise: Exercise) => {
-    setExercises(exercises.map(e => 
-      e.id === exercise.id 
-        ? { ...e, conditional: true, disabled: false }
-        : e
-    ));
-  };
-
-  const handleRemoveConditional = (exercise: Exercise) => {
-    setExercises(exercises.map(e => 
-      e.id === exercise.id 
-        ? { ...e, conditional: false, disabled: true }
-        : e
-    ));
   };
 
   return (
@@ -140,6 +209,70 @@ const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onSu
 
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
           {step === 1 && (
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nombre del Esqueleto *
+                </label>
+                <input
+                  type="text"
+                  value={skeletonData.nombre}
+                  onChange={(e) => setSkeletonData({...skeletonData, nombre: e.target.value})}
+                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Ingrese el nombre del esqueleto"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Descripción *
+                </label>
+                <textarea
+                  value={skeletonData.descripcion}
+                  onChange={(e) => setSkeletonData({...skeletonData, descripcion: e.target.value})}
+                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Ingrese una descripción para el esqueleto"
+                  rows={4}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tipo *
+                </label>
+                <select
+                  value={skeletonData.tipo}
+                  onChange={(e) => setSkeletonData({...skeletonData, tipo: e.target.value})}
+                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  required
+                >
+                  <option value="">Seleccione un tipo</option>
+                  <option value="Fuerza">Fuerza</option>
+                  <option value="Hipertrofia">Hipertrofia</option>
+                  <option value="Resistencia">Resistencia</option>
+                  <option value="Pérdida de peso">Pérdida de peso</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Dificultad *
+                </label>
+                <select
+                  value={skeletonData.dificultad}
+                  onChange={(e) => setSkeletonData({...skeletonData, dificultad: e.target.value})}
+                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  required
+                >
+                  <option value="">Seleccione una dificultad</option>
+                  <option value="Principiante">Principiante</option>
+                  <option value="Intermedio">Intermedio</option>
+                  <option value="Avanzado">Avanzado</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
             <WeekSelector
               selectedWeeks={selectedWeeks}
               onWeekSelect={handleWeekSelect}
@@ -152,29 +285,27 @@ const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onSu
             />
           )}
 
-          {step === 2 && selectedWeeks.map((period, index) => (
+          {step === 3 && selectedWeeks.map((period, index) => (
             <ExercisePeriod
               key={index}
               period={period}
               exercises={exercises}
-              onModify={handleModifyExercise}
-              onMakeConditional={handleMakeConditional}
-              onRemoveConditional={handleRemoveConditional}
+              onModify={(exercise) => {
+                setExercises(prev => [...prev, exercise]);
+              }}
+              onMakeConditional={() => {}}
+              onRemoveConditional={() => {}}
             />
           ))}
 
-          {step === 3 && (
-            <ClientInfo onSubmit={handleNext} />
-          )}
-
-          {step !== 1 && (
+          <div className="mt-6">
             <NavigationButtons
               onBack={handleBack}
               onNext={handleNext}
               nextLabel={step === 3 ? "Finalizar" : "Siguiente"}
               showNext={true}
             />
-          )}
+          </div>
         </div>
       </motion.div>
     </motion.div>

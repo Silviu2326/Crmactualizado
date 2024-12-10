@@ -80,21 +80,30 @@ const PopupCrearPlanificacion: React.FC<PopupCrearPlanificacionProps> = ({
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings', {
+      let endpoint = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings';
+      let requestBody: any = {
+        nombre,
+        descripcion,
+        meta: meta === 'Otra' ? otraMeta : meta,
+        semanas,
+      };
+
+      if (tipo === 'Planificacion') {
+        requestBody.fechaInicio = fechaInicio;
+        requestBody.tipo = tipo;
+        requestBody.clienteId = clienteId || null;
+      } else {
+        // Si es una plantilla, usar el endpoint específico para plantillas
+        endpoint = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api/planningtemplate/templates';
+      }
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          nombre,
-          descripcion,
-          fechaInicio,
-          meta: meta === 'Otra' ? otraMeta : meta,
-          semanas,
-          tipo,
-          clienteId: clienteId || null,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -163,19 +172,21 @@ const PopupCrearPlanificacion: React.FC<PopupCrearPlanificacionProps> = ({
           ></textarea>
         </div>
 
-        <div className="mb-4">
-          <label htmlFor="fechaInicio" className="block mb-1 font-medium">
-            Fecha de Inicio
-          </label>
-          <input
-            type="date"
-            id="fechaInicio"
-            value={fechaInicio}
-            onChange={(e) => setFechaInicio(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
-            required
-          />
-        </div>
+        {tipo === 'Planificacion' && (
+          <div className="mb-4">
+            <label htmlFor="fechaInicio" className="block mb-1 font-medium">
+              Fecha de Inicio
+            </label>
+            <input
+              type="date"
+              id="fechaInicio"
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
+              className="w-full px-3 py-2 border rounded"
+              required
+            />
+          </div>
+        )}
 
         <div className="mb-4">
           <label htmlFor="meta" className="block mb-1 font-medium">

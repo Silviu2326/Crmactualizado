@@ -70,7 +70,7 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
         throw new Error('Token no encontrado. Por favor, inicia sesión nuevamente.');
       }
 
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos', {
+      const response = await fetch('http://localhost:3000/api/gastos', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -145,7 +145,7 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
         throw new Error('Token no encontrado');
       }
 
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos/${gastoId}`, {
+      const response = await fetch(`http://localhost:3000/api/gastos/${gastoId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -170,7 +170,7 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
         throw new Error('Token no encontrado');
       }
 
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos/${gastoId}/confirm`, {
+      const response = await fetch(`http://localhost:3000/api/gastos/${gastoId}/confirm`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -210,8 +210,8 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
       };
 
       const url = isEditing && selectedGastoId
-        ? `https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos/${selectedGastoId}`
-        : 'https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos';
+        ? `http://localhost:3000/api/gastos/${selectedGastoId}`
+        : 'http://localhost:3000/api/gastos';
 
       const method = isEditing ? 'PUT' : 'POST';
 

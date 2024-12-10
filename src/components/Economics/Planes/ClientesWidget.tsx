@@ -38,7 +38,7 @@ const ClientesWidget: React.FC = () => {
   const fetchClientes = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes', {
+      const response = await axios.get('http://localhost:3000/api/clientes', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

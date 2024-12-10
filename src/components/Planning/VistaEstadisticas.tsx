@@ -2,10 +2,46 @@ import React from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { BarChart2, Activity, TrendingUp, Clock, Target, Dumbbell } from 'lucide-react';
 
+interface Exercise {
+  _id: string;
+  exercise: {
+    nombre: string;
+    grupoMuscular: string[];
+  };
+  sets: Array<{
+    reps: number;
+    weight: number;
+    rest: number;
+    completed: boolean;
+  }>;
+}
+
+interface Session {
+  _id: string;
+  name: string;
+  tipo: string;
+  exercises: Exercise[];
+}
+
+interface DayPlan {
+  _id: string;
+  day: string;
+  fecha: string;
+  sessions: Session[];
+}
+
+interface WeekPlan {
+  _id: string;
+  weekNumber: number;
+  startDate: string;
+  days: {
+    [key: string]: DayPlan;
+  };
+}
+
 interface VistaEstadisticasProps {
   semanaActual: number;
-  planSemanal: any;
-  updatePlan: (plan: any) => void;
+  planSemanal: WeekPlan;
 }
 
 const VistaEstadisticas: React.FC<VistaEstadisticasProps> = ({
@@ -14,13 +50,71 @@ const VistaEstadisticas: React.FC<VistaEstadisticasProps> = ({
 }) => {
   const { theme } = useTheme();
 
-  const metricas = [
+  // Calcular métricas reales basadas en el plan
+  const calcularMetricas = () => {
+    if (!planSemanal?.days) return {
+      intensidad: { alta: 0, media: 0, baja: 0 },
+      duracion: { larga: 0, media: 0, corta: 0 },
+      completado: 0
+    };
+
+    let totalSets = 0;
+    let setsCompletados = 0;
+    let totalEjercicios = 0;
+    let ejerciciosPorTipo: { [key: string]: number } = {};
+    let duracionTotal = 0;
+
+    Object.values(planSemanal.days).forEach(day => {
+      if (!day?.sessions) return;
+      
+      day.sessions.forEach(session => {
+        if (!session?.exercises) return;
+        
+        session.exercises.forEach(exercise => {
+          if (!exercise?.exercise?.grupoMuscular || !exercise?.sets) return;
+          
+          totalEjercicios++;
+          
+          // Contar ejercicios por tipo muscular
+          exercise.exercise.grupoMuscular.forEach(grupo => {
+            ejerciciosPorTipo[grupo] = (ejerciciosPorTipo[grupo] || 0) + 1;
+          });
+
+          // Contar sets y calcular duración
+          exercise.sets.forEach(set => {
+            if (!set) return;
+            totalSets++;
+            if (set.completed) setsCompletados++;
+            duracionTotal += set.rest || 0;
+          });
+        });
+      });
+    });
+
+    return {
+      intensidad: {
+        alta: Math.round((ejerciciosPorTipo['Pecho'] || 0) / (totalEjercicios || 1) * 100),
+        media: Math.round((ejerciciosPorTipo['Piernas'] || 0) / (totalEjercicios || 1) * 100),
+        baja: Math.round((ejerciciosPorTipo['Core'] || 0) / (totalEjercicios || 1) * 100),
+      },
+      duracion: {
+        larga: Math.round(duracionTotal > 3600 ? 100 : (duracionTotal / 3600 * 100)),
+        media: Math.round(duracionTotal > 1800 && duracionTotal <= 3600 ? 100 : 0),
+        corta: Math.round(duracionTotal <= 1800 ? 100 : 0),
+      },
+      completado: Math.round((setsCompletados / (totalSets || 1)) * 100),
+    };
+  };
+
+  const metricas = calcularMetricas();
+
+  const metricasVisuales = [
     {
       categoria: 'Intensidad',
       datos: [
-        { label: 'Alta', valor: 30 },
-        { label: 'Media', valor: 45 },
-        { label: 'Baja', valor: 25 },
+        { label: 'Alta', valor: metricas.intensidad.alta },
+        { label: 'Media', valor: metricas.intensidad.media },
+        { label: 'Baja', valor: metricas.intensidad.baja },
       ],
       icon: Activity,
       color: 'bg-red-500',
@@ -28,34 +122,56 @@ const VistaEstadisticas: React.FC<VistaEstadisticasProps> = ({
     {
       categoria: 'Duración',
       datos: [
-        { label: '60+ min', valor: 20 },
-        { label: '30-60 min', valor: 60 },
-        { label: '0-30 min', valor: 20 },
+        { label: '60+ min', valor: metricas.duracion.larga },
+        { label: '30-60 min', valor: metricas.duracion.media },
+        { label: '0-30 min', valor: metricas.duracion.corta },
       ],
       icon: Clock,
       color: 'bg-blue-500',
     },
-    {
-      categoria: 'Tipo de Ejercicio',
-      datos: [
-        { label: 'Fuerza', valor: 40 },
-        { label: 'Cardio', valor: 35 },
-        { label: 'Flexibilidad', valor: 25 },
-      ],
-      icon: Dumbbell,
-      color: 'bg-green-500',
-    },
   ];
 
-  const tendencias = [
-    { dia: 'Lun', valor: 85 },
-    { dia: 'Mar', valor: 75 },
-    { dia: 'Mie', valor: 90 },
-    { dia: 'Jue', valor: 65 },
-    { dia: 'Vie', valor: 80 },
-    { dia: 'Sab', valor: 70 },
-    { dia: 'Dom', valor: 60 },
-  ];
+  // Calcular tendencias diarias
+  const calcularTendenciasDiarias = () => {
+    if (!planSemanal?.days) return Array(7).fill(0).map((_, i) => ({
+      dia: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'][i],
+      valor: 0
+    }));
+
+    const dias = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
+    return dias.map(dia => {
+      const diaCompleto = dia === 'Mie' ? 'Miércoles' : 
+                         dia === 'Sab' ? 'Sábado' : 
+                         dia + 'es';
+                         
+      const dayPlan = planSemanal.days[diaCompleto];
+      if (!dayPlan?.sessions) return { dia, valor: 0 };
+
+      let totalSets = 0;
+      let completedSets = 0;
+
+      dayPlan.sessions.forEach(session => {
+        if (!session?.exercises) return;
+        
+        session.exercises.forEach(exercise => {
+          if (!exercise?.sets) return;
+          
+          exercise.sets.forEach(set => {
+            if (!set) return;
+            totalSets++;
+            if (set.completed) completedSets++;
+          });
+        });
+      });
+
+      return {
+        dia,
+        valor: totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0
+      };
+    });
+  };
+
+  const tendencias = calcularTendenciasDiarias();
 
   return (
     <div className="space-y-8">
@@ -66,8 +182,8 @@ const VistaEstadisticas: React.FC<VistaEstadisticasProps> = ({
           <h2 className="text-xl font-bold">Estadísticas Detalladas</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {metricas.map((metrica, index) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {metricasVisuales.map((metrica, index) => {
             const Icon = metrica.icon;
             return (
               <div
@@ -139,13 +255,13 @@ const VistaEstadisticas: React.FC<VistaEstadisticasProps> = ({
                 </div>
                 <div className="text-right">
                   <span className="text-xs font-semibold inline-block text-blue-600">
-                    75%
+                    {metricas.completado}%
                   </span>
                 </div>
               </div>
               <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-200">
                 <div
-                  style={{ width: "75%" }}
+                  style={{ width: `${metricas.completado}%` }}
                   className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500"
                 />
               </div>
@@ -157,15 +273,19 @@ const VistaEstadisticas: React.FC<VistaEstadisticasProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Intensidad Promedio</span>
-                <span className="font-medium">7.5/10</span>
+                <span className="font-medium">{Math.round(metricas.intensidad.alta / 10)}/10</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm">Consistencia</span>
-                <span className="font-medium">85%</span>
+                <span className="font-medium">{metricas.completado}%</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm">Recuperación</span>
-                <span className="font-medium">Óptima</span>
+                <span className="text-sm">Estado</span>
+                <span className="font-medium">
+                  {metricas.completado >= 80 ? 'Excelente' : 
+                   metricas.completado >= 60 ? 'Bueno' : 
+                   metricas.completado >= 40 ? 'Regular' : 'Necesita Mejorar'}
+                </span>
               </div>
             </div>
           </div>

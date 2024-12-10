@@ -35,7 +35,7 @@ const AddDocumentoModal: React.FC<AddDocumentoModalProps> = ({ isOpen, onClose, 
       }
 
       const response = await axios.post(
-        'https://fitoffice2-f70b52bef77e.herokuapp.com/api/otros-documentos',
+        'http://localhost:3000/api/otros-documentos',
         dataToSend,
         {
           headers: {

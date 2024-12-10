@@ -56,7 +56,7 @@ const NuevaSuscripcionPopup: React.FC<NuevaSuscripcionPopupProps> = ({ isOpen, o
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services', {
+      const response = await fetch('http://localhost:3000/api/servicios/services', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

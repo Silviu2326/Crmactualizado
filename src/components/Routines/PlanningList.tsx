@@ -33,14 +33,28 @@ interface PlanningSchema {
   meta: string;
   semanas: number;
   tipo: 'Planificacion' | 'Plantilla';
+  esqueleto?: string;
   cliente: {
     _id: string;
     nombre: string;
     email: string;
   };
-  trainer: string;
+  trainer: {
+    _id: string;
+    nombre: string;
+    email: string;
+  };
+  plan: any[];
   createdAt: string;
   updatedAt: string;
+}
+
+interface EsqueletoDetails {
+  _id: string;
+  nombre: string;
+  descripcion: string;
+  semanas: number;
+  plan: any[];
 }
 
 const PlanningList: React.FC = () => {
@@ -61,7 +75,8 @@ const PlanningList: React.FC = () => {
   });
 
   // Estados para planificaciones, carga y errores
-  const [planningData, setPlanningData] = useState<any[]>([]);
+  const [planningData, setPlanningData] = useState<PlanningSchema[]>([]);
+  const [esqueletoDetails, setEsqueletoDetails] = useState<{ [key: string]: EsqueletoDetails }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,79 +113,50 @@ const PlanningList: React.FC = () => {
     switch (key) {
       case 'tipo':
         return (
-          <span
-            className={`px-3 py-1 rounded-full text-sm font-medium ${
-              value === 'Planificacion'
-                ? 'bg-emerald-100 text-emerald-800'
-                : 'bg-indigo-100 text-indigo-800'
-            }`}
-          >
-            {value}
-          </span>
-        );
-      case 'meta':
-        return (
-          <span
-            className={`px-3 py-1 rounded-full text-sm font-medium ${
-              value === 'Aumentar la fuerza en 6 semanas'
-                ? 'bg-purple-100 text-purple-800'
-                : value === 'Pérdida de peso'
-                ? 'bg-red-100 text-red-800'
-                : 'bg-blue-100 text-blue-800'
-            }`}
-          >
+          <span className={`px-2 py-1 rounded-full text-sm ${
+            value === 'Planificacion' 
+              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+              : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+          }`}>
             {value}
           </span>
         );
       case 'estado':
         return (
-          <span
-            className={`px-3 py-1 rounded-full text-sm font-medium ${
-              value === 'En progreso'
-                ? 'bg-blue-100 text-blue-800'
-                : value === 'Pendiente'
-                ? 'bg-yellow-100 text-yellow-800'
-                : 'bg-green-100 text-green-800'
-            }`}
-          >
+          <span className={`px-2 py-1 rounded-full text-sm ${
+            value === 'Activo' 
+              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+              : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+          }`}>
             {value}
           </span>
         );
       case 'completado':
         return (
-          <div className="flex items-center space-x-2">
-            <div className="flex-grow bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-              <div
-                className={`h-2.5 rounded-full ${
-                  parseInt(value) === 100
-                    ? 'bg-green-600'
-                    : parseInt(value) > 50
-                    ? 'bg-blue-600'
-                    : 'bg-amber-600'
-                }`}
-                style={{ width: value }}
-              ></div>
-            </div>
-            <span className="text-sm font-medium">{value}</span>
+          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+            <div 
+              className="bg-blue-600 h-2.5 rounded-full" 
+              style={{ width: value }}
+            ></div>
           </div>
         );
-      case 'clientesAsociados':
+      case 'esqueleto':
+        if (!value) {
+          return (
+            <span className="text-gray-500 dark:text-gray-400">
+              Sin esqueleto
+            </span>
+          );
+        }
+        const esqueletoDetail = esqueletoDetails[value];
         return (
-          <div className="flex items-center space-x-2">
-            <Users className="w-4 h-4 text-gray-500" />
-            <span>{value}</span>
-          </div>
-        );
-      case 'duracion':
-        return (
-          <div className="flex items-center space-x-2">
-            <Clock className="w-4 h-4 text-gray-500" />
-            <span>{value}</span>
-          </div>
+          <span className="text-blue-600 dark:text-blue-400">
+            {esqueletoDetail ? esqueletoDetail.nombre : 'Cargando...'}
+          </span>
         );
       case 'acciones':
         return (
-          <div className="flex items-center space-x-2">
+          <div className="flex space-x-2">
             <button
               onClick={() => {
                 if (item.tipo === 'Plantilla') {
@@ -179,11 +165,20 @@ const PlanningList: React.FC = () => {
                   navigate(`/edit-planning/${item._id}`);
                 }
               }}
-              className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                theme === 'dark' ? 'text-white' : 'text-gray-600'
-              }`}
+              className="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+              title="Editar planificación"
             >
-              <Edit className="w-4 h-4" />
+              <Edit className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => {
+                setSelectedItemId(item._id);
+                setIsEsqueletoModalOpen(true);
+              }}
+              className="p-2 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
+              title={item.esqueleto ? "Modificar Esqueleto" : "Asignar Esqueleto"}
+            >
+              <FileText className="w-5 h-5" />
             </button>
           </div>
         );
@@ -194,6 +189,7 @@ const PlanningList: React.FC = () => {
 
   // Función para obtener las planificaciones
   const fetchPlannings = async () => {
+    console.log('Fetching plannings...');
     setLoading(true);
     setError(null);
     try {
@@ -206,14 +202,14 @@ const PlanningList: React.FC = () => {
 
       // Realizar ambas peticiones en paralelo
       const [planningsResponse, templatesResponse] = await Promise.all([
-        fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/schemas', {
+        fetch('http://localhost:3000/api/plannings/schemas', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
         }),
-        fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/planningtemplate/templates', {
+        fetch('http://localhost:3000/api/planningtemplate/templates', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -232,11 +228,13 @@ const PlanningList: React.FC = () => {
         throw new Error(errorData.mensaje || 'Error al obtener las plantillas');
       }
 
-      const planningsData: PlanningSchema[] = await planningsResponse.json();
+      const planningsData = await planningsResponse.json();
       const templatesData = await templatesResponse.json();
 
+      console.log('Plannings Data:', planningsData);
+
       // Procesar datos de planificaciones
-      const processedPlannings = planningsData.map((planning) => ({
+      const processedPlannings = planningsData.map((planning: any) => ({
         _id: planning._id,
         nombre: planning.nombre,
         descripcion: planning.descripcion,
@@ -244,11 +242,14 @@ const PlanningList: React.FC = () => {
         fechaInicio: new Date(planning.fechaInicio).toLocaleDateString(),
         meta: planning.meta,
         tipo: planning.tipo || 'Planificacion',
+        esqueleto: planning.esqueleto,
         clientesAsociados: 1,
         estado: 'En progreso',
         completado: '65%',
         acciones: 'Editar'
       }));
+
+      console.log('Processed Plannings:', processedPlannings);
 
       // Procesar datos de plantillas
       const processedTemplates = templatesData.map((template: any) => ({
@@ -259,6 +260,7 @@ const PlanningList: React.FC = () => {
         fechaInicio: new Date(template.createdAt).toLocaleDateString(),
         meta: template.category,
         tipo: 'Plantilla',
+        esqueleto: template.esqueleto,
         clientesAsociados: template.assignedClients?.length || 0,
         estado: template.isActive ? 'Activo' : 'Inactivo',
         completado: '100%',
@@ -275,14 +277,72 @@ const PlanningList: React.FC = () => {
     }
   };
 
-  const handleCrearEsqueleto = async (esqueletoData: any) => {
+  const fetchEsqueletoDetails = async (esqueletoId: string) => {
+    console.log('Fetching esqueleto details for ID:', esqueletoId);
     try {
-      // Aquí implementarás la llamada a la API para crear el esqueleto
-      console.log('Datos del esqueleto:', esqueletoData);
-      // TODO: Implementar la llamada a la API
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const response = await fetch(`http://localhost:3000/api/esqueleto/esqueletos/${esqueletoId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener los detalles del esqueleto');
+      }
+
+      const esqueletoData = await response.json();
+      console.log('Esqueleto data received:', esqueletoData);
+      setEsqueletoDetails(prev => ({
+        ...prev,
+        [esqueletoId]: esqueletoData
+      }));
+    } catch (error) {
+      console.error('Error al obtener detalles del esqueleto:', error);
+    }
+  };
+
+  useEffect(() => {
+    console.log('Current planningData:', planningData);
+    const fetchEsqueletosForPlannings = async () => {
+      const esqueletoIds = planningData
+        .map(planning => planning.esqueleto)
+        .filter((id): id is string => typeof id === 'string');
+
+      console.log('Filtered esqueleto IDs:', esqueletoIds);
+      const uniqueEsqueletoIds = [...new Set(esqueletoIds)];
+      console.log('Unique esqueleto IDs:', uniqueEsqueletoIds);
+
+      for (const esqueletoId of uniqueEsqueletoIds) {
+        if (!esqueletoDetails[esqueletoId]) {
+          await fetchEsqueletoDetails(esqueletoId);
+        }
+      }
+    };
+
+    fetchEsqueletosForPlannings();
+  }, [planningData]);
+
+  const handleCrearEsqueleto = async (updatedPlanning: any) => {
+    console.log('Creating esqueleto for planning:', updatedPlanning);
+    try {
+      // Actualizar la lista de planificaciones con el esqueleto asignado
+      setPlanningData(prevData => 
+        prevData.map(item => 
+          item._id === updatedPlanning._id 
+            ? { ...item, esqueleto: updatedPlanning.esqueleto }
+            : item
+        )
+      );
       setIsEsqueletoModalOpen(false);
     } catch (error) {
-      console.error('Error al crear el esqueleto:', error);
+      console.error('Error al actualizar la planificación:', error);
     }
   };
 
@@ -290,6 +350,8 @@ const PlanningList: React.FC = () => {
   useEffect(() => {
     fetchPlannings();
   }, []);
+
+  const [selectedItemId, setSelectedItemId] = useState('');
 
   return (
     <div
@@ -609,6 +671,7 @@ const PlanningList: React.FC = () => {
               'Clientes',
               'Estado',
               'Completado',
+              'Esqueleto',
               'Acciones',
             ]}
             data={planningData
@@ -650,6 +713,7 @@ const PlanningList: React.FC = () => {
                 clientesAsociados: renderCell('clientesAsociados', item.clientesAsociados, item),
                 estado: renderCell('estado', item.estado, item),
                 completado: renderCell('completado', item.completado, item),
+                esqueleto: renderCell('esqueleto', item.esqueleto, item),
                 acciones: renderCell('acciones', item.acciones, { ...item, _id: item._id }),
               }))}
             variant={theme === 'dark' ? 'dark' : 'white'}
@@ -732,7 +796,7 @@ const PlanningList: React.FC = () => {
       <AnimatePresence>
         {isEsqueletoModalOpen && (
           <motion.div
-            key="modal-crear-esqueleto"
+            key="modal-asignar-esqueleto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -741,6 +805,7 @@ const PlanningList: React.FC = () => {
             <PopupCrearEsqueleto
               onClose={() => setIsEsqueletoModalOpen(false)}
               onCrear={handleCrearEsqueleto}
+              planningId={selectedItemId}
             />
           </motion.div>
         )}

@@ -1,204 +1,219 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
-import { FileText, Plus, Tag, Clock, Edit2, Trash2 } from 'lucide-react';
-import Button from '../Common/Button';
+import { motion } from 'framer-motion';
+import { AlertTriangle, Plus, X } from 'lucide-react';
 
 interface Nota {
-  id: string;
+  _id: string;
   titulo: string;
   contenido: string;
+  importante: boolean;
+  planning: string;
   fecha: string;
-  etiquetas: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface VistaNotasProps {
-  semanaActual: number;
-  planSemanal: any;
-  updatePlan: (plan: any) => void;
+  planningId: string;
 }
 
-const VistaNotas: React.FC<VistaNotasProps> = ({
-  semanaActual,
-}) => {
+const VistaNotas: React.FC<VistaNotasProps> = ({ planningId }) => {
   const { theme } = useTheme();
-  const [notas, setNotas] = useState<Nota[]>([
-    {
-      id: '1',
-      titulo: 'Progreso en Fuerza',
-      contenido: 'Incremento notable en los ejercicios de peso muerto y sentadillas. Mantener la forma y aumentar peso gradualmente.',
-      fecha: '2024-03-15',
-      etiquetas: ['Fuerza', 'Progreso'],
-    },
-    {
-      id: '2',
-      titulo: 'Ajustes de Rutina',
-      contenido: 'Modificar el orden de ejercicios para optimizar el rendimiento. Comenzar con compuestos y terminar con aislamientos.',
-      fecha: '2024-03-14',
-      etiquetas: ['Planificación', 'Optimización'],
-    },
-  ]);
-
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [nuevaNota, setNuevaNota] = useState({
+  const [notas, setNotas] = useState<Nota[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [newNota, setNewNota] = useState({
     titulo: '',
     contenido: '',
-    etiquetas: '',
+    importante: false
   });
+  const [error, setError] = useState<string | null>(null);
 
-  const agregarNota = () => {
-    if (nuevaNota.titulo && nuevaNota.contenido) {
-      const nota: Nota = {
-        id: Date.now().toString(),
-        titulo: nuevaNota.titulo,
-        contenido: nuevaNota.contenido,
-        fecha: new Date().toISOString().split('T')[0],
-        etiquetas: nuevaNota.etiquetas.split(',').map(tag => tag.trim()),
-      };
-      setNotas([nota, ...notas]);
-      setNuevaNota({ titulo: '', contenido: '', etiquetas: '' });
-      setMostrarFormulario(false);
+  const fetchNotas = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const response = await fetch(`http://localhost:3000/api/notas-planning/planning/${planningId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al cargar las notas');
+      }
+
+      const data = await response.json();
+      setNotas(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar las notas');
     }
   };
 
-  const eliminarNota = (id: string) => {
-    setNotas(notas.filter(nota => nota.id !== id));
+  useEffect(() => {
+    if (planningId) {
+      fetchNotas();
+    }
+  }, [planningId]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const response = await fetch('http://localhost:3000/api/notas-planning', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          planningId,
+          ...newNota
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al crear la nota');
+      }
+
+      await fetchNotas();
+      setShowForm(false);
+      setNewNota({
+        titulo: '',
+        contenido: '',
+        importante: false
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al crear la nota');
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <div className={`p-6 rounded-xl shadow-lg
-        ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <FileText className="w-6 h-6 text-blue-500" />
-            <h2 className="text-xl font-bold">Notas y Observaciones</h2>
-          </div>
-          <Button
-            variant="create"
-            onClick={() => setMostrarFormulario(!mostrarFormulario)}
-            className="flex items-center space-x-2"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Nueva Nota</span>
-          </Button>
-        </div>
-
-        {mostrarFormulario && (
-          <div className={`mb-6 p-4 rounded-lg
-            ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'}`}>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Título</label>
-                <input
-                  type="text"
-                  value={nuevaNota.titulo}
-                  onChange={(e) => setNuevaNota({ ...nuevaNota, titulo: e.target.value })}
-                  className={`w-full p-2 rounded-md border
-                    ${theme === 'dark'
-                      ? 'bg-gray-600 border-gray-500'
-                      : 'bg-white border-gray-300'}`}
-                  placeholder="Título de la nota"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Contenido</label>
-                <textarea
-                  value={nuevaNota.contenido}
-                  onChange={(e) => setNuevaNota({ ...nuevaNota, contenido: e.target.value })}
-                  className={`w-full p-2 rounded-md border h-32
-                    ${theme === 'dark'
-                      ? 'bg-gray-600 border-gray-500'
-                      : 'bg-white border-gray-300'}`}
-                  placeholder="Contenido de la nota"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Etiquetas (separadas por comas)</label>
-                <input
-                  type="text"
-                  value={nuevaNota.etiquetas}
-                  onChange={(e) => setNuevaNota({ ...nuevaNota, etiquetas: e.target.value })}
-                  className={`w-full p-2 rounded-md border
-                    ${theme === 'dark'
-                      ? 'bg-gray-600 border-gray-500'
-                      : 'bg-white border-gray-300'}`}
-                  placeholder="Fuerza, Progreso, Planificación"
-                />
-              </div>
-              <div className="flex justify-end space-x-3">
-                <Button
-                  variant="normal"
-                  onClick={() => setMostrarFormulario(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="create"
-                  onClick={agregarNota}
-                >
-                  Guardar Nota
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-4">
-          {notas.map((nota) => (
-            <div
-              key={nota.id}
-              className={`p-4 rounded-lg transition-all duration-300
-                ${theme === 'dark'
-                  ? 'bg-gray-700 hover:bg-gray-650'
-                  : 'bg-gray-50 hover:bg-gray-100'}`}
-            >
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="font-semibold text-lg">{nota.titulo}</h3>
-                <div className="flex space-x-2">
-                  <button
-                    className={`p-2 rounded-full transition-colors
-                      ${theme === 'dark'
-                        ? 'hover:bg-gray-600'
-                        : 'hover:bg-gray-200'}`}
-                  >
-                    <Edit2 className="w-4 h-4 text-gray-500" />
-                  </button>
-                  <button
-                    onClick={() => eliminarNota(nota.id)}
-                    className={`p-2 rounded-full transition-colors
-                      ${theme === 'dark'
-                        ? 'hover:bg-gray-600'
-                        : 'hover:bg-gray-200'}`}
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </button>
-                </div>
-              </div>
-              <p className="text-gray-600 dark:text-gray-300 mb-3">
-                {nota.contenido}
-              </p>
-              <div className="flex items-center justify-between">
-                <div className="flex flex-wrap gap-2">
-                  {nota.etiquetas.map((etiqueta, index) => (
-                    <span
-                      key={index}
-                      className="flex items-center space-x-1 text-sm px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                    >
-                      <Tag className="w-3 h-3" />
-                      <span>{etiqueta}</span>
-                    </span>
-                  ))}
-                </div>
-                <div className="flex items-center text-sm text-gray-500">
-                  <Clock className="w-4 h-4 mr-1" />
-                  {nota.fecha}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.5 }}
+      className={`${
+        theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'
+      } rounded-xl p-6 shadow-lg`}
+    >
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+          Notas del Plan
+        </h2>
+        <button
+          onClick={() => setShowForm(true)}
+          className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+        >
+          <Plus className="w-5 h-5 mr-2" />
+          Nueva Nota
+        </button>
       </div>
-    </div>
+
+      {error && (
+        <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg flex items-center">
+          <AlertTriangle className="w-5 h-5 mr-2" />
+          {error}
+        </div>
+      )}
+
+      {showForm && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow"
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Nueva Nota</h3>
+            <button
+              onClick={() => setShowForm(false)}
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <input
+                type="text"
+                placeholder="Título"
+                value={newNota.titulo}
+                onChange={(e) => setNewNota({ ...newNota, titulo: e.target.value })}
+                className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                required
+              />
+            </div>
+            <div>
+              <textarea
+                placeholder="Contenido"
+                value={newNota.contenido}
+                onChange={(e) => setNewNota({ ...newNota, contenido: e.target.value })}
+                className="w-full p-2 border rounded-lg min-h-[100px] dark:bg-gray-700 dark:border-gray-600"
+                required
+              />
+            </div>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="importante"
+                checked={newNota.importante}
+                onChange={(e) => setNewNota({ ...newNota, importante: e.target.checked })}
+                className="mr-2"
+              />
+              <label htmlFor="importante">Marcar como importante</label>
+            </div>
+            <button
+              type="submit"
+              className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Guardar Nota
+            </button>
+          </form>
+        </motion.div>
+      )}
+
+      <div className="space-y-4">
+        {notas.length === 0 ? (
+          <p className="text-center text-gray-500 dark:text-gray-400">
+            No hay notas disponibles
+          </p>
+        ) : (
+          notas.map((nota) => (
+            <motion.div
+              key={nota._id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className={`p-4 rounded-lg shadow ${
+                nota.importante
+                  ? 'bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-500'
+                  : 'bg-white dark:bg-gray-800'
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">{nota.titulo}</h3>
+                  <p className="text-gray-600 dark:text-gray-300">{nota.contenido}</p>
+                </div>
+                {nota.importante && (
+                  <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0" />
+                )}
+              </div>
+              <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                {new Date(nota.fecha).toLocaleDateString()}
+              </div>
+            </motion.div>
+          ))
+        )}
+      </div>
+    </motion.div>
   );
 };
 

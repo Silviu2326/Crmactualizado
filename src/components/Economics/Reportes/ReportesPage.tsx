@@ -165,7 +165,7 @@ const ReportesPage: React.FC = () => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/reports/${reporteId}/download`, {
+      const response = await fetch(`http://localhost:3000/api/reports/${reporteId}/download`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

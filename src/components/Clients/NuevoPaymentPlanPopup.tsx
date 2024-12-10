@@ -101,7 +101,7 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
       const token = localStorage.getItem('token');
       console.log('Token:', token);
 
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/planes-de-pago', {
+      const response = await fetch('http://localhost:3000/api/planes-de-pago', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

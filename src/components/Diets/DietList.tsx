@@ -99,7 +99,7 @@ const DietList: React.FC = () => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/dietas', {
+      const response = await fetch('http://localhost:3000/api/dietas', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -153,7 +153,7 @@ const DietList: React.FC = () => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/foods', {
+      const response = await fetch('http://localhost:3000/api/foods', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

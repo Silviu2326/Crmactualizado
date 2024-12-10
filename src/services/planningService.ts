@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Planning, WeekPlan, Session } from '../types/planning';
 
-const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api';
+const API_URL = 'http://localhost:3000/api';
 
 class PlanningService {
   private getAuthConfig() {

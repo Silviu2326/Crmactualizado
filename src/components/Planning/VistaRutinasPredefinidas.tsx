@@ -76,7 +76,7 @@ const VistaRutinasPredefinidas: React.FC<VistaRutinasPredefinidasProps> = ({ pla
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/routines/routines', {
+      const response = await axios.get('http://localhost:3000/api/routines/routines', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -100,23 +100,87 @@ const VistaRutinasPredefinidas: React.FC<VistaRutinasPredefinidasProps> = ({ pla
   }, []);
 
   const handleAddRoutine = (routine: Routine) => {
+    console.log('🔵 Iniciando proceso de agregar rutina:', {
+      routineId: routine._id,
+      routineName: routine.name,
+      exercises: routine.exercises.length
+    });
     setSelectedRoutine(routine);
     setShowPopup(true);
   };
 
   const handleConfirmAdd = () => {
     if (selectedRoutine && updatePlan && planSemanal) {
+      console.log('🟢 Confirmando adición de rutina:', {
+        routineId: selectedRoutine._id,
+        routineName: selectedRoutine.name,
+        selectedWeek,
+        selectedDay,
+        currentPlanSessions: planSemanal[selectedDay]?.sessions?.length || 0
+      });
+
       const updatedPlan = { ...planSemanal };
       if (!updatedPlan[selectedDay]) {
+        console.log('⚪ Creando estructura para día:', selectedDay);
         updatedPlan[selectedDay] = { sessions: [] };
       }
       if (!updatedPlan[selectedDay].sessions) {
         updatedPlan[selectedDay].sessions = [];
       }
-      updatedPlan[selectedDay].sessions.push(selectedRoutine);
+
+      // Transformar la rutina al formato esperado por SesionEntrenamiento
+      const formattedRoutine = {
+        _id: selectedRoutine._id,
+        name: selectedRoutine.name,
+        tipo: 'Normal',
+        exercises: selectedRoutine.exercises.map(exercise => ({
+          _id: exercise._id,
+          exercise: {
+            _id: exercise._id,
+            nombre: exercise.name,
+            grupoMuscular: [],
+            descripcion: exercise.notes || '',
+            equipo: [],
+            imgUrl: ''
+          },
+          sets: exercise.metrics.map(metric => ({
+            _id: metric._id,
+            reps: metric.type === 'Repeticiones' ? parseInt(metric.value) : 0,
+            weight: metric.type === 'Peso' ? parseInt(metric.value) : 0,
+            rest: metric.type === 'Descanso' ? parseFloat(metric.value) : 0,
+            renderConfig: {
+              campo1: 'reps',
+              campo2: 'weight',
+              campo3: 'rest'
+            },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          })),
+          createdAt: exercise.createdAt || new Date().toISOString(),
+          updatedAt: exercise.updatedAt || new Date().toISOString()
+        })),
+        createdAt: selectedRoutine.createdAt,
+        updatedAt: selectedRoutine.updatedAt
+      };
+
+      console.log('🔷 Rutina formateada:', formattedRoutine);
+      
+      updatedPlan[selectedDay].sessions.push(formattedRoutine);
+      console.log('🟣 Plan actualizado:', {
+        day: selectedDay,
+        totalSessions: updatedPlan[selectedDay].sessions.length,
+        lastAddedSession: formattedRoutine.name
+      });
+      
       updatePlan(updatedPlan);
       setShowPopup(false);
       setSelectedRoutine(null);
+    } else {
+      console.warn('❌ No se pudo agregar la rutina:', {
+        hasSelectedRoutine: !!selectedRoutine,
+        hasUpdatePlan: !!updatePlan,
+        hasPlanSemanal: !!planSemanal
+      });
     }
   };
 

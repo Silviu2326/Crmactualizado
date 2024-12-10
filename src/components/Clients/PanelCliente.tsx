@@ -119,7 +119,7 @@ interface PanelClienteProps {
   onClose: () => void;
 }
 
-const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api';
+const API_URL = 'http://localhost:3000/api';
 
 const PanelCliente: React.FC<PanelClienteProps> = ({ clienteId, onClose }) => {
   const { theme } = useTheme();

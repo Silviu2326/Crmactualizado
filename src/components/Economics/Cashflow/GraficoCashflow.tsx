@@ -70,7 +70,7 @@ const GraficoCashflow: React.FC = () => {
         console.log('Iniciando peticiones a las APIs...');
 
         // Obtener ingresos
-        const ingresosResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos', {
+        const ingresosResponse = await fetch('http://localhost:3000/api/ingresos', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -78,7 +78,7 @@ const GraficoCashflow: React.FC = () => {
         });
 
         // Obtener gastos
-        const gastosResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos', {
+        const gastosResponse = await fetch('http://localhost:3000/api/gastos', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

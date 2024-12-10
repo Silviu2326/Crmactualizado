@@ -75,7 +75,7 @@ const EditPlanningPage: React.FC = () => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${id}`, {
+      const response = await fetch(`http://localhost:3000/api/plannings/${id}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -90,9 +90,16 @@ const EditPlanningPage: React.FC = () => {
 
       const data: Planning = await response.json();
       console.log('Datos recibidos del backend:', data);
+      console.log('Plan semanal actual:', data.plan[semanaActual - 1]);
+      console.log('Días del plan semanal:', data.plan[semanaActual - 1]?.days);
 
       setPlanning(data);
-      setPlanSemanal(data.plan[semanaActual - 1].days);
+      if (data.plan && data.plan[semanaActual - 1]) {
+        setPlanSemanal(data.plan[semanaActual - 1].days);
+      } else {
+        console.error('No se encontró el plan para la semana', semanaActual);
+        setPlanSemanal(null);
+      }
     } catch (err: any) {
       console.error('Error al obtener la planificación:', err);
       setError(err.message);
@@ -106,8 +113,12 @@ const EditPlanningPage: React.FC = () => {
   }, [id, semanaActual]);
 
   useEffect(() => {
-    if (planning) {
+    if (planning && planning.plan && planning.plan[semanaActual - 1]) {
+      console.log('Actualizando planSemanal con:', planning.plan[semanaActual - 1].days);
       setPlanSemanal(planning.plan[semanaActual - 1].days);
+    } else {
+      console.log('No se pudo actualizar planSemanal:', { planning, semanaActual });
+      setPlanSemanal(null);
     }
   }, [semanaActual, planning]);
 
@@ -137,21 +148,78 @@ const EditPlanningPage: React.FC = () => {
     }
   };
 
-  const updatePlan = (updatedDays: { [key: string]: DayPlan }) => {
-    if (!planning) return;
-
-    setPlanSemanal(updatedDays);
-    setPlanning((prev) => {
-      if (!prev) return prev;
-
-      const newPlan = [...prev.plan];
-      newPlan[semanaActual - 1].days = updatedDays;
-      return {
-        ...prev,
-        plan: newPlan,
-        updatedAt: new Date().toISOString(),
-      };
+  const savePlanning = async (updatedPlanning: Planning) => {
+    console.log('💾 Guardando planning en el backend:', {
+      planningId: updatedPlanning._id,
+      weekCount: updatedPlanning.plan.length,
+      lastUpdate: new Date().toISOString()
     });
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const response = await fetch(`http://localhost:3000/api/plannings/${updatedPlanning._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(updatedPlanning),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.mensaje || 'Error al guardar la planificación');
+      }
+
+      console.log('✨ Planning guardado exitosamente');
+    } catch (error) {
+      console.error('❌ Error al guardar el planning:', error);
+      // Aquí podrías mostrar una notificación al usuario si lo deseas
+    }
+  };
+
+  const updatePlan = (updatedDays: { [key: string]: DayPlan }) => {
+    console.log('🔄 Actualizando plan semanal:', {
+      semanaActual,
+      updatedDays: Object.keys(updatedDays),
+      totalSessions: Object.values(updatedDays).reduce((acc, day) => acc + (day.sessions?.length || 0), 0)
+    });
+
+    if (planning && planning.plan) {
+      const updatedPlanning = { ...planning };
+      if (!updatedPlanning.plan[semanaActual - 1]) {
+        console.log('📝 Creando nueva semana en el plan:', semanaActual);
+        updatedPlanning.plan[semanaActual - 1] = {
+          weekNumber: semanaActual,
+          days: {}
+        };
+      }
+      
+      updatedPlanning.plan[semanaActual - 1].days = updatedDays;
+      updatedPlanning.updatedAt = new Date().toISOString();
+
+      console.log('✅ Plan actualizado correctamente:', {
+        weekNumber: semanaActual,
+        updatedDaysCount: Object.keys(updatedDays).length,
+        totalSessionsInWeek: Object.values(updatedDays).reduce((acc, day) => acc + (day.sessions?.length || 0), 0)
+      });
+
+      setPlanning(updatedPlanning);
+      setPlanSemanal(updatedDays);
+      
+      // Guardar en el backend
+      savePlanning(updatedPlanning);
+    } else {
+      console.error('❌ Error al actualizar plan:', {
+        hasPlanning: !!planning,
+        hasPlanArray: !!(planning?.plan),
+        currentWeek: semanaActual
+      });
+    }
   };
 
   const handleSaveChanges = async () => {
@@ -165,7 +233,7 @@ const EditPlanningPage: React.FC = () => {
         throw new Error('No se encontró el token de autenticación');
       }
   
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${planning._id}`, {
+      const response = await fetch(`http://localhost:3000/api/plannings/${planning._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -216,14 +284,14 @@ const EditPlanningPage: React.FC = () => {
         return <VistaExcel {...props} />;
       case 'resumen':
         return <VistaResumen {...props} />;
-      case 'ejercicios':
-        return <VistaEjerciciosDetallados {...props} />;
       case 'progreso':
-        return <VistaProgreso semanaActual={semanaActual} />;
+        return <VistaProgreso planSemanal={planSemanal} />;
       case 'estadisticas':
-        return <VistaEstadisticas {...props} />;
+        return <VistaEstadisticas planSemanal={planSemanal} />;
+      case 'ejercicios':
+        return <VistaEjerciciosDetallados planSemanal={planSemanal} semanaActual={semanaActual} />;
       case 'notas':
-        return <VistaNotas {...props} />;
+        return <VistaNotas planningId={id} />;
       case 'rutinas':
         return <VistaRutinasPredefinidas {...props} planning={planning} />;
       case 'configuracion':

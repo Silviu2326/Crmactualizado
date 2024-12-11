@@ -124,6 +124,30 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
     };
   };
 
+  // Lista de campos válidos para la configuración
+  const VALID_FIELDS = [
+    'reps',
+    'weight',
+    'rest',
+    'tempo',
+    'rpe',
+    'rpm',
+    'rir',
+    'speed',
+    'cadence',
+    'distance',
+    'height',
+    'calories',
+    'round'
+  ] as const;
+
+  type ValidField = typeof VALID_FIELDS[number];
+
+  // Función para validar si un campo es válido
+  const isValidField = (field: string): field is ValidField => {
+    return VALID_FIELDS.includes(field as ValidField);
+  };
+
   // Función para actualizar la configuración de renderizado en el backend
   const updateRenderConfig = async (
     exerciseId: string,
@@ -136,85 +160,44 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
         throw new Error('No se encontró el token de autenticación');
       }
 
+      // Validar que los campos sean válidos
+      const validatedConfig = {
+        campo1: isValidField(config.campo1) ? config.campo1 : 'reps',
+        campo2: isValidField(config.campo2) ? config.campo2 : 'weight',
+        campo3: isValidField(config.campo3) ? config.campo3 : 'rest'
+      };
+
       const url = `https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${planningId}/weeks/${weekNumber}/days/${selectedDay}/sessions/${session._id}/exercises/${exerciseId}/sets/${setId}/render-config`;
       
-      await axios.patch(url, config, {
+      const response = await axios.patch(url, validatedConfig, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
-      console.log('Configuración de renderizado actualizada exitosamente');
+      if (response.status === 200) {
+        // Actualizar el estado local con la nueva configuración
+        setLocalSession(prevSession => ({
+          ...prevSession,
+          exercises: prevSession.exercises.map(exercise => 
+            exercise._id === exerciseId
+              ? {
+                  ...exercise,
+                  sets: exercise.sets.map(set =>
+                    set._id === setId
+                      ? { ...set, renderConfig: validatedConfig }
+                      : set
+                  )
+                }
+              : exercise
+          )
+        }));
+        console.log('Configuración de renderizado actualizada exitosamente');
+      }
     } catch (error) {
       console.error('Error al actualizar la configuración de renderizado:', error);
-    }
-  };
-
-  // Función para actualizar los tipos seleccionados
-  const handleTypeChange = async (
-    exerciseId: string,
-    setId: string,
-    campo: string,
-    newType: MeasureType
-  ) => {
-    // Actualizar el estado local
-    setSelectedTypes((prevTypes) => {
-      const updatedTypes = { ...prevTypes };
-      if (!updatedTypes[exerciseId]) {
-        updatedTypes[exerciseId] = {};
-      }
-      if (!updatedTypes[exerciseId][setId]) {
-        updatedTypes[exerciseId][setId] = {
-          reps: 'REPS',
-          weight: 'WEIGHT',
-          rest: 'REST'
-        };
-      }
-      updatedTypes[exerciseId][setId] = {
-        ...updatedTypes[exerciseId][setId],
-        [campo]: newType
-      };
-      return updatedTypes;
-    });
-
-    try {
-      // Encontrar el ejercicio y el set actual
-      const exercise = session.exercises.find(e => e._id === exerciseId);
-      const set = exercise?.sets.find(s => s._id === setId);
-      
-      if (!set || !set.renderConfig) return;
-
-      // Crear el nuevo renderConfig basado en el campo que se está cambiando
-      const newRenderConfig = {
-        ...set.renderConfig,
-        [campo]: newType.toLowerCase()
-      };
-
-      // Enviar la petición PATCH al backend
-      const response = await axios.patch(
-        `https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${planningId}/weeks/${weekNumber}/days/${selectedDay}/sessions/${session._id}/exercises/${exerciseId}/sets/${setId}/render-config`,
-        newRenderConfig
-      );
-
-      if (response.status === 200) {
-        console.log('RenderConfig actualizado exitosamente:', response.data);
-        
-        // Actualizar el estado local de la sesión
-        setLocalSession(prevSession => {
-          const newSession = { ...prevSession };
-          const exerciseIndex = newSession.exercises.findIndex(e => e._id === exerciseId);
-          if (exerciseIndex !== -1) {
-            const setIndex = newSession.exercises[exerciseIndex].sets.findIndex(s => s._id === setId);
-            if (setIndex !== -1) {
-              newSession.exercises[exerciseIndex].sets[setIndex].renderConfig = response.data.data.renderConfig;
-            }
-          }
-          return newSession;
-        });
-      }
-    } catch (error) {
-      console.error('Error al actualizar el renderConfig:', error);
+      throw error;
     }
   };
 
@@ -592,13 +575,16 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
   const fieldOptions = {
     campo1: [
       { value: 'reps', label: 'Repeticiones' },
-      { value: 'time', label: 'Tiempo' },
-      { value: 'distance', label: 'Distancia' }
+      { value: 'distance', label: 'Distancia' },
+      { value: 'tempo', label: 'Tempo' },
+      { value: 'calories', label: 'Calorías' }
     ],
     campo2: [
       { value: 'weight', label: 'Peso' },
       { value: 'speed', label: 'Velocidad' },
-      { value: 'height', label: 'Altura' }
+      { value: 'height', label: 'Altura' },
+      { value: 'cadence', label: 'Cadencia' },
+      { value: 'rpm', label: 'RPM' }
     ],
     campo3: [
       { value: 'rest', label: 'Descanso' },
@@ -606,6 +592,69 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
       { value: 'rpe', label: 'RPE' },
       { value: 'rir', label: 'RIR' }
     ]
+  };
+
+  // Función para actualizar los tipos seleccionados
+  const handleTypeChange = async (
+    exerciseId: string,
+    setId: string,
+    campo: string,
+    newType: string
+  ) => {
+    try {
+      // Validar que el nuevo tipo sea válido
+      if (!isValidField(newType.toLowerCase())) {
+        console.error('Tipo de medición no válido:', newType);
+        return;
+      }
+
+      // Actualizar el estado local
+      setSelectedTypes((prevTypes) => {
+        const updatedTypes = { ...prevTypes };
+        if (!updatedTypes[exerciseId]) {
+          updatedTypes[exerciseId] = {};
+        }
+        if (!updatedTypes[exerciseId][setId]) {
+          updatedTypes[exerciseId][setId] = {
+            reps: 'reps',
+            weight: 'weight',
+            rest: 'rest'
+          };
+        }
+        updatedTypes[exerciseId][setId] = {
+          ...updatedTypes[exerciseId][setId],
+          [campo]: newType.toLowerCase()
+        };
+        return updatedTypes;
+      });
+
+      // Encontrar el ejercicio y el set actual
+      const exercise = localSession.exercises.find(e => e._id === exerciseId);
+      const set = exercise?.sets.find(s => s._id === setId);
+      
+      if (!set) {
+        console.error('No se encontró el set especificado');
+        return;
+      }
+
+      // Crear el nuevo renderConfig basado en el campo que se está cambiando
+      const currentConfig = set.renderConfig || {
+        campo1: 'reps',
+        campo2: 'weight',
+        campo3: 'rest'
+      };
+
+      const newRenderConfig = {
+        ...currentConfig,
+        [campo]: newType.toLowerCase()
+      };
+
+      // Actualizar la configuración en el backend
+      await updateRenderConfig(exerciseId, setId, newRenderConfig);
+
+    } catch (error) {
+      console.error('Error al actualizar el tipo de medición:', error);
+    }
   };
 
   return (
@@ -722,7 +771,7 @@ const SesionEntrenamiento: React.FC<SesionEntrenamientoProps> = ({
             >
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-lg font-medium">
-                  {exercise.exercise.nombre}
+                  {exercise?.exercise?.nombre || 'Ejercicio sin nombre'}
                 </h4>
                 <div className="flex space-x-2">
                   <button

@@ -237,10 +237,6 @@ const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
         <Button variant="filter" onClick={toggleFilter}>
           <Filter className="w-4 h-4" />
         </Button>
-        <Button variant="create" onClick={() => setIsDocumentoPopupOpen(true)}>
-          <Plus className="w-4 h-4 mr-1" />
-          Añadir
-        </Button>
       </div>
       {isFilterOpen && (
         <div

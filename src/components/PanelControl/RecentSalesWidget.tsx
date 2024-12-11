@@ -26,6 +26,8 @@ const IncomeWidget: React.FC = () => {
   const [ingresos, setIngresos] = useState<FormattedIncome[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filterOption, setFilterOption] = useState('all');
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -66,24 +68,50 @@ const IncomeWidget: React.FC = () => {
     fetchIngresos();
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isFilterOpen && !(event.target as Element).closest('.filter-dropdown')) {
+        setIsFilterOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isFilterOpen]);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
 
-  const handleFilter = () => {
-    // Implementar lógica de filtrado avanzado aquí si es necesario
-    console.log('Filtrar ingresos');
-  };
-
-  // Utiliza useMemo para optimizar el filtrado
   const filteredData = useMemo(() => {
-    if (!searchTerm) return ingresos;
-    return ingresos.filter((item) =>
-      Object.values(item).some((value) =>
-        value.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    );
-  }, [searchTerm, ingresos]);
+    let filtered = ingresos;
+    
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter((item) =>
+        Object.values(item).some((value) =>
+          value.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+    }
+    
+    // Apply dropdown filter
+    if (filterOption !== 'all') {
+      filtered = filtered.filter((item) => {
+        if (filterOption === 'pending') {
+          return item['Estado del Pago'].toLowerCase() === 'pendiente';
+        }
+        if (filterOption === 'completed') {
+          return item['Estado del Pago'].toLowerCase() === 'completado';
+        }
+        return true;
+      });
+    }
+    
+    return filtered;
+  }, [searchTerm, ingresos, filterOption]);
 
   if (loading) {
     return (
@@ -110,22 +138,81 @@ const IncomeWidget: React.FC = () => {
   return (
     <div className={`h-full flex flex-col p-4 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
       <h3 className="text-lg font-semibold mb-4">Ingresos</h3>
-      <div className="flex items-center space-x-2 mb-4">
-        <div className="relative flex-grow">
+      <div className="flex gap-2 mb-4">
+        <div className="flex-grow relative">
           <input
             type="text"
-            placeholder="Buscar ingresos..."
+            placeholder="Buscar..."
             value={searchTerm}
             onChange={handleSearchChange}
-            className={`w-full px-3 py-2 pr-10 border ${
-              theme === 'dark' ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-800'
-            } rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+            className={`w-full pl-8 pr-4 py-2 rounded-lg border ${
+              theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+            }`}
           />
-          <Search className={`absolute right-3 top-2.5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
+          <Search className="absolute left-2 top-2.5 h-5 w-5 text-gray-400" />
         </div>
-        <Button variant="filter" onClick={handleFilter}>
-          <Filter className="w-4 h-4" />
-        </Button>
+        <div className="relative filter-dropdown">
+          <Button 
+            variant="filter"
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            className={`flex items-center gap-2 ${
+              theme === 'dark' 
+                ? 'bg-red-900 hover:bg-red-800 text-red-400' 
+                : 'bg-red-100 hover:bg-red-200 text-red-500'
+            }`}
+          >
+            <Filter size={16} />
+            Filtrar
+          </Button>
+          
+          {isFilterOpen && (
+            <div className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg ${
+              theme === 'dark' ? 'bg-gray-700' : 'bg-white'
+            } ring-1 ring-black ring-opacity-5 z-10`}>
+              <div className="py-1" role="menu">
+                <button
+                  onClick={() => {
+                    setFilterOption('all');
+                    setIsFilterOpen(false);
+                  }}
+                  className={`block px-4 py-2 text-sm w-full text-left ${
+                    theme === 'dark' 
+                      ? 'text-white hover:bg-gray-600' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  Todos
+                </button>
+                <button
+                  onClick={() => {
+                    setFilterOption('pending');
+                    setIsFilterOpen(false);
+                  }}
+                  className={`block px-4 py-2 text-sm w-full text-left ${
+                    theme === 'dark' 
+                      ? 'text-white hover:bg-gray-600' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  Pendientes
+                </button>
+                <button
+                  onClick={() => {
+                    setFilterOption('completed');
+                    setIsFilterOpen(false);
+                  }}
+                  className={`block px-4 py-2 text-sm w-full text-left ${
+                    theme === 'dark' 
+                      ? 'text-white hover:bg-gray-600' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  Completados
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       <div className="flex-grow overflow-auto">
         <Table

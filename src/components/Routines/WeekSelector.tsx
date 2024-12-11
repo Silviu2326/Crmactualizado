@@ -105,7 +105,15 @@ function SelectedPeriods({
   onRemovePeriod: (index: number) => void;
 }) {
   const formatDateRange = (start: number, end: number) => {
-    return `Semana ${start} - Semana ${end}`;
+    // Calcular semana y día para el inicio
+    const startWeek = Math.ceil(start / 7);
+    const startDay = start % 7 === 0 ? 7 : start % 7;
+
+    // Calcular semana y día para el fin
+    const endWeek = Math.ceil(end / 7);
+    const endDay = end % 7 === 0 ? 7 : end % 7;
+
+    return `Semana ${startWeek} (día ${startDay}) - Semana ${endWeek} (día ${endDay})`;
   };
 
   return (

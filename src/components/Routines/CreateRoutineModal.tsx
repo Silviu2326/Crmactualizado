@@ -109,18 +109,26 @@ const CreateRoutineModal: React.FC<CreateRoutineModalProps> = ({
     ));
   };
 
-  const handleUpdateMetric = (metricIndex: number, newType: string) => {
-    setExercises(exercises.map(exercise => ({
-      ...exercise,
-      metrics: exercise.metrics.map((metric, idx) =>
-        idx === metricIndex ? { ...metric, type: newType } : metric
+  const handleUpdateMetric = (exerciseId: string, metricIndex: number, newType: string) => {
+    setExercises(prevExercises => 
+      prevExercises.map(exercise => 
+        exercise.id === exerciseId 
+          ? {
+              ...exercise,
+              metrics: exercise.metrics.map((metric, idx) =>
+                idx === metricIndex ? { ...metric, type: newType } : metric
+              )
+            }
+          : exercise
       )
-    })));
+    );
     setOpenMetricDropdown(null);
   };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevenir la propagación del evento
+    
     const routineData = {
       name: routineName,
       description,
@@ -132,6 +140,7 @@ const CreateRoutineModal: React.FC<CreateRoutineModalProps> = ({
         notes: ex.notes
       }))
     };
+    
     onSave(routineData);
     onClose();
   };
@@ -158,7 +167,11 @@ const CreateRoutineModal: React.FC<CreateRoutineModalProps> = ({
         </div>
 
         <div className="p-6 max-h-[80vh] overflow-y-auto">
-          <form onSubmit={handleSave}>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSave(e);
+          }}>
             <BasicInformation
               routineName={routineName}
               setRoutineName={setRoutineName}
@@ -185,7 +198,11 @@ const CreateRoutineModal: React.FC<CreateRoutineModalProps> = ({
                     {exercises[0]?.metrics.map((metric, index) => (
                       <th key={index} className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider">
                         <button
-                          onClick={() => setOpenMetricDropdown(openMetricDropdown === `header-${index}` ? null : `header-${index}`)}
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setOpenMetricDropdown(openMetricDropdown === `header-${index}` ? null : `header-${index}`);
+                          }}
                           className="group flex items-center gap-1 hover:text-blue-500 focus:outline-none transition-colors duration-200"
                         >
                           <span>{metric.type}</span>
@@ -200,8 +217,15 @@ const CreateRoutineModal: React.FC<CreateRoutineModalProps> = ({
                                 <button
                                   key={option}
                                   type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const exerciseId = exercises[0]?.id;
+                                    if (exerciseId) {
+                                      handleUpdateMetric(exerciseId, index, option);
+                                    }
+                                  }}
                                   className="block w-full text-left px-4 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors duration-150"
-                                  onClick={() => handleUpdateMetric(index, option)}
                                 >
                                   {option}
                                 </button>

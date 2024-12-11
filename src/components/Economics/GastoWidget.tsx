@@ -234,6 +234,111 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({
           <Search className={`absolute right-3 top-2.5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
         </div>
         <div className="flex gap-2 items-center relative" ref={filterRef}>
+          <AnimatePresence>
+            {isFilterOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className={`absolute right-0 mt-10 p-4 rounded-lg shadow-lg z-50 ${
+                  theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+                } min-w-[300px]`}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Tipo</label>
+                    <select
+                      name="tipo"
+                      value={filterOptions.tipo}
+                      onChange={handleFilterChange}
+                      className={`w-full p-2 rounded-md ${
+                        theme === 'dark' 
+                          ? 'bg-gray-600 text-white' 
+                          : 'bg-white text-gray-800'
+                      }`}
+                    >
+                      <option value="">Todos</option>
+                      <option value="fijo">Fijo</option>
+                      <option value="variable">Variable</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Categoría</label>
+                    <input
+                      type="text"
+                      name="categoria"
+                      value={filterOptions.categoria}
+                      onChange={handleFilterChange}
+                      placeholder="Filtrar por categoría"
+                      className={`w-full p-2 rounded-md ${
+                        theme === 'dark' 
+                          ? 'bg-gray-600 text-white' 
+                          : 'bg-white text-gray-800'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Fecha desde</label>
+                    <input
+                      type="date"
+                      name="fechaDesde"
+                      value={filterOptions.fechaDesde}
+                      onChange={handleFilterChange}
+                      className={`w-full p-2 rounded-md ${
+                        theme === 'dark' 
+                          ? 'bg-gray-600 text-white' 
+                          : 'bg-white text-gray-800'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Fecha hasta</label>
+                    <input
+                      type="date"
+                      name="fechaHasta"
+                      value={filterOptions.fechaHasta}
+                      onChange={handleFilterChange}
+                      className={`w-full p-2 rounded-md ${
+                        theme === 'dark' 
+                          ? 'bg-gray-600 text-white' 
+                          : 'bg-white text-gray-800'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Importe mínimo</label>
+                    <input
+                      type="number"
+                      name="importeMin"
+                      value={filterOptions.importeMin}
+                      onChange={handleFilterChange}
+                      placeholder="0"
+                      className={`w-full p-2 rounded-md ${
+                        theme === 'dark' 
+                          ? 'bg-gray-600 text-white' 
+                          : 'bg-white text-gray-800'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Importe máximo</label>
+                    <input
+                      type="number"
+                      name="importeMax"
+                      value={filterOptions.importeMax}
+                      onChange={handleFilterChange}
+                      placeholder="999999"
+                      className={`w-full p-2 rounded-md ${
+                        theme === 'dark' 
+                          ? 'bg-gray-600 text-white' 
+                          : 'bg-white text-gray-800'
+                      }`}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <Button
             variant="filter"
             onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -242,118 +347,12 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({
             <Filter className="w-4 h-4" />
             <ChevronDown className={`w-4 h-4 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
           </Button>
-
-          <AnimatePresence>
-            {isFilterOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className={`absolute right-0 mt-2 w-80 p-4 rounded-lg shadow-lg z-50 ${
-                  theme === 'dark' ? 'bg-gray-700' : 'bg-white'
-                }`}
-              >
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Cawtegoría</label>
-                    <input
-                      type="text"
-                      name="categoria"
-                      value={filterOptions.categoria}
-                      onChange={handleFilterChange}
-                      className={`w-full px-3 py-2 rounded-md ${
-                        theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
-                      }`}
-                      placeholder="Filtrar por categoría"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Tipo</label>
-                    <select
-                      name="tipo"
-                      value={filterOptions.tipo}
-                      onChange={handleFilterChange}
-                      className={`w-full px-3 py-2 rounded-md ${
-                        theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
-                      }`}
-                    >
-                      <option value="">Todos</option>
-                      <option value="fijo">Fijo</option>
-                      <option value="variable">Variable</option>
-                    </select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Fecha desde</label>
-                      <input
-                        type="date"
-                        name="fechaDesde"
-                        value={filterOptions.fechaDesde}
-                        onChange={handleFilterChange}
-                        className={`w-full px-3 py-2 rounded-md ${
-                          theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
-                        }`}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Fecha hasta</label>
-                      <input
-                        type="date"
-                        name="fechaHasta"
-                        value={filterOptions.fechaHasta}
-                        onChange={handleFilterChange}
-                        className={`w-full px-3 py-2 rounded-md ${
-                          theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
-                        }`}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Importe mínimo</label>
-                      <input
-                        type="number"
-                        name="importeMin"
-                        value={filterOptions.importeMin}
-                        onChange={handleFilterChange}
-                        className={`w-full px-3 py-2 rounded-md ${
-                          theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
-                        }`}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Importe máximo</label>
-                      <input
-                        type="number"
-                        name="importeMax"
-                        value={filterOptions.importeMax}
-                        onChange={handleFilterChange}
-                        className={`w-full px-3 py-2 rounded-md ${
-                          theme === 'dark' ? 'bg-gray-600' : 'bg-gray-100'
-                        }`}
-                        placeholder="999999"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
         <Button variant="create" onClick={onAddGasto}>
           <Plus className="w-4 h-4 mr-1" />
           Añadir
         </Button>
       </div>
-      {isFilterOpen && (
-        <div className={`mb-4 p-4 ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-md shadow-sm`}>
-          <p>Opciones de filtro (por implementar)</p>
-        </div>
-      )}
       <div className="flex-grow overflow-auto custom-scrollbar">
         {loading ? (
           <p>Loading...</p>

@@ -198,7 +198,7 @@ const CashflowWidget: React.FC<CashflowWidgetProps> = ({
 
   return (
     <div
-      className={`relative p-6 h-full flex flex-col justify-between ${
+      className={`relative p-4 h-full flex flex-col ${
         theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'
       } rounded-lg shadow-md transition-colors duration-200`}
     >
@@ -224,8 +224,8 @@ const CashflowWidget: React.FC<CashflowWidgetProps> = ({
           </button>
         </>
       )}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className={`text-2xl font-bold ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}>
           Cash Flow
         </h3>
         <div className="flex items-center space-x-2">
@@ -234,15 +234,15 @@ const CashflowWidget: React.FC<CashflowWidgetProps> = ({
             <select
               value={viewType}
               onChange={(e) => setViewType(e.target.value as 'weekly' | 'monthly' | 'annual')}
-              className={`block w-full pl-3 pr-10 py-2 text-base border ${
+              className={`block w-full pl-2 pr-8 py-1 text-sm border ${
                 theme === 'dark'
                   ? 'bg-gray-700 border-gray-600 text-white'
                   : 'bg-white border-gray-300 text-gray-800'
-              } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+              } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
             >
-              <option>weekly</option>
-              <option>monthly</option>
-              <option>annual</option>
+              <option value="weekly">Semanal</option>
+              <option value="monthly">Mensual</option>
+              <option value="annual">Anual</option>
             </select>
           </div>
           {/* Controles de navegación de fechas */}
@@ -254,9 +254,9 @@ const CashflowWidget: React.FC<CashflowWidgetProps> = ({
               } transition-colors duration-200`}
               title="Anterior"
             >
-              <ChevronLeft className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`} />
+              <ChevronLeft className={`w-4 h-4 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`} />
             </button>
-            <span className={`text-lg font-semibold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+            <span className={`text-sm font-semibold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
               {getDateDisplay()}
             </span>
             <button
@@ -266,16 +266,16 @@ const CashflowWidget: React.FC<CashflowWidgetProps> = ({
               } transition-colors duration-200`}
               title="Siguiente"
             >
-              <ChevronRight className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`} />
+              <ChevronRight className={`w-4 h-4 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`} />
             </button>
           </div>
         </div>
       </div>
-      <div className="flex-grow">
-        <ResponsiveContainer width="100%" height={300}>
+      <div className="flex-grow min-h-0">
+        <ResponsiveContainer width="100%" height="100%" minHeight={200}>
           <ComposedChart
             data={getData()}
-            margin={{ top: 20, right: 50, left: 20, bottom: 20 }}
+            margin={{ top: 10, right: 30, left: 0, bottom: 5 }}
           >
             {/* Rejilla del gráfico */}
             <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />

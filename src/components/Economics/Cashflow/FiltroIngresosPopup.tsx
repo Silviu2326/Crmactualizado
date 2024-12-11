@@ -25,13 +25,17 @@ const FiltroIngresosPopup: React.FC<FiltroIngresosPopupProps> = ({ onClose, onAp
     const fetchPlanes = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/planes', {
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/planes-de-pago', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (!response.ok) {
+          throw new Error('Failed to fetch planes de pago');
+        }
         const data = await response.json();
-        setPlanesDePago(data);
+        setPlanesDePago(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Error fetching planes:', error);
+        setPlanesDePago([]);
       }
     };
 
@@ -140,7 +144,7 @@ const FiltroIngresosPopup: React.FC<FiltroIngresosPopupProps> = ({ onClose, onAp
               }`}
             >
               <option value="">Todos</option>
-              {planesDePago.map(plan => (
+              {Array.isArray(planesDePago) && planesDePago.map(plan => (
                 <option key={plan._id} value={plan._id}>
                   {plan.nombre}
                 </option>

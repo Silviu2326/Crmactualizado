@@ -252,7 +252,7 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
       { i: 'gastoWidget', x: 0, y: 5, w: 2, h: 2, minW: 1, minH: 1 },
       { i: 'alertasWidget', x: 2, y: 5, w: 2, h: 2, minW: 1, minH: 1 },
       { i: 'cuentaBancariaWidget', x: 0, y: 7, w: 2, h: 2, minW: 1, minH: 1 },
-      { i: 'cashflowWidget', x: 2, y: 7, w: 2, h: 2, minW: 1, minH: 1 },
+      { i: 'cashflowWidget', x: 2, y: 7, w: 2, h: 3, minW: 1, minH: 2 },
       { i: 'documentosWidget', x: 0, y: 9, w: 2, h: 2, minW: 1, minH: 1 },
       { i: 'facturasWidget', x: 2, y: 9, w: 2, h: 2, minW: 1, minH: 1 },
       { i: 'serviciosWidget', x: 0, y: 11, w: 2, h: 2, minW: 1, minH: 1 },
@@ -398,7 +398,7 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
             onRemove={handleRemove}
           />
         </div>
-        <div key="cashflowWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
+        <div key="cashflowWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden h-full p-4`}>
           <CashflowWidget
             ingresos={20000}
             gastos={15000}

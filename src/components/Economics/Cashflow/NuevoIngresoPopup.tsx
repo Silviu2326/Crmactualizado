@@ -35,6 +35,7 @@ const NuevoIngresoPopup: React.FC<NuevoIngresoPopupProps> = ({ onClose, onSubmit
     fecha: new Date().toISOString().split('T')[0],
     descripcion: '',
     importe: '',
+    moneda: 'EUR',
     estado: 'pendiente',
     clienteId: '',
     planId: '',
@@ -130,21 +131,40 @@ const NuevoIngresoPopup: React.FC<NuevoIngresoPopupProps> = ({ onClose, onSubmit
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Importe</label>
-            <input
-              type="number"
-              name="importe"
-              value={formData.importe}
-              onChange={handleChange}
-              className={`w-full p-2 rounded border ${
-                theme === 'dark' 
-                  ? 'bg-gray-700 border-gray-600 text-white' 
-                  : 'bg-white border-gray-300'
-              }`}
-              required
-              step="0.01"
-            />
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium mb-1">Importe</label>
+              <input
+                type="number"
+                name="importe"
+                value={formData.importe}
+                onChange={handleChange}
+                className={`w-full p-2 rounded border ${
+                  theme === 'dark' 
+                    ? 'bg-gray-700 border-gray-600 text-white' 
+                    : 'bg-white border-gray-300'
+                }`}
+                required
+                step="0.01"
+              />
+            </div>
+            <div className="w-32">
+              <label className="block text-sm font-medium mb-1">Moneda</label>
+              <select
+                name="moneda"
+                value={formData.moneda}
+                onChange={handleChange}
+                className={`w-full p-2 rounded border ${
+                  theme === 'dark' 
+                    ? 'bg-gray-700 border-gray-600 text-white' 
+                    : 'bg-white border-gray-300'
+                }`}
+              >
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+                <option value="GBP">GBP</option>
+              </select>
+            </div>
           </div>
 
           <div>

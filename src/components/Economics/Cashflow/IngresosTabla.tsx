@@ -350,161 +350,170 @@ const IngresosTabla: React.FC = () => {
 
   return (
     <div>
-      <div className="flex items-center space-x-2 mb-4">
-        <div className="relative flex-grow">
-          <input
-            type="text"
-            placeholder="Buscar ingresos..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            className={`w-full px-4 py-2 rounded-full ${
-              theme === 'dark' 
-                ? 'bg-gray-700 border-gray-600 text-white' 
-                : 'bg-white border-gray-300 text-gray-800'
-            } border focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300`}
-          />
-          <Search className={`absolute right-3 top-2.5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
-        </div>
-        <div className="flex gap-2 items-center relative" ref={filterRef}>
-          <Button variant="filter" onClick={handleFilter}>
-            <Filter className="w-4 h-4" />
-          </Button>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className={`text-2xl font-bold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+          Ingresos
+        </h3>
+        <div className="flex items-center space-x-4">
+          <div className="relative flex-grow">
+            <input
+              type="text"
+              placeholder="Buscar ingresos..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className={`w-full px-4 py-2 pr-10 border ${
+                theme === 'dark'
+                  ? 'bg-gray-700 border-gray-600 text-white'
+                  : 'bg-white border-gray-300 text-gray-800'
+              } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300`}
+            />
+            <Search className={`absolute right-3 top-2.5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
+          </div>
+          <div className="flex gap-2 items-center relative" ref={filterRef}>
+            <Button variant="filter" onClick={handleFilter}>
+              <Filter className="w-4 h-4" />
+            </Button>
 
-          <AnimatePresence>
-            {isFilterOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className={`absolute right-0 mt-10 p-4 rounded-lg shadow-lg z-50 ${
-                  theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-                } min-w-[300px]`}
-              >
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Estado</label>
-                    <select
-                      name="estado"
-                      value={filterOptions.estado}
-                      onChange={handleFilterChange}
-                      className={`w-full p-2 rounded-md ${
-                        theme === 'dark' 
-                          ? 'bg-gray-600 text-white' 
-                          : 'bg-white text-gray-800'
-                      }`}
-                    >
-                      <option value="">Todos</option>
-                      <option value="pendiente">Pendiente</option>
-                      <option value="pagado">Pagado</option>
-                      <option value="cancelado">Cancelado</option>
-                    </select>
-                  </div>
+            <AnimatePresence>
+              {isFilterOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className={`absolute right-0 mt-10 p-4 rounded-lg shadow-lg z-50 ${
+                    theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+                  } min-w-[300px]`}
+                >
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Estado</label>
+                      <select
+                        name="estado"
+                        value={filterOptions.estado}
+                        onChange={handleFilterChange}
+                        className={`w-full p-2 rounded-md ${
+                          theme === 'dark' 
+                            ? 'bg-gray-600 text-white' 
+                            : 'bg-white text-gray-800'
+                        }`}
+                      >
+                        <option value="">Todos</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="pagado">Pagado</option>
+                        <option value="cancelado">Cancelado</option>
+                      </select>
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Plan de Pago</label>
-                    <select
-                      name="planDePago"
-                      value={filterOptions.planDePago}
-                      onChange={handleFilterChange}
-                      className={`w-full p-2 rounded-md ${
-                        theme === 'dark' 
-                          ? 'bg-gray-600 text-white' 
-                          : 'bg-white text-gray-800'
-                      }`}
-                    >
-                      <option value="">Todos</option>
-                      {Array.isArray(planesDePago) && planesDePago.map(plan => (
-                        <option key={plan._id} value={plan._id}>
-                          {plan.nombre}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Plan de Pago</label>
+                      <select
+                        name="planDePago"
+                        value={filterOptions.planDePago}
+                        onChange={handleFilterChange}
+                        className={`w-full p-2 rounded-md ${
+                          theme === 'dark' 
+                            ? 'bg-gray-600 text-white' 
+                            : 'bg-white text-gray-800'
+                        }`}
+                      >
+                        <option value="">Todos</option>
+                        {Array.isArray(planesDePago) && planesDePago.map(plan => (
+                          <option key={plan._id} value={plan._id}>
+                            {plan.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Método de Pago</label>
-                    <select
-                      name="metodoPago"
-                      value={filterOptions.metodoPago}
-                      onChange={handleFilterChange}
-                      className={`w-full p-2 rounded-md ${
-                        theme === 'dark' 
-                          ? 'bg-gray-600 text-white' 
-                          : 'bg-white text-gray-800'
-                      }`}
-                    >
-                      <option value="">Todos</option>
-                      <option value="efectivo">Efectivo</option>
-                      <option value="tarjeta">Tarjeta</option>
-                      <option value="transferencia">Transferencia</option>
-                    </select>
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Método de Pago</label>
+                      <select
+                        name="metodoPago"
+                        value={filterOptions.metodoPago}
+                        onChange={handleFilterChange}
+                        className={`w-full p-2 rounded-md ${
+                          theme === 'dark' 
+                            ? 'bg-gray-600 text-white' 
+                            : 'bg-white text-gray-800'
+                        }`}
+                      >
+                        <option value="">Todos</option>
+                        <option value="efectivo">Efectivo</option>
+                        <option value="tarjeta">Tarjeta</option>
+                        <option value="transferencia">Transferencia</option>
+                      </select>
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Fecha desde</label>
-                    <input
-                      type="date"
-                      name="fechaInicio"
-                      value={filterOptions.fechaInicio}
-                      onChange={handleFilterChange}
-                      className={`w-full p-2 rounded-md ${
-                        theme === 'dark' 
-                          ? 'bg-gray-600 text-white' 
-                          : 'bg-white text-gray-800'
-                      }`}
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Fecha desde</label>
+                      <input
+                        type="date"
+                        name="fechaInicio"
+                        value={filterOptions.fechaInicio}
+                        onChange={handleFilterChange}
+                        className={`w-full p-2 rounded-md ${
+                          theme === 'dark' 
+                            ? 'bg-gray-600 text-white' 
+                            : 'bg-white text-gray-800'
+                        }`}
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Fecha hasta</label>
-                    <input
-                      type="date"
-                      name="fechaFin"
-                      value={filterOptions.fechaFin}
-                      onChange={handleFilterChange}
-                      className={`w-full p-2 rounded-md ${
-                        theme === 'dark' 
-                          ? 'bg-gray-600 text-white' 
-                          : 'bg-white text-gray-800'
-                      }`}
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Fecha hasta</label>
+                      <input
+                        type="date"
+                        name="fechaFin"
+                        value={filterOptions.fechaFin}
+                        onChange={handleFilterChange}
+                        className={`w-full p-2 rounded-md ${
+                          theme === 'dark' 
+                            ? 'bg-gray-600 text-white' 
+                            : 'bg-white text-gray-800'
+                        }`}
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Importe mínimo</label>
-                    <input
-                      type="number"
-                      name="montoMinimo"
-                      value={filterOptions.montoMinimo}
-                      onChange={handleFilterChange}
-                      placeholder="0"
-                      className={`w-full p-2 rounded-md ${
-                        theme === 'dark' 
-                          ? 'bg-gray-600 text-white' 
-                          : 'bg-white text-gray-800'
-                      }`}
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Importe mínimo</label>
+                      <input
+                        type="number"
+                        name="montoMinimo"
+                        value={filterOptions.montoMinimo}
+                        onChange={handleFilterChange}
+                        placeholder="0"
+                        className={`w-full p-2 rounded-md ${
+                          theme === 'dark' 
+                            ? 'bg-gray-600 text-white' 
+                            : 'bg-white text-gray-800'
+                        }`}
+                      />
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Importe máximo</label>
-                    <input
-                      type="number"
-                      name="montoMaximo"
-                      value={filterOptions.montoMaximo}
-                      onChange={handleFilterChange}
-                      placeholder="999999"
-                      className={`w-full p-2 rounded-md ${
-                        theme === 'dark' 
-                          ? 'bg-gray-600 text-white' 
-                          : 'bg-white text-gray-800'
-                      }`}
-                    />
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Importe máximo</label>
+                      <input
+                        type="number"
+                        name="montoMaximo"
+                        value={filterOptions.montoMaximo}
+                        onChange={handleFilterChange}
+                        placeholder="999999"
+                        className={`w-full p-2 rounded-md ${
+                          theme === 'dark' 
+                            ? 'bg-gray-600 text-white' 
+                            : 'bg-white text-gray-800'
+                        }`}
+                      />
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <Button variant="create" onClick={handleAdd} className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white">
+              <Plus className="w-5 h-5 mr-2" />
+              Nuevo Ingreso
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -598,17 +607,6 @@ const IngresosTabla: React.FC = () => {
           Mostrando 10 de {filteredIngresos.length} ingresos. Desplázate para ver más.
         </div>
       )}
-
-      <div className="mt-4">
-        <Button
-          variant="primary"
-          onClick={handleAdd}
-          className="flex items-center space-x-2"
-        >
-          <Plus size={16} />
-          <span>Añadir Ingreso</span>
-        </Button>
-      </div>
 
       {showAddModal && (
         <NuevoIngresoPopup

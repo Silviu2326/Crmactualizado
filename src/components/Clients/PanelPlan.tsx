@@ -17,7 +17,7 @@ interface PlanPlanProps {
     meta: string;
     fechaInicio: string;
     semanas: number;
-    weeks: Array<{
+    semanas_detalle: Array<{
       weekNumber: number;
       startDate: string;
       days: {
@@ -51,8 +51,16 @@ const PanelPlan: React.FC<PlanPlanProps> = ({ clienteId, planningDetails }) => {
       };
     }
 
+    // Verificar si semanas_detalle existe y es un array
+    if (!planningDetails.semanas_detalle || !Array.isArray(planningDetails.semanas_detalle)) {
+      return {
+        tipo: 'error',
+        mensaje: 'No hay detalles de planificación disponibles'
+      };
+    }
+
     // Buscar la semana actual
-    for (const week of planningDetails.weeks) {
+    for (const week of planningDetails.semanas_detalle) {
       const fechaInicioSemana = new Date(week.startDate);
       const fechaFinSemana = new Date(fechaInicioSemana);
       fechaFinSemana.setDate(fechaFinSemana.getDate() + 7);

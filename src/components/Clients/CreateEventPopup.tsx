@@ -20,7 +20,9 @@ const CreateEventPopup: React.FC<CreateEventPopupProps> = ({
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    time: '12:00'
+    time: '12:00',
+    startDate: selectedDate.toISOString().split('T')[0],
+    endDate: selectedDate.toISOString().split('T')[0]
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,9 +49,10 @@ const CreateEventPopup: React.FC<CreateEventPopupProps> = ({
         body: JSON.stringify({
           title: formData.title,
           description: formData.description,
-          date: selectedDate.toISOString().split('T')[0],
+          startDate: formData.startDate,
+          endDate: formData.endDate,
           time: formData.time,
-          clientId // Asegurarse de que clientId está siendo enviado
+          clientId
         })
       });
 
@@ -122,6 +125,44 @@ const CreateEventPopup: React.FC<CreateEventPopupProps> = ({
                   : 'bg-white border-gray-300 text-gray-900'
               } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               rows={3}
+              required
+            />
+          </div>
+
+          <div>
+            <label className={`block text-sm font-medium mb-1 ${
+              theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+            }`}>
+              Fecha de inicio
+            </label>
+            <input
+              type="date"
+              value={formData.startDate}
+              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+              className={`w-full px-3 py-2 rounded-md border ${
+                theme === 'dark'
+                  ? 'bg-gray-700 border-gray-600 text-white'
+                  : 'bg-white border-gray-300 text-gray-900'
+              } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              required
+            />
+          </div>
+
+          <div>
+            <label className={`block text-sm font-medium mb-1 ${
+              theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+            }`}>
+              Fecha de finalización
+            </label>
+            <input
+              type="date"
+              value={formData.endDate}
+              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+              className={`w-full px-3 py-2 rounded-md border ${
+                theme === 'dark'
+                  ? 'bg-gray-700 border-gray-600 text-white'
+                  : 'bg-white border-gray-300 text-gray-900'
+              } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
               required
             />
           </div>

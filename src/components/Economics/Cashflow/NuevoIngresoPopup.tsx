@@ -54,14 +54,14 @@ const NuevoIngresoPopup: React.FC<NuevoIngresoPopupProps> = ({ onClose, onSubmit
         setClientes(clientesData);
 
         // Fetch planes de pago
-        const planesResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/planes', {
+        const planesResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/payment-plans', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const planesData = await planesResponse.json();
         setPlanesDePago(planesData);
 
         // Fetch servicios
-        const serviciosResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios', {
+        const serviciosResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const serviciosData = await serviciosResponse.json();

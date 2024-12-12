@@ -106,26 +106,6 @@ const Notes: React.FC<NotesProps> = ({ notes = [], onAddNote, onEditNote, onDele
           <StickyNote className="w-5 h-5 text-blue-500" />
           <h3 className="text-lg font-semibold">Notas</h3>
         </div>
-        <div className="flex space-x-2">
-          {(Object.keys(categoryColors) as Array<keyof typeof categoryColors>).map((category) => (
-            <Button
-              key={category}
-              variant="normal"
-              onClick={() => setSelectedCategory(category)}
-              className={`
-                px-3 py-1 rounded-full text-sm
-                ${selectedCategory === category
-                  ? `${categoryColors[category]} text-white`
-                  : theme === 'dark'
-                    ? 'bg-gray-700 hover:bg-gray-600'
-                    : 'bg-gray-100 hover:bg-gray-200'
-                }
-              `}
-            >
-              {categoryLabels[category]}
-            </Button>
-          ))}
-        </div>
       </div>
 
       {/* Input para nueva nota */}

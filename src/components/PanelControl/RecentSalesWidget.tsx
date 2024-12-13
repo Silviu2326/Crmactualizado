@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Table from '../Common/Table';
 import Button from '../Common/Button';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, Trash2 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface Income {
@@ -19,6 +19,8 @@ interface FormattedIncome {
   'Estado del Pago': string;
   'Descripción': string;
   'Importe': string;
+  'Acciones': React.ReactNode;
+  _id: string; // Añadido para mantener referencia al ID original
 }
 
 const IncomeWidget: React.FC = () => {
@@ -29,6 +31,35 @@ const IncomeWidget: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filterOption, setFilterOption] = useState('all');
   const { theme } = useTheme();
+
+  // Función para eliminar un ingreso
+  const deleteIncome = async (id: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      // Mock API call
+      const response = await fetch(`https://api.ejemplo.com/ingresos/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar el ingreso');
+      }
+
+      // Actualizar la lista de ingresos después de eliminar
+      setIngresos(prevIngresos => prevIngresos.filter(ingreso => ingreso._id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+      console.error('Error deleting income:', err);
+    }
+  };
 
   useEffect(() => {
     const fetchIngresos = async () => {
@@ -54,7 +85,21 @@ const IncomeWidget: React.FC = () => {
           'Fecha': new Date(item.fecha).toLocaleDateString(),
           'Estado del Pago': item.estado,
           'Descripción': item.descripcion,
-          'Importe': `${item.monto} ${item.moneda}`
+          'Importe': `${item.monto} ${item.moneda}`,
+          'Acciones': (
+            <button
+              onClick={() => {
+                if (window.confirm('¿Estás seguro de que deseas eliminar este ingreso?')) {
+                  deleteIncome(item._id);
+                }
+              }}
+              className="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
+              title="Eliminar ingreso"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          ),
+          _id: item._id
         }));
         setIngresos(formattedData);
       } catch (err) {
@@ -216,7 +261,7 @@ const IncomeWidget: React.FC = () => {
       </div>
       <div className="flex-grow overflow-auto">
         <Table
-          headers={['Fecha', 'Estado del Pago', 'Descripción', 'Importe']}
+          headers={['Fecha', 'Estado del Pago', 'Descripción', 'Importe', 'Acciones']}
           data={filteredData}
           variant={theme === 'dark' ? 'dark' : 'white'}
         />

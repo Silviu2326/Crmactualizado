@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Search, Filter } from 'lucide-react';
+import { Package, Search, Filter, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import Table from '../Common/Table';
 import Button from '../Common/Button';
@@ -70,6 +70,34 @@ const ServiciosWidget: React.FC = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const deleteServicio = async (id: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      // Mock API call
+      const response = await fetch(`https://api.ejemplo.com/servicios/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar el servicio');
+      }
+
+      // Actualizar la lista de servicios después de eliminar
+      setServicios(prevServicios => prevServicios.filter(servicio => servicio._id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+      console.error('Error deleting servicio:', err);
+    }
   };
 
   const filteredServicios = servicios.filter(servicio => {
@@ -182,11 +210,24 @@ const ServiciosWidget: React.FC = () => {
           <div style={{ height: '300px' }} className="overflow-y-auto">
             <div className="min-w-full">
               <Table
-                headers={['Nombre', 'Tipo', 'Planes de Pago']}
+                headers={['Nombre', 'Tipo', 'Planes de Pago', 'Acciones']}
                 data={filteredServicios.map(servicio => ({
                   Nombre: servicio.nombre,
                   Tipo: servicio.tipo,
-                  'Planes de Pago': servicio.planDePago ? servicio.planDePago.length.toString() : '0'
+                  'Planes de Pago': servicio.planDePago ? servicio.planDePago.length.toString() : '0',
+                  'Acciones': (
+                    <button
+                      onClick={() => {
+                        if (window.confirm('¿Estás seguro de que deseas eliminar este servicio?')) {
+                          deleteServicio(servicio._id);
+                        }
+                      }}
+                      className="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
+                      title="Eliminar servicio"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  ),
                 }))}
                 variant={theme === 'dark' ? 'dark' : 'white'}
               />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Gift, Search, Filter, Plus } from 'lucide-react';
+import { Gift, Search, Filter, Plus, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import Table from '../Common/Table';
 import Button from '../Common/Button';
@@ -90,6 +90,34 @@ const BonosWidget: React.FC = () => {
 
   const handleBonoAdded = () => {
     fetchBonos();
+  };
+
+  const deleteBono = async (id: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      // Mock API call
+      const response = await fetch(`https://api.ejemplo.com/bonos/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar el bono');
+      }
+
+      // Actualizar la lista de bonos después de eliminar
+      setBonos(prevBonos => prevBonos.filter(bono => bono._id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+      console.error('Error deleting bono:', err);
+    }
   };
 
   const filteredBonos = bonos.filter(bono => {
@@ -298,7 +326,7 @@ const BonosWidget: React.FC = () => {
         <div className="text-red-500 text-center py-4">{error}</div>
       ) : (
         <Table
-          headers={['Nombre', 'Servicio', 'Sesiones', 'Precio', 'Trainer', 'Estado']}
+          headers={['Nombre', 'Servicio', 'Sesiones', 'Precio', 'Trainer', 'Estado', 'Acciones']}
           data={filteredBonos.map(bono => ({
             Nombre: bono.nombre,
             Servicio: bono.servicio,
@@ -313,7 +341,20 @@ const BonosWidget: React.FC = () => {
               }`}>
                 {bono.estado.charAt(0).toUpperCase() + bono.estado.slice(1)}
               </span>
-            )
+            ),
+            Acciones: (
+              <button
+                onClick={() => {
+                  if (window.confirm('¿Estás seguro de que deseas eliminar este bono?')) {
+                    deleteBono(bono._id);
+                  }
+                }}
+                className="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
+                title="Eliminar bono"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            ),
           }))}
           variant={theme === 'dark' ? 'dark' : 'white'}
         />

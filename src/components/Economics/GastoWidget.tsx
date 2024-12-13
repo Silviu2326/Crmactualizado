@@ -1,6 +1,6 @@
 // src/components/Economics/GastoWidget.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { DollarSign, TrendingDown, Search, Filter, Plus, Copy, Link, ChevronDown } from 'lucide-react';
+import { DollarSign, TrendingDown, Search, Filter, Plus, Copy, Link, ChevronDown, Trash2 } from 'lucide-react';
 import Table from '../Common/Table';
 import Button from '../Common/Button';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -185,6 +185,35 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({
     });
   };
 
+  // Función para eliminar un gasto
+  const deleteGasto = async (id: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      // Mock API call
+      const response = await fetch(`https://api.ejemplo.com/gastos/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar el gasto');
+      }
+
+      // Actualizar la lista de gastos después de eliminar
+      setGastoData(prevGastos => prevGastos.filter(gasto => gasto._id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+      console.error('Error deleting gasto:', err);
+    }
+  };
+
   // Filtrar los datos según el término de búsqueda
   const filteredGastoData = gastoData.filter((gasto) => {
     console.log('Procesando gasto:', gasto); // Log agregado
@@ -360,13 +389,26 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({
           <p className="text-red-500">{error}</p>
         ) : (
           <Table
-            headers={['Concepto', 'Fecha', 'Estado', 'Importe', 'Tipo de Gasto']}
+            headers={['Concepto', 'Fecha', 'Estado', 'Importe', 'Tipo de Gasto', 'Acciones']}
             data={applyFilters(filteredGastoData).map(item => ({
               Concepto: item.Concepto,
               Fecha: new Date(item.Fecha).toLocaleDateString('es-ES'),
               Estado: item.Estado,
               Importe: formatImporte(item.Importe, item.Moneda),
               'Tipo de Gasto': item.TipoDeGasto.charAt(0).toUpperCase() + item.TipoDeGasto.slice(1),
+              'Acciones': (
+                <button
+                  onClick={() => {
+                    if (window.confirm('¿Estás seguro de que deseas eliminar este gasto?')) {
+                      deleteGasto(item._id);
+                    }
+                  }}
+                  className="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
+                  title="Eliminar gasto"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              ),
             }))}
             variant={theme === 'dark' ? 'dark' : 'white'}
           />

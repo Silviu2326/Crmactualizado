@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Table from '../../Common/Table';
 import Button from '../../Common/Button';
-import { Download, FileText, Calendar, Search, Filter } from 'lucide-react';
+import { Download, FileText, Calendar, Search, Filter, Trash2 } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { motion } from 'framer-motion';
 import ReportesFilter, { FilterValues } from './ReportesFilter';
@@ -122,6 +122,34 @@ const ReportesPage: React.FC = () => {
     console.log('Filtros aplicados:', filters);
   };
 
+  const handleDeleteReport = async (id: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      // Mock API call para eliminar el reporte
+      const response = await fetch(`https://api.ejemplo.com/reportes/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar el reporte');
+      }
+
+      // Actualizar la lista de reportes después de eliminar
+      setReportesData(prevReportes => prevReportes.filter(reporte => reporte.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al eliminar el reporte');
+      console.error('Error deleting report:', err);
+    }
+  };
+
   const filteredReportes = reportesData.filter(reporte => {
     const matchesSearch = reporte.titulo.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTipo = activeFilters.tipo.length === 0 || activeFilters.tipo.includes(reporte.tipo);
@@ -226,7 +254,7 @@ const ReportesPage: React.FC = () => {
       className={`p-6 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-800'}`}
     >
       <h2 className="text-3xl font-bold mb-8 text-center">Reportes Detallados</h2>
-      
+
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 space-y-4 md:space-y-0 md:space-x-4">
         <div className="flex space-x-4">
           <Button variant="create" onClick={handleGenerateRecurringReport}>
@@ -246,16 +274,16 @@ const ReportesPage: React.FC = () => {
               value={searchTerm}
               onChange={handleSearchChange}
               className={`w-full px-4 py-2 rounded-full ${
-                theme === 'dark' 
-                  ? 'bg-gray-700 border-gray-600 text-white' 
+                theme === 'dark'
+                  ? 'bg-gray-700 border-gray-600 text-white'
                   : 'bg-white border-gray-300 text-gray-800'
               } border focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300`}
             />
             <Search className={`absolute right-3 top-2.5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
           </div>
           <div className="relative">
-            <Button 
-              variant="filter" 
+            <Button
+              variant="filter"
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               className={isFilterOpen ? 'ring-2 ring-blue-500' : ''}
             >
@@ -307,6 +335,17 @@ const ReportesPage: React.FC = () => {
                   <Download className="w-4 h-4 mr-1" />
                   Descargar PDF
                 </Button>
+                <button
+                  onClick={() => {
+                    if (window.confirm('¿Estás seguro de que deseas eliminar este reporte?')) {
+                      handleDeleteReport(reporte.id);
+                    }
+                  }}
+                  className="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200 rounded-full hover:bg-red-100 dark:hover:bg-red-900/20"
+                  title="Eliminar reporte"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             )
           }))}

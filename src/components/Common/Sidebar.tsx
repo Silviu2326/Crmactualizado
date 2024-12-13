@@ -36,7 +36,6 @@ const Sidebar: React.FC = () => {
     { to: '/classes', icon: BookOpen, label: 'Clases' },
     { to: '/economics', icon: DollarSign, label: 'Finanzas' },
     { to: '/marketing/campaigns', icon: MailPlus , label: 'Campañas de Correo' },
-    { to: '/marketing/analytics', icon: BarChart2, label: 'Análisis' },
     { to: '/content', icon: Share2, label: 'Contenido' },
     { to: '/publications', icon: Share2, label: 'Publicaciones' },
     { to: '/settings', icon: Settings, label: 'Ajustes' },

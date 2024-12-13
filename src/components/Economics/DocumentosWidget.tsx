@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Search, Filter, Plus } from 'lucide-react';
+import { FileText, Search, Filter, Plus, Trash2 } from 'lucide-react';
 import Table from '../Common/Table';
 import Button from '../Common/Button';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -165,6 +165,34 @@ const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
     return matchesTipo && matchesEstado && matchesFechaDesde && matchesFechaHasta;
   });
 
+  const deleteDocumento = async (id: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      // Mock API call
+      const response = await fetch(`https://api.ejemplo.com/documentos/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar el documento');
+      }
+
+      // Actualizar la lista de documentos después de eliminar
+      setDocumentos(prevDocs => prevDocs.filter(doc => doc._id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+      console.error('Error deleting documento:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className={`rounded-lg p-6 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
@@ -326,10 +354,23 @@ const DocumentosWidget: React.FC<DocumentosWidgetProps> = ({
       )}
       <div className="flex-grow overflow-auto custom-scrollbar">
         <Table
-          headers={['Nombre', 'Fecha']}
+          headers={['Nombre', 'Fecha', 'Acciones']}
           data={filteredDocumentos.map((doc) => ({
             Nombre: doc.nombre,
             Fecha: formatDate(doc.fecha),
+            Acciones: (
+              <button
+                onClick={() => {
+                  if (window.confirm('¿Estás seguro de que deseas eliminar este documento?')) {
+                    deleteDocumento(doc._id);
+                  }
+                }}
+                className="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
+                title="Eliminar documento"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            ),
           }))}
           variant={theme === 'dark' ? 'dark' : 'white'}
         />

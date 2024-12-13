@@ -14,6 +14,7 @@ import {
   Users,
   Clock,
   Target,
+  Trash2,
 } from 'lucide-react';
 import Button from '../Common/Button';
 import Table from '../Common/Table';
@@ -180,6 +181,17 @@ const PlanningList: React.FC = () => {
             >
               <FileText className="w-5 h-5" />
             </button>
+            <button
+              onClick={() => {
+                if (window.confirm('¿Estás seguro de que deseas eliminar esta planificación?')) {
+                  deletePlanning(item._id);
+                }
+              }}
+              className="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
+              title="Eliminar planificación"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
           </div>
         );
       default:
@@ -325,6 +337,35 @@ const PlanningList: React.FC = () => {
       }));
     } catch (error) {
       console.error('Error al obtener detalles del esqueleto:', error);
+    }
+  };
+
+  // Mock API para eliminar planificación
+  const deletePlanning = async (id: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      // Simular llamada a API
+      const response = await fetch(`https://api.ejemplo.com/plannings/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar la planificación');
+      }
+
+      // Actualizar la lista después de eliminar
+      fetchPlannings();
+    } catch (error) {
+      console.error('Error:', error);
+      setError('Error al eliminar la planificación');
     }
   };
 

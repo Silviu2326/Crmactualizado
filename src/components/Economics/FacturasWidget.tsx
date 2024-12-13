@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Search, Filter } from 'lucide-react';
+import { FileText, Search, Filter, Trash2 } from 'lucide-react';
 import Table from '../Common/Table';
 import Button from '../Common/Button';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -120,14 +120,14 @@ const FacturasWidget: React.FC<FacturasWidgetProps> = ({ isEditMode, onRemove })
   // Función para formatear la fecha
   const formatFecha = (fecha: string): string => {
     if (!fecha) return 'Fecha no disponible';
-    
+
     const date = new Date(fecha);
     const options: Intl.DateTimeFormatOptions = {
       day: '2-digit',
       month: 'long',
       year: 'numeric',
     };
-    
+
     return date.toLocaleDateString('es-ES', options);
   };
 
@@ -149,22 +149,51 @@ const FacturasWidget: React.FC<FacturasWidgetProps> = ({ isEditMode, onRemove })
 
   const applyFilters = (facturas: Factura[]) => {
     return facturas.filter(factura => {
-      const matchesSearch = 
+      const matchesSearch =
         factura.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
         factura.estado.toLowerCase().includes(searchTerm.toLowerCase()) ||
         factura.tipo.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesEstado = !filterOptions.estado || factura.estado === filterOptions.estado;
       const matchesTipo = !filterOptions.tipo || factura.tipo === filterOptions.tipo;
-      
+
       const facturaDate = new Date(factura.fecha);
-      const matchesFechaInicio = !filterOptions.fechaInicio || 
+      const matchesFechaInicio = !filterOptions.fechaInicio ||
         facturaDate >= new Date(filterOptions.fechaInicio);
-      const matchesFechaFin = !filterOptions.fechaFin || 
+      const matchesFechaFin = !filterOptions.fechaFin ||
         facturaDate <= new Date(filterOptions.fechaFin);
 
       return matchesSearch && matchesEstado && matchesTipo && matchesFechaInicio && matchesFechaFin;
     });
+  };
+
+  // Función para eliminar una factura
+  const deleteFactura = async (id: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      // Mock API call
+      const response = await fetch(`https://api.ejemplo.com/facturas/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar la factura');
+      }
+
+      // Actualizar la lista de facturas después de eliminar
+      setFacturas(prevFacturas => prevFacturas.filter(factura => factura.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+      console.error('Error deleting factura:', err);
+    }
   };
 
   if (loading) {
@@ -254,8 +283,8 @@ const FacturasWidget: React.FC<FacturasWidgetProps> = ({ isEditMode, onRemove })
                 value={filterOptions.estado}
                 onChange={handleFilterChange}
                 className={`w-full p-2 rounded-md ${
-                  theme === 'dark' 
-                    ? 'bg-gray-600 text-white' 
+                  theme === 'dark'
+                    ? 'bg-gray-600 text-white'
                     : 'bg-white text-gray-800'
                 }`}
               >
@@ -271,8 +300,8 @@ const FacturasWidget: React.FC<FacturasWidgetProps> = ({ isEditMode, onRemove })
                 value={filterOptions.tipo}
                 onChange={handleFilterChange}
                 className={`w-full p-2 rounded-md ${
-                  theme === 'dark' 
-                    ? 'bg-gray-600 text-white' 
+                  theme === 'dark'
+                    ? 'bg-gray-600 text-white'
                     : 'bg-white text-gray-800'
                 }`}
               >
@@ -289,8 +318,8 @@ const FacturasWidget: React.FC<FacturasWidgetProps> = ({ isEditMode, onRemove })
                 value={filterOptions.fechaInicio}
                 onChange={handleFilterChange}
                 className={`w-full p-2 rounded-md ${
-                  theme === 'dark' 
-                    ? 'bg-gray-600 text-white' 
+                  theme === 'dark'
+                    ? 'bg-gray-600 text-white'
                     : 'bg-white text-gray-800'
                 }`}
               />
@@ -303,8 +332,8 @@ const FacturasWidget: React.FC<FacturasWidgetProps> = ({ isEditMode, onRemove })
                 value={filterOptions.fechaFin}
                 onChange={handleFilterChange}
                 className={`w-full p-2 rounded-md ${
-                  theme === 'dark' 
-                    ? 'bg-gray-600 text-white' 
+                  theme === 'dark'
+                    ? 'bg-gray-600 text-white'
                     : 'bg-white text-gray-800'
                 }`}
               />
@@ -315,13 +344,26 @@ const FacturasWidget: React.FC<FacturasWidgetProps> = ({ isEditMode, onRemove })
 
       <div className="flex-grow overflow-auto custom-scrollbar">
         <Table
-          headers={['Número', 'Importe', 'Estado', 'Tipo', 'Fecha']}
+          headers={['Número', 'Importe', 'Estado', 'Tipo', 'Fecha', 'Acciones']}
           data={applyFilters(facturas).map((factura) => ({
             Número: factura.numero,
             Importe: `${factura.monto} ${factura.currency}`,
             Estado: factura.estado,
             Tipo: factura.tipo,
             Fecha: factura.fecha,
+            Acciones: (
+              <button
+                onClick={() => {
+                  if (window.confirm('¿Estás seguro de que deseas eliminar esta factura?')) {
+                    deleteFactura(factura.id);
+                  }
+                }}
+                className="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
+                title="Eliminar factura"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            ),
           }))}
           variant={theme === 'dark' ? 'dark' : 'white'}
         />

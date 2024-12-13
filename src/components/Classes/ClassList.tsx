@@ -7,7 +7,8 @@ import Table from '../Common/Table';
 import { useTheme } from '../../contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
-import CrearClasePopup from './CrearClasePopup'; // Asegúrate de la ruta correcta
+import CrearClasePopup from './CrearClasePopup';
+import EditarClasePopup from './EditarClasePopup';
 
 interface Entrenador {
   _id: string;
@@ -48,6 +49,8 @@ const ClassList: React.FC = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [classData, setClassData] = useState<ClaseGrupal[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -241,9 +244,8 @@ const ClassList: React.FC = () => {
 
   // Funciones de manejo para acciones (editar y eliminar)
   const handleEdit = (id: string) => {
-    // Implementa la lógica para editar la clase con el id proporcionado
-    console.log(`Editar clase con id: ${id}`);
-    // Por ejemplo, abrir el modal y cargar los datos de la clase
+    setSelectedClassId(id);
+    setIsEditModalOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -445,14 +447,24 @@ const ClassList: React.FC = () => {
         </motion.div>
       )}
 
-      <AnimatePresence>
-        {isModalOpen && (
-          <CrearClasePopup 
-            onClose={() => setIsModalOpen(false)} 
-            onCreate={refreshClassData} // Actualizar la lista después de crear
-          />
-        )}
-      </AnimatePresence>
+      {/* Popups */}
+      {isModalOpen && (
+        <CrearClasePopup
+          onClose={() => setIsModalOpen(false)}
+          onCreate={refreshClassData}
+        />
+      )}
+      
+      {isEditModalOpen && selectedClassId && (
+        <EditarClasePopup
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setSelectedClassId(null);
+          }}
+          onEdit={refreshClassData}
+          claseId={selectedClassId}
+        />
+      )}
     </div>
   );
 };

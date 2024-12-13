@@ -1,11 +1,12 @@
 // src/components/Economics/Cashflow/GastoWidget.tsx
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Plus, Edit2, Trash2, CheckCircle, DollarSign } from 'lucide-react';
+import { Search, Filter, Plus, Edit2, Trash2, CheckCircle, DollarSign, Link } from 'lucide-react';
 import Table from '../../Common/Table';
 import Button from '../../Common/Button';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import GastoPopup from '../../modals/GastoPopup';
+import AsociarGastoPopup from '../../modals/AsociarGastoPopup';
 
 interface GastoWidgetProps { }
 
@@ -27,11 +28,13 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedGastoId, setSelectedGastoId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isAsociando, setIsAsociando] = useState(false);
   const [expandedServices, setExpandedServices] = useState<number[]>([]);
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const { theme } = useTheme();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAsociacionPopupOpen, setIsAsociacionPopupOpen] = useState(false);
 
   // Función para obtener el token del localStorage
   const getToken = (): string | null => {
@@ -243,6 +246,43 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
     setIsEditing(false);
   };
 
+  const handleAsociarGasto = (gastoId: string) => {
+    setSelectedGastoId(gastoId);
+    setIsAsociacionPopupOpen(true);
+  };
+
+  const handleAsociacionSubmit = async (tipo: string, id: string) => {
+    try {
+      const token = getToken();
+      if (!token) {
+        throw new Error('Token no encontrado');
+      }
+
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos/${selectedGastoId}/asociar`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          tipo,
+          id
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al asociar el gasto');
+      }
+
+      // Actualizar la lista de gastos
+      await fetchGastos();
+      setIsAsociacionPopupOpen(false);
+    } catch (error) {
+      console.error('Error:', error);
+      setError(error instanceof Error ? error.message : 'Error al asociar el gasto');
+    }
+  };
+
   const servicios: any[] = [
     {
       id: 1,
@@ -375,6 +415,15 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
                 'Acciones': (
                   <div className="flex items-center space-x-2">
                     <button
+                      onClick={() => handleAsociarGasto(gasto._id)}
+                      className={`p-1.5 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors ${
+                        theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                      }`}
+                      title="Asociar Gasto"
+                    >
+                      <Link size={16} />
+                    </button>
+                    <button
                       onClick={() => handleEdit(gasto)}
                       className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
                         theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
@@ -414,29 +463,19 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
 
       <AnimatePresence>
         {isPopupOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm"
-            onClick={handleClosePopup}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className={`${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} p-8 rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-y-auto`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <GastoPopup
-                isOpen={isPopupOpen}
-                onClose={handleClosePopup}
-                onSubmit={handleAddOrUpdateGasto}
-                initialData={isEditing ? gastos.find(g => g._id === selectedGastoId) : undefined}
-                isEditing={isEditing}
-              />
-            </motion.div>
-          </motion.div>
+          <GastoPopup
+            onClose={handleClosePopup}
+            onSubmit={handleAddOrUpdateGasto}
+            gastoInicial={gastos.find(g => g._id === selectedGastoId)}
+            isEditing={isEditing}
+          />
+        )}
+        {isAsociacionPopupOpen && selectedGastoId && (
+          <AsociarGastoPopup
+            onClose={() => setIsAsociacionPopupOpen(false)}
+            onSubmit={handleAsociacionSubmit}
+            gastoId={selectedGastoId}
+          />
         )}
       </AnimatePresence>
     </div>

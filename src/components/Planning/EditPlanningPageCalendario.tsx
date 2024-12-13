@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Calendar } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import axios from 'axios';
@@ -53,6 +53,56 @@ const EditPlanningPageCalendario: React.FC<EditPlanningPageCalendarioProps> = ({
 }) => {
   const { theme } = useTheme();
   const [isHovered, setIsHovered] = React.useState(false);
+
+  useEffect(() => {
+    const handleWeekChange = (event: CustomEvent) => {
+      const { weekNumber, action } = event.detail;
+      
+      if (weekNumber !== undefined) {
+        // Ir a una semana específica
+        if (weekNumber > 0 && weekNumber <= weeks.length) {
+          setSemanaActual(weekNumber);
+        }
+      } else if (action === 'next') {
+        // Ir a la siguiente semana
+        cambiarSemana('siguiente');
+      } else if (action === 'previous') {
+        // Ir a la semana anterior
+        cambiarSemana('anterior');
+      }
+    };
+
+    const handleWeeksList = () => {
+      if (weeks && weeks.length > 0) {
+        const weeksList = weeks.map(week => {
+          const fechas = getFechasRango(week.startDate);
+          return `Semana ${week.weekNumber}: ${fechas}`;
+        }).join('\n');
+        
+        const event = new CustomEvent('assistantResponse', { 
+          detail: { 
+            message: `Lista de semanas disponibles:\n${weeksList}` 
+          }
+        });
+        window.dispatchEvent(event);
+      } else {
+        const event = new CustomEvent('assistantResponse', { 
+          detail: { 
+            message: 'No hay semanas disponibles en la planificación.' 
+          }
+        });
+        window.dispatchEvent(event);
+      }
+    };
+
+    window.addEventListener('changeWeek', handleWeekChange as EventListener);
+    window.addEventListener('requestWeeksList', handleWeeksList as EventListener);
+
+    return () => {
+      window.removeEventListener('changeWeek', handleWeekChange as EventListener);
+      window.removeEventListener('requestWeeksList', handleWeeksList as EventListener);
+    };
+  }, [weeks, setSemanaActual]);
 
   const cambiarSemana = (direccion: 'anterior' | 'siguiente') => {
     if (!weeks) return;

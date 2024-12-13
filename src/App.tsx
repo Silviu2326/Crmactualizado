@@ -69,14 +69,14 @@ function AppContent() {
         
         {/* CommandAssister y contenido principal */}
         {isOnEditPlanningPage ? (
-          <>
-            <div className="w-1/3 h-full">
+          <div className="flex flex-1">
+            <div className={`transition-all duration-300 ${isCommandAssisterOpen ? 'w-64' : 'w-0'}`}>
               <CommandAssister
                 isExpanded={isCommandAssisterOpen}
                 setIsExpanded={setIsCommandAssisterOpen}
               />
             </div>
-            <main className="w-2/3 h-full p-6 overflow-y-auto">
+            <main className="flex-1 p-6 overflow-y-auto">
               <Routes>
                 <Route
                   path="/edit-planning/:id"
@@ -88,7 +88,7 @@ function AppContent() {
                 />
               </Routes>
             </main>
-          </>
+          </div>
         ) : (
           <>
             <main className="flex-1 p-6">

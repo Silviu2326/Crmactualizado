@@ -70,19 +70,42 @@ const ClientesServicioWidget: React.FC = () => {
         }
       });
       
+      console.log('Datos recibidos de la API:', response.data);
+
       // Transformar los datos para mantener la estructura existente
-      const serviciosTransformados = response.data.map((servicio: Servicio) => ({
-        ...servicio,
-        _id: servicio._id,
-        nombre: servicio.nombre,
-        tipo: servicio.tipo.toLowerCase(),
-        planDePago: servicio.planDePago.map(plan => ({
-          ...plan,
-          ingresosTotales: plan.precio * (plan.clientes?.length || 0),
-          clientes: plan.clientes || []
-        }))
-      }));
+      const serviciosTransformados = response.data.map((servicio: any) => {
+        console.log('Procesando servicio:', servicio);
+        console.log('planDePago:', servicio.planDePago);
+
+        // Si planDePago no existe o no es un array, crear un array vacío
+        let planesDePago = [];
+        
+        // Verificar si planDePago existe y es un objeto (no un array)
+        if (servicio.planDePago && typeof servicio.planDePago === 'object' && !Array.isArray(servicio.planDePago)) {
+          // Si es un objeto, convertirlo en un array con ese único objeto
+          planesDePago = [servicio.planDePago];
+        } else if (Array.isArray(servicio.planDePago)) {
+          // Si ya es un array, usarlo directamente
+          planesDePago = servicio.planDePago;
+        }
+        
+        return {
+          _id: servicio._id || '',
+          nombre: servicio.nombre || '',
+          tipo: (servicio.tipo || '').toLowerCase(),
+          planDePago: planesDePago.map((plan: any) => ({
+            _id: plan._id || '',
+            nombre: plan.nombre || '',
+            precio: plan.precio || 0,
+            duracion: plan.duracion || '',
+            descripcion: plan.descripcion || '',
+            ingresosTotales: (plan.precio || 0) * ((plan.clientes && Array.isArray(plan.clientes)) ? plan.clientes.length : 0),
+            clientes: (plan.clientes && Array.isArray(plan.clientes)) ? plan.clientes : []
+          }))
+        };
+      });
       
+      console.log('Servicios transformados:', serviciosTransformados);
       setServicios(serviciosTransformados);
       setLoading(false);
     } catch (err) {

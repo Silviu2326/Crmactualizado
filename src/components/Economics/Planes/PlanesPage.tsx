@@ -1,12 +1,8 @@
 import React from 'react';
-import { Users, FileText, UserPlus, Clock } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { motion } from 'framer-motion';
 import MetricCard from './MetricCard';
-import BonosWidget from './BonosWidget';
-import ClientesWidget from './ClientesWidget';
-import ServiciosWidget from './ServiciosWidget';
-import ClientesServicioWidget from './ClientesServicioWidget'; // Importación del nuevo widget
+import ClientesServicioWidget from './ClientesServicioWidget';
 
 const PlanesPage: React.FC = () => {
   const { theme } = useTheme();
@@ -30,46 +26,9 @@ const PlanesPage: React.FC = () => {
         <MetricCard title="Nuevos Planes (este mes)" value="25" icon={<UserPlus className="w-6 h-6 text-purple-500" />} />
       </div>
 
-      {/* Widgets */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <motion.div
-          className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg overflow-hidden`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <div className="p-4">
-            <h3 className="text-2xl font-semibold mb-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-transparent bg-clip-text">Bonos</h3>
-            <BonosWidget />
-          </div>
-        </motion.div>
-        <motion.div
-          className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg overflow-hidden`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-        >
-          <div className="p-4">
-            <h3 className="text-2xl font-semibold mb-4 bg-gradient-to-r from-green-400 to-blue-500 text-transparent bg-clip-text">Clientes</h3>
-            <ClientesWidget />
-          </div>
-        </motion.div>
-        <motion.div
-          className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg overflow-hidden`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-        >
-          <div className="p-4">
-            <h3 className="text-2xl font-semibold mb-4 bg-gradient-to-r from-pink-400 to-red-500 text-transparent bg-clip-text">Servicios</h3>
-            <ServiciosWidget />
-          </div>
-        </motion.div>
-      </div>
-
       {/* ClientesServicioWidget - Ocupa todo el ancho de la pantalla */}
       <motion.div
-        className="w-full mt-8"
+        className="w-full"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}

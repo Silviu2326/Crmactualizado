@@ -79,6 +79,18 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
     'Domingo',
   ];
 
+  useEffect(() => {
+    const handleAddSessionEvent = () => {
+      setShowSessionPopup(true);
+    };
+
+    window.addEventListener('addSession', handleAddSessionEvent as EventListener);
+
+    return () => {
+      window.removeEventListener('addSession', handleAddSessionEvent as EventListener);
+    };
+  }, []);
+
   const handleAddSession = async (dia: string) => {
     console.log('🚀 Iniciando creación de sesión para el día:', dia);
     setShowSessionPopup(true);
@@ -264,20 +276,8 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
 
   return (
     <>
-      {showExerciseSelector && (
-        <ExerciseSelector
-          isOpen={showExerciseSelector}
-          onClose={() => setShowExerciseSelector(false)}
-          onSelectExercise={handleSelectExercise}
-          planningId={planningId}
-          weekNumber={semanaActual}
-          selectedDay={diaSeleccionado}
-          sessionId={selectedSessionId || ''}
-        />
-      )}
-
-      <div className="space-y-6">
-        {/* Grid de días de la semana */}
+      <div id="week-navigation" className="flex justify-between items-center mb-4">
+        {/* Navegación de semanas */}
         <div className="grid grid-cols-7 gap-2">
           {dias.map((dia) => (
             <motion.div
@@ -299,8 +299,10 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
             </motion.div>
           ))}
         </div>
+      </div>
 
-        {/* Contenido del día seleccionado */}
+      <div id="content-area" className="space-y-4">
+        {/* Contenido principal */}
         <AnimatePresence mode="wait">
           <motion.div
             key={diaSeleccionado}
@@ -371,6 +373,16 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
             </div>
           </motion.div>
         </AnimatePresence>
+      </div>
+
+      <div id="add-session-area" className="mt-4">
+        <Button
+          onClick={handleAddSession}
+          className="w-full"
+          variant="outline"
+        >
+          Añadir Sesión
+        </Button>
       </div>
 
       {/* Popup para crear nueva sesión */}

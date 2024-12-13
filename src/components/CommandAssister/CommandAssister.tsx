@@ -42,6 +42,27 @@ const CommandAssister: React.FC<CommandAssisterProps> = ({
   };
 
   useEffect(() => {
+    console.log('CommandAssister expanded state changed:', isExpanded);
+    // Emitir evento cuando cambia el estado
+    const event = new CustomEvent('commandAssisterStateChange', {
+      detail: { isOpen: isExpanded }
+    });
+    window.dispatchEvent(event);
+  }, [isExpanded]);
+
+  useEffect(() => {
+    if (isExpanded) {
+      // Emitir el evento después de un pequeño retraso para asegurar que el componente está montado
+      setTimeout(() => {
+        const event = new CustomEvent('commandAssisterOpen', {
+          detail: { timestamp: Date.now() }
+        });
+        window.dispatchEvent(event);
+      }, 100);
+    }
+  }, [isExpanded]);
+
+  useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isExpanded) {
         handleClose();
@@ -90,16 +111,42 @@ const CommandAssister: React.FC<CommandAssisterProps> = ({
       : 'fixed bottom-4 right-4 w-[400px] h-[500px] z-50'
     : '';
 
+  const handleExpand = () => {
+    console.log('CommandAssister button clicked');
+    if (!isExpanded) {
+      setIsExpanded(true);
+      // Emitir el evento con un pequeño retraso para asegurar que el estado se ha actualizado
+      setTimeout(() => {
+        console.log('Emitting commandAssisterOpen event');
+        const event = new CustomEvent('commandAssisterOpen');
+        window.dispatchEvent(event);
+      }, 100);
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        handleExpand();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
   return (
     <>
       {!isExpanded && (
         <button
-          onClick={() => setIsExpanded(true)}
+          id="command-assister-button"
+          onClick={handleExpand}
           className={`${buttonPositionClasses} ${
             theme === 'dark'
               ? 'bg-gray-800 hover:bg-gray-700'
-              : 'bg-white hover:bg-gray-100'
-          } p-3 rounded-full shadow-lg transition-all duration-200`}
+              : 'bg-white hover:bg-gray-50'
+          } p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110`}
         >
           <Command className="w-6 h-6" />
         </button>
@@ -135,54 +182,33 @@ const CommandAssister: React.FC<CommandAssisterProps> = ({
             >
               {/* Contenido del Command Assister */}
               <div
-                className={`p-6 border-b ${
-                  theme === 'dark' ? 'border-gray-800' : 'border-gray-200'
-                } relative flex-shrink-0`}
+                className={`flex flex-col h-full`}
               >
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center space-x-3">
-                    <div className="relative">
-                      <Wand2
-                        className={`w-5 h-5 ${
-                          theme === 'dark' ? 'text-blue-400' : 'text-blue-500'
-                        } animate-pulse`}
-                      />
-                      <div
-                        className={`absolute -inset-1 bg-blue-500/20 rounded-full blur-sm animate-pulse`}
-                      />
-                    </div>
-                    <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-violet-500">
-                      Command Assister
-                    </h2>
+                <div className={`flex items-center justify-between p-4 border-b ${
+                  theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+                }`}>
+                  <div className="flex items-center space-x-2">
+                    <CommandModeSelector currentMode={currentMode} setCurrentMode={setCurrentMode} />
                   </div>
                   <button
                     onClick={handleClose}
-                    className={`p-2.5 rounded-xl ${
+                    className={`p-2 rounded-lg transition-colors ${
                       theme === 'dark'
-                        ? 'hover:bg-gray-800 active:bg-gray-700'
-                        : 'hover:bg-gray-100 active:bg-gray-200'
-                    } transition-all duration-300 transform hover:scale-110 hover:rotate-90 active:scale-95 group`}
-                    aria-label="Cerrar Command Assister"
+                        ? 'hover:bg-gray-700 text-gray-400 hover:text-white'
+                        : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
+                    }`}
                   >
-                    <X
-                      className={`w-5 h-5 ${
-                        theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                      } group-hover:text-red-500 transition-colors duration-300`}
-                    />
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
-                <CommandModeSelector
-                  currentMode={currentMode}
-                  setCurrentMode={setCurrentMode}
-                />
-              </div>
-              {/* Ajustes para evitar scroll y ocupar todo el alto */}
-              <div
-                className={`flex-1 ${
-                  isOnEditPlanningPage ? 'overflow-hidden' : 'overflow-auto'
-                } p-4`}
-              >
-                {renderContent()}
+                {/* Ajustes para evitar scroll y ocupar todo el alto */}
+                <div
+                  className={`flex-1 ${
+                    isOnEditPlanningPage ? 'overflow-hidden' : 'overflow-auto'
+                  } p-4`}
+                >
+                  {renderContent()}
+                </div>
               </div>
             </motion.div>
           </AnimatePresence>

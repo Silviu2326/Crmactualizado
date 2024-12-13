@@ -127,9 +127,11 @@ const ClientList: React.FC = () => {
 
   const toggleClientSelection = (
     clientId: string,
-    event: React.MouseEvent
+    event: React.MouseEvent | null
   ) => {
-    event.stopPropagation();
+    if (event) {
+      event.stopPropagation();
+    }
     setSelectedClients((prev) =>
       prev.includes(clientId)
         ? prev.filter((id) => id !== clientId)

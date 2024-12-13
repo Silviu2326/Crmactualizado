@@ -140,7 +140,9 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className={`bg-white dark:bg-gray-700 rounded-lg shadow-lg w-full max-w-lg p-6 relative`}
+            className={`${
+              isDarkMode ? 'bg-gray-800' : 'bg-white'
+            } rounded-lg shadow-lg w-full max-w-lg p-6 relative`}
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             exit={{ scale: 0.8 }}
@@ -149,13 +151,17 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
             {/* Botón de cerrar */}
             <button
               onClick={onClose}
-              className="absolute top-3 right-3 text-gray-500 dark:text-gray-200 hover:text-gray-700 dark:hover:text-white transition-colors duration-150"
+              className={`absolute top-3 right-3 ${
+                isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
+              } transition-colors duration-150`}
               aria-label="Cerrar"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">
+            <h2 className={`text-xl font-semibold mb-4 ${
+              isDarkMode ? 'text-gray-100' : 'text-gray-900'
+            }`}>
               Nuevo Payment Plan
             </h2>
 
@@ -164,7 +170,7 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
                 <label
                   htmlFor="nombre"
                   className={`block text-sm font-medium ${
-                    isDarkMode ? 'text-white' : 'text-black'
+                    isDarkMode ? 'text-gray-200' : 'text-gray-700'
                   }`}
                 >
                   Nombre
@@ -176,9 +182,11 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
                   value={formData.nombre}
                   onChange={handleChange}
                   required
-                  className={`mt-1 block w-full px-3 py-2 ${
-                    isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
-                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  className={`mt-1 block w-full px-3 py-2 rounded-md shadow-sm ${
+                    isDarkMode 
+                      ? 'bg-gray-600 text-white border-gray-500' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                  } focus:ring-blue-500 focus:border-blue-500 focus:outline-none`}
                 />
               </div>
 
@@ -186,7 +194,7 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
                 <label
                   htmlFor="precio"
                   className={`block text-sm font-medium ${
-                    isDarkMode ? 'text-white' : 'text-black'
+                    isDarkMode ? 'text-gray-200' : 'text-gray-700'
                   }`}
                 >
                   Precio
@@ -200,9 +208,11 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
                   required
                   min="0"
                   step="0.01"
-                  className={`mt-1 block w-full px-3 py-2 ${
-                    isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
-                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  className={`mt-1 block w-full px-3 py-2 rounded-md shadow-sm ${
+                    isDarkMode 
+                      ? 'bg-gray-600 text-white border-gray-500' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                  } focus:ring-blue-500 focus:border-blue-500 focus:outline-none`}
                 />
               </div>
 
@@ -210,7 +220,7 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
                 <label
                   htmlFor="moneda"
                   className={`block text-sm font-medium ${
-                    isDarkMode ? 'text-white' : 'text-black'
+                    isDarkMode ? 'text-gray-200' : 'text-gray-700'
                   }`}
                 >
                   Moneda
@@ -221,9 +231,11 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
                   value={formData.moneda}
                   onChange={handleChange}
                   required
-                  className={`mt-1 block w-full px-3 py-2 ${
-                    isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
-                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  className={`mt-1 block w-full px-3 py-2 rounded-md shadow-sm ${
+                    isDarkMode 
+                      ? 'bg-gray-600 text-white border-gray-500' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                  } focus:ring-blue-500 focus:border-blue-500 focus:outline-none`}
                 >
                   <option value="EUR">EUR</option>
                   <option value="USD">USD</option>
@@ -234,7 +246,7 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
                 <label
                   htmlFor="frecuencia"
                   className={`block text-sm font-medium ${
-                    isDarkMode ? 'text-white' : 'text-black'
+                    isDarkMode ? 'text-gray-200' : 'text-gray-700'
                   }`}
                 >
                   Frecuencia
@@ -245,9 +257,11 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
                   value={formData.frecuencia}
                   onChange={handleChange}
                   required
-                  className={`mt-1 block w-full px-3 py-2 ${
-                    isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
-                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  className={`mt-1 block w-full px-3 py-2 rounded-md shadow-sm ${
+                    isDarkMode 
+                      ? 'bg-gray-600 text-white border-gray-500' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                  } focus:ring-blue-500 focus:border-blue-500 focus:outline-none`}
                 >
                   <option value="Mensual">Mensual</option>
                   <option value="Trimestral">Trimestral</option>
@@ -260,7 +274,7 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
                 <label
                   htmlFor="duracion"
                   className={`block text-sm font-medium ${
-                    isDarkMode ? 'text-white' : 'text-black'
+                    isDarkMode ? 'text-gray-200' : 'text-gray-700'
                   }`}
                 >
                   Duración (en periodos de {formData.frecuencia.toLowerCase()})
@@ -273,11 +287,15 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
                   onChange={handleChange}
                   required
                   min="1"
-                  className={`mt-1 block w-full px-3 py-2 ${
-                    isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
-                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  className={`mt-1 block w-full px-3 py-2 rounded-md shadow-sm ${
+                    isDarkMode 
+                      ? 'bg-gray-600 text-white border-gray-500' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                  } focus:ring-blue-500 focus:border-blue-500 focus:outline-none`}
                 />
-                <span className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <span className={`text-sm ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                } mt-1`}>
                   Total en meses: {formData.duracion}
                 </span>
               </div>
@@ -286,7 +304,7 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
                 <label
                   htmlFor="detalles"
                   className={`block text-sm font-medium ${
-                    isDarkMode ? 'text-white' : 'text-black'
+                    isDarkMode ? 'text-gray-200' : 'text-gray-700'
                   }`}
                 >
                   Detalles
@@ -298,23 +316,29 @@ const NuevoPaymentPlanPopup: React.FC<NuevoPaymentPlanPopupProps> = ({
                   onChange={handleChange}
                   required
                   rows={3}
-                  className={`mt-1 block w-full px-3 py-2 ${
-                    isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
-                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  className={`mt-1 block w-full px-3 py-2 rounded-md shadow-sm ${
+                    isDarkMode 
+                      ? 'bg-gray-600 text-white border-gray-500' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                  } focus:ring-blue-500 focus:border-blue-500 focus:outline-none`}
                 />
               </div>
 
-              <div className="flex justify-end space-x-2">
+              <div className="flex justify-end space-x-3 mt-6">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors duration-150"
+                  className={`px-4 py-2 rounded-md ${
+                    isDarkMode
+                      ? 'bg-gray-600 text-white hover:bg-gray-500'
+                      : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                  } transition-colors duration-150`}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors duration-150"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-150"
                 >
                   Crear
                 </button>

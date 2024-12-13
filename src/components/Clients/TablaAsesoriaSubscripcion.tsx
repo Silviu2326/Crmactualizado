@@ -5,13 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Edit, Trash, ChevronRight, X, Plus } from 'lucide-react'; // Importar Plus para el botón de Payment Plan
 import TablaPlanesServicio from './TablaPlanesServicio';
 import NuevoPaymentPlanPopup from './NuevoPaymentPlanPopup'; // Importar el nuevo popup
-import type { ServicioAsesoriaSubscripcion } from '../types/servicios';
+import type { ServicioAsesoriaSubscripcion, PlanPago } from '../types/servicios';
 
 interface TablaAsesoriaSubscripcionProps {
-  datos: any[];
+  datos: ServicioAsesoriaSubscripcion[];
   isDarkMode: boolean;
-  onServiceUpdated: (servicio: any) => void;
-  onAddPaymentPlan: (servicioId: string, nuevoPlan: any) => void;
+  onServiceUpdated: (servicio: ServicioAsesoriaSubscripcion) => void;
+  onAddPaymentPlan: (servicioId: string, nuevoPlan: PlanPago) => void;
 }
 
 const TablaAsesoriaSubscripcion: React.FC<TablaAsesoriaSubscripcionProps> = ({
@@ -91,7 +91,7 @@ const TablaAsesoriaSubscripcion: React.FC<TablaAsesoriaSubscripcionProps> = ({
   };
 
   // Función para manejar la adición de un nuevo Payment Plan
-  const handleAddPaymentPlan = (nuevoPlan: any) => {
+  const handleAddPaymentPlan = (nuevoPlan: PlanPago) => {
     if (servicioParaPaymentPlan) {
       onAddPaymentPlan(servicioParaPaymentPlan, nuevoPlan);
       setIsNuevoPaymentPlanOpen(false);
@@ -108,7 +108,7 @@ const TablaAsesoriaSubscripcion: React.FC<TablaAsesoriaSubscripcionProps> = ({
             <th className="py-2">Fecha de Creación</th>
             <th className="py-2">Tipo de Servicio</th>
             <th className="py-2">Servicios Adicionales</th>
-            <th className="py-2">Acciones</th>
+            <th className="py-2 text-center">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -138,7 +138,7 @@ const TablaAsesoriaSubscripcion: React.FC<TablaAsesoriaSubscripcionProps> = ({
                       >
                         <ChevronRight className="w-5 h-5" />
                       </motion.span>
-                      <span className={`px-6 py-4 text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                      <span className={`text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>
                         {servicio.nombre}
                       </span>
                     </motion.button>
@@ -147,10 +147,13 @@ const TablaAsesoriaSubscripcion: React.FC<TablaAsesoriaSubscripcionProps> = ({
                     {servicio.descripcion}
                   </td>
                   <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>
-                    {servicio.serviciosAdicionales.join(', ')}
+                    {servicio.tipo || 'No especificado'}
+                  </td>
+                  <td className={`px-6 py-4 text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                    {servicio.serviciosAdicionales.join(', ') || 'Ninguno'}
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex space-x-3 items-center">
+                    <div className="flex justify-center space-x-3 items-center">
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
@@ -164,7 +167,6 @@ const TablaAsesoriaSubscripcion: React.FC<TablaAsesoriaSubscripcionProps> = ({
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => {
-                          // Implementar lógica para eliminar el servicio
                           console.log('Eliminar servicio:', servicio._id);
                         }}
                         className="text-red-400 hover:text-red-300 transition-colors duration-150"
@@ -172,7 +174,6 @@ const TablaAsesoriaSubscripcion: React.FC<TablaAsesoriaSubscripcionProps> = ({
                       >
                         <Trash className="w-5 h-5" />
                       </motion.button>
-                      {/* Botón para agregar Payment Plan */}
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
@@ -194,7 +195,7 @@ const TablaAsesoriaSubscripcion: React.FC<TablaAsesoriaSubscripcionProps> = ({
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <td colSpan={4} className={`${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} border-t border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                      <td colSpan={5} className={`${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} border-t border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                         <motion.div
                           initial={{ y: -20 }}
                           animate={{ y: 0 }}
@@ -230,29 +231,52 @@ const TablaAsesoriaSubscripcion: React.FC<TablaAsesoriaSubscripcionProps> = ({
       <AnimatePresence>
         {isModalOpen && servicioEditando && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
+            {/* Overlay */}
+            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={handleModalClose} />
+            
+            {/* Modal Content */}
             <motion.div
-              className={`bg-white dark:bg-gray-700 rounded-lg shadow-lg w-full max-w-md p-6 relative`}
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.8 }}
+              className={`relative w-full max-w-md p-6 mx-4 ${
+                isDarkMode 
+                  ? 'bg-gray-800 text-gray-100' 
+                  : 'bg-white text-gray-900'
+              } rounded-lg shadow-xl`}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
+              {/* Close Button */}
               <button
                 onClick={handleModalClose}
-                className="absolute top-3 right-3 text-gray-500 dark:text-gray-200 hover:text-gray-700 dark:hover:text-white transition-colors duration-150"
+                className={`absolute top-4 right-4 p-1 rounded-full transition-colors duration-150 ${
+                  isDarkMode
+                    ? 'text-gray-400 hover:text-gray-100 hover:bg-gray-700'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                }`}
                 aria-label="Cerrar"
               >
                 <X className="w-5 h-5" />
               </button>
-              <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Editar Servicio</h2>
-              <form onSubmit={handleFormSubmit} className="space-y-4">
+
+              {/* Modal Header */}
+              <h2 className={`text-xl font-semibold mb-6 ${
+                isDarkMode ? 'text-gray-100' : 'text-gray-900'
+              }`}>
+                Editar Servicio
+              </h2>
+
+              {/* Form */}
+              <form onSubmit={handleFormSubmit} className="space-y-5">
                 <div>
-                  <label htmlFor="nombre" className={`block text-sm font-medium ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                  <label htmlFor="nombre" className={`block text-sm font-medium mb-1 ${
+                    isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                  }`}>
                     Nombre
                   </label>
                   <input
@@ -262,11 +286,18 @@ const TablaAsesoriaSubscripcion: React.FC<TablaAsesoriaSubscripcionProps> = ({
                     value={formData.nombre}
                     onChange={handleInputChange}
                     required
-                    className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full px-3 py-2 rounded-md border ${
+                      isDarkMode
+                        ? 'bg-gray-700 border-gray-600 text-gray-100 focus:border-blue-500'
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
+                    } focus:ring-1 focus:ring-blue-500 focus:outline-none`}
                   />
                 </div>
+
                 <div>
-                  <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  <label htmlFor="descripcion" className={`block text-sm font-medium mb-1 ${
+                    isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                  }`}>
                     Descripción
                   </label>
                   <textarea
@@ -276,11 +307,18 @@ const TablaAsesoriaSubscripcion: React.FC<TablaAsesoriaSubscripcionProps> = ({
                     onChange={handleInputChange}
                     required
                     rows={3}
-                    className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  ></textarea>
+                    className={`w-full px-3 py-2 rounded-md border ${
+                      isDarkMode
+                        ? 'bg-gray-700 border-gray-600 text-gray-100 focus:border-blue-500'
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
+                    } focus:ring-1 focus:ring-blue-500 focus:outline-none`}
+                  />
                 </div>
+
                 <div>
-                  <label htmlFor="serviciosAdicionales" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  <label htmlFor="serviciosAdicionales" className={`block text-sm font-medium mb-1 ${
+                    isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                  }`}>
                     Servicios Adicionales (separados por comas)
                   </label>
                   <input
@@ -290,22 +328,32 @@ const TablaAsesoriaSubscripcion: React.FC<TablaAsesoriaSubscripcionProps> = ({
                     value={formData.serviciosAdicionales}
                     onChange={handleInputChange}
                     required
-                    className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full px-3 py-2 rounded-md border ${
+                      isDarkMode
+                        ? 'bg-gray-700 border-gray-600 text-gray-100 focus:border-blue-500'
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
+                    } focus:ring-1 focus:ring-blue-500 focus:outline-none`}
                   />
                 </div>
-                <div className="flex justify-end space-x-2">
+
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-3 mt-6">
                   <button
                     type="button"
                     onClick={handleModalClose}
-                    className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors duration-150"
+                    className={`px-4 py-2 rounded-md transition-colors duration-150 ${
+                      isDarkMode
+                        ? 'bg-gray-700 text-gray-200 hover:bg-gray-600'
+                        : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                    }`}
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors duration-150"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-150"
                   >
-                    Guardar
+                    Guardar Cambios
                   </button>
                 </div>
               </form>

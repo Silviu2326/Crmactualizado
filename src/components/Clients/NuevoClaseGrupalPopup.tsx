@@ -74,7 +74,9 @@ const NuevoClaseGrupalPopup: React.FC<NuevoClaseGrupalPopupProps> = ({ isOpen, o
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className={`bg-white dark:bg-gray-700 rounded-lg shadow-lg w-full max-w-lg p-6 relative`}
+            className={`${
+              isDarkMode ? 'bg-gray-800' : 'bg-white'
+            } rounded-lg shadow-lg w-full max-w-lg p-6 relative`}
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             exit={{ scale: 0.8 }}
@@ -83,17 +85,21 @@ const NuevoClaseGrupalPopup: React.FC<NuevoClaseGrupalPopupProps> = ({ isOpen, o
             {/* Botón de cerrar */}
             <button
               onClick={onClose}
-              className="absolute top-3 right-3 text-gray-500 dark:text-gray-200 hover:text-gray-700 dark:hover:text-white transition-colors duration-150"
+              className={`absolute top-3 right-3 ${
+                isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
+              } transition-colors duration-150`}
               aria-label="Cerrar"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Nueva Clase Grupal</h2>
+            <h2 className={`text-xl font-semibold mb-4 ${
+              isDarkMode ? 'text-gray-100' : 'text-gray-900'
+            }`}>Nueva Clase Grupal</h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="nombre" className={`block text-sm font-medium ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                <label htmlFor="nombre" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
                   Nombre
                 </label>
                 <input
@@ -103,14 +109,16 @@ const NuevoClaseGrupalPopup: React.FC<NuevoClaseGrupalPopupProps> = ({ isOpen, o
                   value={formData.nombre}
                   onChange={handleChange}
                   required
-                  className={`mt-1 block w-full px-3 py-2 ${
-                    isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
-                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  className={`mt-1 block w-full px-3 py-2 rounded-md border ${
+                    isDarkMode 
+                      ? 'bg-gray-600 text-white border-gray-500' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                  } focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 focus:border-blue-500`}
                 />
               </div>
 
               <div>
-                <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                <label htmlFor="descripcion" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
                   Descripción
                 </label>
                 <textarea
@@ -120,14 +128,16 @@ const NuevoClaseGrupalPopup: React.FC<NuevoClaseGrupalPopupProps> = ({ isOpen, o
                   onChange={handleChange}
                   required
                   rows={3}
-                  className={`mt-1 block w-full px-3 py-2 ${
-                    isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
-                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  className={`mt-1 block w-full px-3 py-2 rounded-md border ${
+                    isDarkMode 
+                      ? 'bg-gray-600 text-white border-gray-500' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                  } focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 focus:border-blue-500`}
                 ></textarea>
               </div>
 
               <div>
-                <label htmlFor="horario" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                <label htmlFor="horario" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
                   Horario
                 </label>
                 <input
@@ -138,14 +148,16 @@ const NuevoClaseGrupalPopup: React.FC<NuevoClaseGrupalPopupProps> = ({ isOpen, o
                   onChange={handleChange}
                   required
                   placeholder="Ej. Lunes 10:00 - 12:00"
-                  className={`mt-1 block w-full px-3 py-2 ${
-                    isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
-                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  className={`mt-1 block w-full px-3 py-2 rounded-md border ${
+                    isDarkMode 
+                      ? 'bg-gray-600 text-white border-gray-500' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                  } focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 focus:border-blue-500`}
                 />
               </div>
 
               <div>
-                <label htmlFor="capacidad" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                <label htmlFor="capacidad" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
                   Capacidad
                 </label>
                 <input
@@ -156,14 +168,16 @@ const NuevoClaseGrupalPopup: React.FC<NuevoClaseGrupalPopupProps> = ({ isOpen, o
                   onChange={handleChange}
                   required
                   min="1"
-                  className={`mt-1 block w-full px-3 py-2 ${
-                    isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
-                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  className={`mt-1 block w-full px-3 py-2 rounded-md border ${
+                    isDarkMode 
+                      ? 'bg-gray-600 text-white border-gray-500' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                  } focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 focus:border-blue-500`}
                 />
               </div>
 
               <div>
-                <label htmlFor="precio" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                <label htmlFor="precio" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
                   Precio (€)
                 </label>
                 <input
@@ -175,9 +189,11 @@ const NuevoClaseGrupalPopup: React.FC<NuevoClaseGrupalPopupProps> = ({ isOpen, o
                   required
                   min="0"
                   step="0.01"
-                  className={`mt-1 block w-full px-3 py-2 ${
-                    isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
-                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  className={`mt-1 block w-full px-3 py-2 rounded-md border ${
+                    isDarkMode 
+                      ? 'bg-gray-600 text-white border-gray-500' 
+                      : 'bg-white text-gray-900 border-gray-300'
+                  } focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 focus:border-blue-500`}
                 />
               </div>
 

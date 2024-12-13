@@ -68,13 +68,13 @@ const ClientList: React.FC = () => {
   const [showCreateClient, setShowCreateClient] = useState<boolean>(false);
 
   useEffect(() => {
-    console.log('🔄 Iniciando la carga de clientes...');
+    console.log(' Iniciando la carga de clientes...');
     fetchClientes();
   }, []);
 
   const fetchClientes = async () => {
     setLoading(true);
-    console.log('🚀 Realizando petición GET a la API para obtener clientes...');
+    console.log(' Realizando petición GET a la API para obtener clientes...');
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -87,13 +87,13 @@ const ClientList: React.FC = () => {
         }
       });
       setClientesData(response.data);
-      console.log('🎉 Clientes obtenidos exitosamente:', response.data);
+      console.log(' Clientes obtenidos exitosamente:', response.data);
     } catch (error) {
-      console.error('❗️ Error al obtener los clientes:', error);
+      console.error(' Error al obtener los clientes:', error);
       setError('Error al obtener los clientes');
     } finally {
       setLoading(false);
-      console.log('⏳ Finalizó la carga de clientes.');
+      console.log(' Finalizó la carga de clientes.');
     }
   };
 
@@ -109,7 +109,7 @@ const ClientList: React.FC = () => {
   };
 
   const handleRowClick = (clientId: string) => {
-    console.log(`👆 Fila de cliente con ID ${clientId} clickeada.`);
+    console.log(` Fila de cliente con ID ${clientId} clickeada.`);
     setOpenPanels(prevOpenPanels => {
       if (prevOpenPanels.includes(clientId)) {
         return prevOpenPanels.filter(id => id !== clientId);
@@ -120,7 +120,7 @@ const ClientList: React.FC = () => {
   };
 
   const handlePanelClose = (clientId: string) => {
-    setOpenPanels(prevOpenPanels => 
+    setOpenPanels(prevOpenPanels =>
       prevOpenPanels.filter(id => id !== clientId)
     );
   };
@@ -139,19 +139,19 @@ const ClientList: React.FC = () => {
     );
     console.log(
       selectedClients.includes(clientId)
-        ? `❌ Cliente con ID ${clientId} deseleccionado.`
-        : `✅ Cliente con ID ${clientId} seleccionado.`
+        ? ` Cliente con ID ${clientId} deseleccionado.`
+        : ` Cliente con ID ${clientId} seleccionado.`
     );
   };
 
   const toggleSelectAll = () => {
     if (selectedClients.length === clientesData.length) {
       setSelectedClients([]);
-      console.log('❌ Todos los clientes han sido deseleccionados.');
+      console.log(' Todos los clientes han sido deseleccionados.');
     } else {
       const allClientIds = clientesData.map((c) => c._id);
       setSelectedClients(allClientIds);
-      console.log('✅ Todos los clientes han sido seleccionados.');
+      console.log(' Todos los clientes han sido seleccionados.');
     }
   };
 
@@ -162,6 +162,14 @@ const ClientList: React.FC = () => {
 
     const matchesFilters = Object.entries(filters).every(([key, value]) => {
       if (!value) return true;
+      
+      if (key === 'tag') {
+        if (value === 'Sin etiqueta') {
+          return !client.tag || client.tag === '' || client.tag === 'Sin etiqueta';
+        }
+        return client.tag === value;
+      }
+      
       return client[key as keyof Cliente] === value;
     });
 
@@ -170,7 +178,7 @@ const ClientList: React.FC = () => {
 
   useEffect(() => {
     console.log(
-      `🔍 Filtrando clientes con término de búsqueda: "${searchTerm}" y filtros:`,
+      ` Filtrando clientes con término de búsqueda: "${searchTerm}" y filtros:`,
       filters
     );
   }, [searchTerm, filters, clientesData]);
@@ -187,16 +195,20 @@ const ClientList: React.FC = () => {
         return (
           <span className={`px-2 py-1 rounded-full text-xs ${
             value === 'Activo' ? 'bg-green-500 text-white' :
-            value === 'Inactivo' ? 'bg-red-500 text-white' :
-            'bg-yellow-500 text-white'
+            value === 'Pendiente' ? 'bg-yellow-500 text-white' :
+            'bg-red-500 text-white'
           }`}>
             {value || 'Sin estado'}
           </span>
         );
       case 'tag':
-        return (
+        return !value || value === 'Sin etiqueta' ? (
+          <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
+            Sin etiqueta
+          </span>
+        ) : (
           <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-            {value || 'Sin etiqueta'}
+            {value}
           </span>
         );
       case 'planDePago':
@@ -251,7 +263,7 @@ const ClientList: React.FC = () => {
         viewMode={viewMode}
         setViewMode={setViewMode}
         onCreateClient={() => {
-          console.log('🆕 Abriendo formulario para crear un nuevo cliente.');
+          console.log(' Abriendo formulario para crear un nuevo cliente.');
           setShowCreateClient(true);
         }}
       />
@@ -260,11 +272,11 @@ const ClientList: React.FC = () => {
         <div className="mt-6">
           <CreateClient
             onClose={() => {
-              console.log('❌ Cerrar formulario de creación de cliente.');
+              console.log(' Cerrar formulario de creación de cliente.');
               setShowCreateClient(false);
             }}
             onClientCreated={() => {
-              console.log('🎉 Cliente creado exitosamente.');
+              console.log(' Cliente creado exitosamente.');
               setShowCreateClient(false);
               fetchClientes();
             }}

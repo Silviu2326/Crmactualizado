@@ -75,12 +75,18 @@ const TablaClientes = ({ clientes, isDarkMode }: Props) => {
                   className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                     cliente.estado === 'Activo'
                       ? isDarkMode ? 'bg-green-900/40 text-green-400' : 'bg-green-100 text-green-800'
+                      : cliente.estado === 'Pendiente'
+                      ? isDarkMode ? 'bg-yellow-900/40 text-yellow-400' : 'bg-yellow-100 text-yellow-800'
                       : isDarkMode ? 'bg-red-900/40 text-red-400' : 'bg-red-100 text-red-800'
                   }`}
                 >
                   <span
                     className={`w-2 h-2 mr-2 rounded-full ${
-                      cliente.estado === 'Activo' ? 'bg-green-400' : 'bg-red-400'
+                      cliente.estado === 'Activo'
+                        ? 'bg-green-400'
+                        : cliente.estado === 'Pendiente'
+                        ? 'bg-yellow-400'
+                        : 'bg-red-400'
                     }`}
                   />
                   {cliente.estado}

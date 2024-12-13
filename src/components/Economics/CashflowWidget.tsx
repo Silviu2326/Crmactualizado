@@ -271,100 +271,110 @@ const CashflowWidget: React.FC<CashflowWidgetProps> = ({
           </div>
         </div>
       </div>
-      <div className="flex-grow min-h-0">
-        <ResponsiveContainer width="100%" height="100%" minHeight={200}>
-          <ComposedChart
-            data={getData()}
-            margin={{ top: 10, right: 30, left: 0, bottom: 5 }}
-          >
-            {/* Rejilla del gráfico */}
-            <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
+      <div className="flex-grow min-h-0 overflow-x-auto">
+        <div style={{ minWidth: '800px', height: '300px' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart
+              data={getData()}
+              margin={{ top: 10, right: 25, left: 10, bottom: 25 }}
+            >
+              {/* Rejilla del gráfico */}
+              <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
 
-            {/* Eje X */}
-            <XAxis
-              dataKey="label"
-              stroke={colors.axis}
-              tick={{ fill: colors.axis }}
-              fontSize={12}
-            />
+              {/* Eje X */}
+              <XAxis
+                dataKey="label"
+                stroke={colors.axis}
+                tick={{ 
+                  fill: colors.axis,
+                  angle: -45,
+                  textAnchor: 'end',
+                  fontSize: 12,
+                  dy: 8,
+                  dx: -8
+                }}
+                height={50}
+                interval={0}
+              />
 
-            {/* Eje Y Primario */}
-            <YAxis
-              yAxisId="left"
-              stroke={colors.axis}
-              tick={{ fill: colors.axis }}
-              fontSize={12}
-              label={{
-                value: 'Euros',
-                angle: -90,
-                position: 'insideLeft',
-                fill: colors.axis,
-                fontSize: 12,
-              }}
-            />
+              {/* Eje Y Primario */}
+              <YAxis
+                yAxisId="left"
+                stroke={colors.axis}
+                tick={{ fill: colors.axis }}
+                fontSize={12}
+                label={{
+                  value: 'Euros',
+                  angle: -90,
+                  position: 'insideLeft',
+                  fill: colors.axis,
+                  fontSize: 12,
+                }}
+              />
 
-            {/* Eje Y Secundario para Beneficio */}
-            <YAxis
-              yAxisId="right"
-              orientation="right"
-              stroke={colors.axis}
-              tick={{ fill: colors.axis }}
-              fontSize={12}
-              label={{
-                value: 'Beneficio (€)',
-                angle: 90,
-                position: 'insideRight',
-                fill: colors.axis,
-                fontSize: 12,
-              }}
-            />
+              {/* Eje Y Secundario para Beneficio */}
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                stroke={colors.axis}
+                tick={{ fill: colors.axis }}
+                fontSize={12}
+                label={{
+                  value: 'Beneficio (€)',
+                  angle: 90,
+                  position: 'insideRight',
+                  fill: colors.axis,
+                  fontSize: 12,
+                }}
+              />
 
-            {/* Tooltip Personalizado */}
-            <Tooltip content={<CustomTooltip />} />
+              {/* Tooltip Personalizado */}
+              <Tooltip content={<CustomTooltip />} />
 
-            {/* Leyenda */}
-            <Legend
-              verticalAlign="top"
-              height={36}
-              wrapperStyle={{
-                color: colors.legendText,
-                fontSize: 12,
-              }}
-            />
+              {/* Leyenda */}
+              <Legend
+                verticalAlign="top"
+                height={36}
+                wrapperStyle={{
+                  color: colors.legendText,
+                  fontSize: 12,
+                }}
+              />
 
-            {/* Barras de Ingresos */}
-            <Bar
-              yAxisId="left"
-              dataKey="ingresos"
-              name="Ingresos"
-              fill={colors.ingresos}
-              barSize={30}
-              radius={[4, 4, 0, 0]}
-            />
+              {/* Barras de Ingresos */}
+              <Bar
+                yAxisId="left"
+                dataKey="ingresos"
+                name="Ingresos"
+                fill={colors.ingresos}
+                barSize={30}
+                radius={[4, 4, 0, 0]}
+              />
 
-            {/* Barras de Gastos */}
-            <Bar
-              yAxisId="left"
-              dataKey="gastos"
-              name="Gastos"
-              fill={colors.gastos}
-              barSize={30}
-              radius={[4, 4, 0, 0]}
-            />
+              {/* Barras de Gastos */}
+              <Bar
+                yAxisId="left"
+                dataKey="gastos"
+                name="Gastos"
+                fill={colors.gastos}
+                barSize={30}
+                radius={[4, 4, 0, 0]}
+              />
 
-            {/* Línea de Beneficio */}
-            <Line
-              type="monotone"
-              dataKey="beneficio"
-              name="Beneficio"
-              stroke={colors.beneficio}
-              strokeWidth={3}
-              dot={{ fill: colors.beneficio, r: 4 }}
-              activeDot={{ r: 6 }}
-              yAxisId="right"
-            />
-          </ComposedChart>
-        </ResponsiveContainer>
+              {/* Línea de Beneficio */}
+              <Line
+                type="monotone"
+                dataKey="beneficio"
+                name="Beneficio"
+                stroke={colors.beneficio}
+                strokeWidth={3}
+                dot={{ fill: colors.beneficio, r: 4 }}
+                activeDot={{ r: 6 }}
+                yAxisId="right"
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
       </div>
       <div
         className={`text-xs ${

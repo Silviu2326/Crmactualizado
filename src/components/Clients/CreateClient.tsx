@@ -20,56 +20,66 @@ const CreateClient: React.FC<CreateClientProps> = ({ onClose, onClientCreated })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('🎯 Iniciando proceso de registro de cliente...');
-    console.log('📝 Datos del formulario:', { nombre, email, password: '****' });
+    console.log(' Iniciando proceso de registro de cliente...');
+    console.log(' Datos del formulario:', { nombre, email, password: '****' });
 
     setLoading(true);
     setError(null);
     setSuccessMessage(null);
 
     try {
-      console.log(`🚀 Enviando solicitud POST a ${API_URL}/clientes/registro`);
-      
+      console.log(` Enviando solicitud POST a ${API_URL}/clientes/registro`);
+
       const response = await axios.post(`${API_URL}/clientes/registro`, {
         nombre,
         email,
         password,
       });
 
-      console.log('✅ Cliente registrado exitosamente:', response.data);
-      console.log('🔄 Limpiando formulario...');
+      console.log(' Cliente registrado exitosamente:', response.data);
+      console.log(' Limpiando formulario...');
 
       setSuccessMessage('Cliente registrado exitosamente');
       setNombre('');
       setEmail('');
       setPassword('');
-      
+
       if (onClientCreated) {
-        console.log('📢 Notificando creación exitosa al componente padre...');
+        console.log(' Notificando creación exitosa al componente padre...');
         onClientCreated();
       }
-      
-      console.log('⏳ Iniciando cierre automático del modal...');
+
+      console.log(' Iniciando cierre automático del modal...');
       setTimeout(() => {
-        console.log('🔒 Cerrando modal de registro...');
+        console.log(' Cerrando modal de registro...');
         onClose();
       }, 2000);
 
     } catch (error: any) {
-      console.error('❌ Error al registrar el cliente:', error);
-      console.log('🔍 Detalles del error:', {
+      console.error(' Error al registrar el cliente:', error);
+      console.log(' Detalles del error:', {
         status: error.response?.status,
         data: error.response?.data,
         message: error.message
       });
 
+      // Manejo específico de errores
       if (error.response?.data) {
-        setError(error.response.data.mensaje || 'Error al registrar el cliente');
+        const errorMessage = error.response.data.mensaje;
+        if (errorMessage?.toLowerCase().includes('contraseña')) {
+          setError('Error en la contraseña: La contraseña debe tener al menos 6 caracteres, incluir una mayúscula, un número y un carácter especial');
+        } else if (errorMessage?.toLowerCase().includes('correo') || errorMessage?.toLowerCase().includes('email')) {
+          setError('Error en el correo electrónico: ' + errorMessage);
+        } else if (errorMessage) {
+          setError(errorMessage);
+        } else {
+          setError('Error al registrar el cliente');
+        }
       } else {
-        setError('Error al registrar el cliente');
+        setError('Error de conexión: Por favor, intente nuevamente');
       }
     } finally {
-      console.log('🏁 Finalizando proceso de registro...');
+      console.log(' Finalizando proceso de registro...');
       setLoading(false);
     }
   };
@@ -79,17 +89,17 @@ const CreateClient: React.FC<CreateClientProps> = ({ onClose, onClientCreated })
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md relative animate-fadeIn">
         <button
           onClick={() => {
-            console.log('🔙 Usuario canceló el registro');
+            console.log(' Usuario canceló el registro');
             onClose();
           }}
           className="absolute right-4 top-4 text-gray-500 hover:text-gray-700 transition-colors"
         >
           <X size={24} />
         </button>
-        
+
         <div className="p-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Registrar Nuevo Cliente</h2>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">
@@ -100,14 +110,14 @@ const CreateClient: React.FC<CreateClientProps> = ({ onClose, onClientCreated })
                 id="nombre"
                 value={nombre}
                 onChange={(e) => {
-                  console.log('✏️ Actualizando nombre:', e.target.value);
+                  console.log(' Actualizando nombre:', e.target.value);
                   setNombre(e.target.value);
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
-            
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Correo Electrónico
@@ -117,37 +127,42 @@ const CreateClient: React.FC<CreateClientProps> = ({ onClose, onClientCreated })
                 id="email"
                 value={email}
                 onChange={(e) => {
-                  console.log('✉️ Actualizando email:', e.target.value);
+                  console.log(' Actualizando email:', e.target.value);
                   setEmail(e.target.value);
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
-            
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Contraseña
               </label>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => {
-                  console.log('🔑 Actualizando contraseña');
-                  setPassword(e.target.value);
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
+              <div className="relative">
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => {
+                    console.log(' Actualizando contraseña');
+                    setPassword(e.target.value);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  La contraseña debe tener al menos 6 caracteres, incluir una mayúscula, un número y un carácter especial
+                </p>
+              </div>
             </div>
 
             {error && (
-              <div className="p-3 bg-red-100 border border-red-200 text-red-700 rounded-md">
+              <div className="p-3 bg-red-100 border border-red-200 text-red-700 rounded-md text-sm">
                 {error}
               </div>
             )}
-            
+
             {successMessage && (
               <div className="p-3 bg-green-100 border border-green-200 text-green-700 rounded-md">
                 {successMessage}

@@ -19,8 +19,8 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, setFilters }) => {
   const { theme } = useTheme();
 
   const filterOptions = {
-    estado: ['Activo', 'Inactivo'],
-    tag: ['Premium', 'Básico', 'VIP'],
+    estado: ['Activo', 'Inactivo', 'Pendiente'],
+    tag: ['Premium', 'Básico', 'VIP', 'Sin etiqueta'],
     tipoPlan: ['Mensual', 'Trimestral', 'Anual'],
     clase: ['CrossFit', 'Yoga', 'Pilates', 'Funcional'],
     servicio: ['Personal', 'Grupal', 'Online'],

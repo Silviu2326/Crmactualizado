@@ -94,6 +94,7 @@ const CashFlowChart: React.FC<CashFlowChartProps> = ({ viewType, currentDate, in
     // Convertir el mapa a array y calcular beneficios
     return Array.from(dataMap.values())
       .map(item => ({
+
         ...item,
         beneficio: item.ingresos + item.gastos // Sumamos porque gastos ya es negativo
       }));
@@ -109,7 +110,7 @@ const CashFlowChart: React.FC<CashFlowChartProps> = ({ viewType, currentDate, in
         });
       case 'monthly':
         return date.toLocaleDateString('es-ES', { 
-          month: 'long'
+          month: 'short'
         });
       case 'annual':
         return date.getFullYear().toString();
@@ -133,11 +134,23 @@ const CashFlowChart: React.FC<CashFlowChartProps> = ({ viewType, currentDate, in
           top: 5,
           right: 30,
           left: 20,
-          bottom: 5,
+          bottom: 20
         }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke={theme === 'dark' ? '#374151' : '#e5e7eb'} />
-        <XAxis dataKey="name" stroke={theme === 'dark' ? '#9CA3AF' : '#4B5563'} />
+        <XAxis 
+          dataKey="name" 
+          stroke={theme === 'dark' ? '#9CA3AF' : '#4B5563'}
+          tick={{
+            angle: -45,
+            textAnchor: 'end',
+            fontSize: 12,
+            dy: 10,
+            dx: -10
+          }}
+          height={60}
+          interval={0}
+        />
         <YAxis stroke={theme === 'dark' ? '#9CA3AF' : '#4B5563'} />
         <Tooltip
           contentStyle={{
@@ -212,7 +225,7 @@ const CashFlowChart: React.FC<CashFlowChartProps> = ({ viewType, currentDate, in
             name="gastos"
           />
         )}
-        {visibleSeries.beneficio && (chartType === 'line' ?
+        {visibleSeries.beneficio && (chartType === 'line' ? 
           <Line 
             type="monotone" 
             dataKey="beneficio" 

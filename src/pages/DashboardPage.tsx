@@ -346,7 +346,6 @@ const DashboardPage: React.FC = () => {
                 ingresos={ingresos}
                 gastos={gastos}
               />
-
             </div>
           </div>
 

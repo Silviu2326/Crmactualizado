@@ -37,6 +37,7 @@ import {
 import { reporteService, type Reporte } from '../services/reporteService';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useTheme } from '../contexts/ThemeContext';
 
 const categorias = ['Bug', 'Request', 'UI', 'Performance'];
 const estados = ['Abierto', 'En Progreso', 'Resuelto', 'Cerrado'];
@@ -74,10 +75,13 @@ const getEstadoColor = (estado: string) => {
 };
 
 const Reportesweb = () => {
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
   const [reportes, setReportes] = useState<Reporte[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editandoReporte, setEditandoReporte] = useState<string | null>(null);
   const [nuevoReporte, setNuevoReporte] = useState<Partial<Reporte>>({
     resumenFeedback: '',
     categoria: '',
@@ -106,12 +110,54 @@ const Reportesweb = () => {
     cargarReportes();
   }, []);
 
-  const abrirDialogo = () => {
+  const abrirDialogoEdicion = (reporte: Reporte) => {
+    setEditandoReporte(reporte._id);
+    setNuevoReporte({
+      resumenFeedback: reporte.resumenFeedback,
+      categoria: reporte.categoria,
+      seccion: reporte.seccion,
+      estado: reporte.estado,
+      departamentoAsignado: reporte.departamentoAsignado,
+      resumenResolucion: reporte.resumenResolucion,
+      usuarioNotificado: reporte.usuarioNotificado,
+    });
     setDialogoAbierto(true);
+  };
+
+  const manejarEnvio = async () => {
+    try {
+      if (!nuevoReporte.resumenFeedback || !nuevoReporte.categoria || !nuevoReporte.seccion || !nuevoReporte.departamentoAsignado) {
+        setError('Por favor, complete todos los campos requeridos');
+        return;
+      }
+
+      if (editandoReporte) {
+        // Actualizar reporte existente
+        await reporteService.actualizarReporte(editandoReporte, nuevoReporte);
+      } else {
+        // Crear nuevo reporte
+        const reporteParaEnviar = {
+          resumenFeedback: nuevoReporte.resumenFeedback,
+          categoria: nuevoReporte.categoria,
+          seccion: nuevoReporte.seccion,
+          estado: 'Abierto',
+          departamentoAsignado: nuevoReporte.departamentoAsignado,
+          resumenResolucion: nuevoReporte.resumenResolucion || 'Pendiente de revisión',
+          usuarioNotificado: false
+        };
+        await reporteService.crearReporte(reporteParaEnviar);
+      }
+
+      await cargarReportes();
+      cerrarDialogo();
+    } catch (err: any) {
+      setError(err.message || 'Error al procesar el reporte');
+    }
   };
 
   const cerrarDialogo = () => {
     setDialogoAbierto(false);
+    setEditandoReporte(null);
     setNuevoReporte({
       resumenFeedback: '',
       categoria: '',
@@ -123,29 +169,8 @@ const Reportesweb = () => {
     });
   };
 
-  const manejarEnvio = async () => {
-    try {
-      if (!nuevoReporte.resumenFeedback || !nuevoReporte.categoria || !nuevoReporte.seccion || !nuevoReporte.departamentoAsignado) {
-        setError('Por favor, complete todos los campos requeridos');
-        return;
-      }
-
-      const reporteParaEnviar = {
-        resumenFeedback: nuevoReporte.resumenFeedback,
-        categoria: nuevoReporte.categoria,
-        seccion: nuevoReporte.seccion,
-        estado: 'Abierto',
-        departamentoAsignado: nuevoReporte.departamentoAsignado,
-        resumenResolucion: nuevoReporte.resumenResolucion || 'Pendiente de revisión',
-        usuarioNotificado: false
-      };
-
-      await reporteService.crearReporte(reporteParaEnviar);
-      await cargarReportes();
-      cerrarDialogo();
-    } catch (err: any) {
-      setError(err.message || 'Error al crear el reporte');
-    }
+  const abrirDialogo = () => {
+    setDialogoAbierto(true);
   };
 
   const getEstadoIcon = (estado: string) => {
@@ -196,36 +221,106 @@ const Reportesweb = () => {
       )}
 
       <Fade in={!cargando}>
-        <Card elevation={3}>
+        <Card elevation={3} sx={{
+          backgroundColor: isDarkMode ? 'rgb(31, 41, 55)' : 'white',
+        }}>
           <CardContent>
-            <TableContainer component={Paper} elevation={0}>
+            <TableContainer component={Paper} sx={{
+              backgroundColor: isDarkMode ? 'rgb(31, 41, 55)' : '#ffffff',
+              '& .MuiTableCell-root': {
+                color: isDarkMode ? '#ffffff' : '#000000',
+                borderBottom: `1px solid ${isDarkMode ? 'rgb(55, 65, 81)' : '#e0e0e0'}`
+              },
+              '& .MuiTableHead-root .MuiTableCell-root': {
+                backgroundColor: isDarkMode ? 'rgb(17, 24, 39)' : '#f5f5f5',
+                fontWeight: 'bold'
+              },
+              '& .MuiTableRow-root:hover': {
+                backgroundColor: isDarkMode ? 'rgb(55, 65, 81)' : '#f5f5f5'
+              }
+            }}>
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>ID Ticket</TableCell>
-                    <TableCell>Resumen</TableCell>
-                    <TableCell>Categoría</TableCell>
-                    <TableCell>Sección</TableCell>
-                    <TableCell>Estado</TableCell>
-                    <TableCell>Departamento</TableCell>
-                    <TableCell>Fecha Recibido</TableCell>
-                    <TableCell>Acciones</TableCell>
+                    <TableCell sx={{
+                      color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(17, 24, 39)',
+                      borderBottomColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(229, 231, 235)',
+                      fontWeight: 600,
+                    }}>ID Ticket</TableCell>
+                    <TableCell sx={{
+                      color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(17, 24, 39)',
+                      borderBottomColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(229, 231, 235)',
+                      fontWeight: 600,
+                    }}>Resumen</TableCell>
+                    <TableCell sx={{
+                      color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(17, 24, 39)',
+                      borderBottomColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(229, 231, 235)',
+                      fontWeight: 600,
+                    }}>Categoría</TableCell>
+                    <TableCell sx={{
+                      color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(17, 24, 39)',
+                      borderBottomColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(229, 231, 235)',
+                      fontWeight: 600,
+                    }}>Sección</TableCell>
+                    <TableCell sx={{
+                      color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(17, 24, 39)',
+                      borderBottomColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(229, 231, 235)',
+                      fontWeight: 600,
+                    }}>Estado</TableCell>
+                    <TableCell sx={{
+                      color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(17, 24, 39)',
+                      borderBottomColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(229, 231, 235)',
+                      fontWeight: 600,
+                    }}>Departamento</TableCell>
+                    <TableCell sx={{
+                      color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(17, 24, 39)',
+                      borderBottomColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(229, 231, 235)',
+                      fontWeight: 600,
+                    }}>Fecha Recibido</TableCell>
+                    <TableCell sx={{
+                      color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(17, 24, 39)',
+                      borderBottomColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(229, 231, 235)',
+                      fontWeight: 600,
+                    }}>Acciones</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {reportes.map((reporte) => (
-                    <TableRow key={reporte._id} hover>
-                      <TableCell>{reporte.idTicket}</TableCell>
-                      <TableCell>{reporte.resumenFeedback}</TableCell>
-                      <TableCell>
+                    <TableRow 
+                      key={reporte._id} 
+                      hover
+                      sx={{
+                        '&:hover': {
+                          backgroundColor: isDarkMode ? 'rgba(55, 65, 81, 0.5)' : 'rgba(243, 244, 246, 0.5)',
+                        },
+                      }}
+                    >
+                      <TableCell sx={{
+                        color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(17, 24, 39)',
+                        borderBottomColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(229, 231, 235)',
+                      }}>{reporte.idTicket}</TableCell>
+                      <TableCell sx={{
+                        color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(17, 24, 39)',
+                        borderBottomColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(229, 231, 235)',
+                      }}>{reporte.resumenFeedback}</TableCell>
+                      <TableCell sx={{
+                        color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(17, 24, 39)',
+                        borderBottomColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(229, 231, 235)',
+                      }}>
                         <Chip
                           label={reporte.categoria}
                           size="small"
-                          sx={{ backgroundColor: '#e3f2fd' }}
+                          sx={{ backgroundColor: isDarkMode ? 'rgb(55, 65, 81)' : 'rgb(243, 244, 246)' }}
                         />
                       </TableCell>
-                      <TableCell>{reporte.seccion}</TableCell>
-                      <TableCell>
+                      <TableCell sx={{
+                        color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(17, 24, 39)',
+                        borderBottomColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(229, 231, 235)',
+                      }}>{reporte.seccion}</TableCell>
+                      <TableCell sx={{
+                        color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(17, 24, 39)',
+                        borderBottomColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(229, 231, 235)',
+                      }}>
                         <Chip
                           icon={getEstadoIcon(reporte.estado)}
                           label={reporte.estado}
@@ -236,13 +331,22 @@ const Reportesweb = () => {
                           }}
                         />
                       </TableCell>
-                      <TableCell>{reporte.departamentoAsignado}</TableCell>
-                      <TableCell>
+                      <TableCell sx={{
+                        color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(17, 24, 39)',
+                        borderBottomColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(229, 231, 235)',
+                      }}>{reporte.departamentoAsignado}</TableCell>
+                      <TableCell sx={{
+                        color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(17, 24, 39)',
+                        borderBottomColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(229, 231, 235)',
+                      }}>
                         {format(new Date(reporte.fechaRecibido), 'dd/MM/yyyy HH:mm', { locale: es })}
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={{
+                        color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(17, 24, 39)',
+                        borderBottomColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(229, 231, 235)',
+                      }}>
                         <Tooltip title="Editar reporte">
-                          <IconButton size="small">
+                          <IconButton size="small" onClick={() => abrirDialogoEdicion(reporte)}>
                             <EditIcon />
                           </IconButton>
                         </Tooltip>
@@ -262,9 +366,23 @@ const Reportesweb = () => {
         </Box>
       )}
 
-      <Dialog open={dialogoAbierto} onClose={cerrarDialogo} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ backgroundColor: '#1a237e', color: 'white' }}>
-          Crear Nuevo Reporte
+      <Dialog 
+        open={dialogoAbierto} 
+        onClose={cerrarDialogo}
+        PaperProps={{
+          style: {
+            backgroundColor: isDarkMode ? 'rgb(31, 41, 55)' : '#ffffff',
+            color: isDarkMode ? '#ffffff' : '#000000',
+            padding: '20px',
+            minWidth: '500px'
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          color: isDarkMode ? '#ffffff' : '#000000',
+          borderBottom: `1px solid ${isDarkMode ? 'rgb(55, 65, 81)' : '#e0e0e0'}`
+        }}>
+          {editandoReporte ? 'Editar Reporte' : 'Crear Nuevo Reporte'}
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           <Grid container spacing={2}>
@@ -278,6 +396,26 @@ const Reportesweb = () => {
                 }
                 multiline
                 rows={3}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: isDarkMode ? 'rgb(55, 65, 81)' : 'white',
+                    '& fieldset': {
+                      borderColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(209, 213, 219)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: isDarkMode ? 'rgb(107, 114, 128)' : 'rgb(156, 163, 175)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#2563eb',
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(55, 65, 81)',
+                  },
+                  '& .MuiOutlinedInput-input': {
+                    color: isDarkMode ? 'white' : 'rgb(17, 24, 39)',
+                  },
+                }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -287,6 +425,26 @@ const Reportesweb = () => {
                 label="Categoría"
                 value={nuevoReporte.categoria}
                 onChange={(e) => setNuevoReporte({ ...nuevoReporte, categoria: e.target.value })}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: isDarkMode ? 'rgb(55, 65, 81)' : 'white',
+                    '& fieldset': {
+                      borderColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(209, 213, 219)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: isDarkMode ? 'rgb(107, 114, 128)' : 'rgb(156, 163, 175)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#2563eb',
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(55, 65, 81)',
+                  },
+                  '& .MuiSelect-select': {
+                    color: isDarkMode ? 'white' : 'rgb(17, 24, 39)',
+                  },
+                }}
               >
                 {categorias.map((cat) => (
                   <MenuItem key={cat} value={cat}>
@@ -302,6 +460,26 @@ const Reportesweb = () => {
                 label="Sección"
                 value={nuevoReporte.seccion}
                 onChange={(e) => setNuevoReporte({ ...nuevoReporte, seccion: e.target.value })}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: isDarkMode ? 'rgb(55, 65, 81)' : 'white',
+                    '& fieldset': {
+                      borderColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(209, 213, 219)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: isDarkMode ? 'rgb(107, 114, 128)' : 'rgb(156, 163, 175)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#2563eb',
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(55, 65, 81)',
+                  },
+                  '& .MuiSelect-select': {
+                    color: isDarkMode ? 'white' : 'rgb(17, 24, 39)',
+                  },
+                }}
               >
                 {secciones.map((sec) => (
                   <MenuItem key={sec} value={sec}>
@@ -310,6 +488,43 @@ const Reportesweb = () => {
                 ))}
               </TextField>
             </Grid>
+            {editandoReporte && (
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  select
+                  label="Estado"
+                  value={nuevoReporte.estado}
+                  onChange={(e) => setNuevoReporte({ ...nuevoReporte, estado: e.target.value })}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: isDarkMode ? 'rgb(55, 65, 81)' : 'white',
+                      '& fieldset': {
+                        borderColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(209, 213, 219)',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: isDarkMode ? 'rgb(107, 114, 128)' : 'rgb(156, 163, 175)',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#2563eb',
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(55, 65, 81)',
+                    },
+                    '& .MuiSelect-select': {
+                      color: isDarkMode ? 'white' : 'rgb(17, 24, 39)',
+                    },
+                  }}
+                >
+                  {estados.map((est) => (
+                    <MenuItem key={est} value={est}>
+                      {est}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+            )}
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -319,6 +534,26 @@ const Reportesweb = () => {
                 onChange={(e) =>
                   setNuevoReporte({ ...nuevoReporte, departamentoAsignado: e.target.value })
                 }
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: isDarkMode ? 'rgb(55, 65, 81)' : 'white',
+                    '& fieldset': {
+                      borderColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(209, 213, 219)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: isDarkMode ? 'rgb(107, 114, 128)' : 'rgb(156, 163, 175)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#2563eb',
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(55, 65, 81)',
+                  },
+                  '& .MuiSelect-select': {
+                    color: isDarkMode ? 'white' : 'rgb(17, 24, 39)',
+                  },
+                }}
               >
                 {departamentos.map((dep) => (
                   <MenuItem key={dep} value={dep}>
@@ -337,25 +572,57 @@ const Reportesweb = () => {
                 }
                 multiline
                 rows={2}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: isDarkMode ? 'rgb(55, 65, 81)' : 'white',
+                    '& fieldset': {
+                      borderColor: isDarkMode ? 'rgb(75, 85, 99)' : 'rgb(209, 213, 219)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: isDarkMode ? 'rgb(107, 114, 128)' : 'rgb(156, 163, 175)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#2563eb',
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(55, 65, 81)',
+                  },
+                  '& .MuiOutlinedInput-input': {
+                    color: isDarkMode ? 'white' : 'rgb(17, 24, 39)',
+                  },
+                }}
               />
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={cerrarDialogo} color="inherit">
+        <DialogActions sx={{ 
+          p: 2,
+          backgroundColor: isDarkMode ? 'rgb(31, 41, 55)' : '#ffffff',
+        }}>
+          <Button 
+            onClick={cerrarDialogo} 
+            sx={{
+              color: isDarkMode ? 'rgb(209, 213, 219)' : 'rgb(55, 65, 81)',
+              '&:hover': {
+                backgroundColor: isDarkMode ? 'rgba(107, 114, 128, 0.1)' : 'rgba(0, 0, 0, 0.04)',
+              },
+            }}
+          >
             Cancelar
           </Button>
           <Button
             onClick={manejarEnvio}
             variant="contained"
             sx={{
-              backgroundColor: '#1a237e',
+              backgroundColor: '#2563eb',
+              color: 'white',
               '&:hover': {
-                backgroundColor: '#0d47a1',
+                backgroundColor: '#1d4ed8',
               },
             }}
           >
-            Crear Reporte
+            {editandoReporte ? 'Guardar Cambios' : 'Crear Reporte'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -257,7 +257,7 @@ const CreateRoutineModal: React.FC<CreateRoutineModalProps> = ({
                           : exerciseIndex % 2 === 0
                             ? 'bg-gray-50/50'
                             : 'bg-white'
-                      } hover:bg-blue-50/50 dark:hover:bg-gray-800/70 transition-colors duration-150`}
+                      } ${theme === 'dark' ? 'hover:bg-gray-800/70' : 'hover:bg-gray-100'} transition-colors duration-150`}
                     >
                       <td className="px-6 py-4 relative">
                         <input

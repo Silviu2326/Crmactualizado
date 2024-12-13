@@ -127,187 +127,217 @@ const PopupCrearPlanificacion: React.FC<PopupCrearPlanificacionProps> = ({
   };
 
   return (
-    <div
-      className={`${
-        theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'
-      } p-6 rounded-lg shadow-lg relative`}
-    >
-      <button
-        className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-        onClick={onClose}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div
+        className={`${
+          theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'
+        } p-8 rounded-lg shadow-lg relative w-[800px] max-h-[90vh] overflow-y-auto`}
+        style={{
+          backgroundColor: theme === 'dark' ? 'rgb(31, 41, 55)' : '#ffffff'
+        }}
       >
-        <X className="w-5 h-5" />
-      </button>
-      <h3 className="text-2xl font-bold mb-4">Crear Planificación</h3>
+        <button
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          onClick={onClose}
+        >
+          <X className="w-6 h-6" />
+        </button>
+        <h3 className="text-2xl font-bold mb-6">{tipo === 'Planificacion' ? 'Crear Planificación' : 'Crear Plantilla'}</h3>
 
-      {error && (
-        <div className="mb-4 p-2 bg-red-200 text-red-800 rounded">{error}</div>
-      )}
-
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label htmlFor="nombre" className="block mb-1 font-medium">
-            Nombre
-          </label>
-          <input
-            type="text"
-            id="nombre"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
-            required
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="descripcion" className="block mb-1 font-medium">
-            Descripción
-          </label>
-          <textarea
-            id="descripcion"
-            value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
-            required
-          ></textarea>
-        </div>
-
-        {tipo === 'Planificacion' && (
-          <div className="mb-4">
-            <label htmlFor="fechaInicio" className="block mb-1 font-medium">
-              Fecha de Inicio
-            </label>
-            <input
-              type="date"
-              id="fechaInicio"
-              value={fechaInicio}
-              onChange={(e) => setFechaInicio(e.target.value)}
-              className="w-full px-3 py-2 border rounded"
-              required
-            />
-          </div>
+        {error && (
+          <div className="mb-4 p-2 bg-red-200 text-red-800 rounded">{error}</div>
         )}
 
-        <div className="mb-4">
-          <label htmlFor="meta" className="block mb-1 font-medium">
-            Meta
-          </label>
-          <select
-            id="meta"
-            value={meta}
-            onChange={(e) => {
-              setMeta(e.target.value);
-              if (e.target.value !== 'Otra') {
-                setOtraMeta('');
-              }
-            }}
-            className={`w-full px-3 py-2 border rounded ${
-              theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
-            }`}
-            required
-          >
-            <option value="">Selecciona una meta</option>
-            <option value="Cardio">Cardio</option>
-            <option value="Fuerza">Fuerza</option>
-            <option value="Hipertrofia">Hipertrofia</option>
-            <option value="Resistencia">Resistencia</option>
-            <option value="Movilidad">Movilidad</option>
-            <option value="Coordinación">Coordinación</option>
-            <option value="Definición">Definición</option>
-            <option value="Recomposición">Recomposición</option>
-            <option value="Rehabilitación">Rehabilitación</option>
-            <option value="Otra">Otra</option>
-          </select>
-        </div>
-
-        {meta === 'Otra' && (
+        <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label htmlFor="otraMeta" className="block mb-1 font-medium">
-              Especifica la meta
+            <label htmlFor="nombre" className="block mb-2 font-medium">
+              Nombre
             </label>
             <input
               type="text"
-              id="otraMeta"
-              value={otraMeta}
-              onChange={(e) => setOtraMeta(e.target.value)}
-              className={`w-full px-3 py-2 border rounded ${
-                theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
+              id="nombre"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 ${
+                theme === 'dark'
+                  ? 'bg-gray-700 border-gray-600 text-white focus:ring-blue-500'
+                  : 'bg-white border-gray-300 text-gray-900 focus:ring-blue-500'
               }`}
               required
-              placeholder="Describe la meta específica"
             />
           </div>
-        )}
 
-        <div className="mb-4">
-          <label htmlFor="semanas" className="block mb-1 font-medium">
-            Semanas
-          </label>
-          <input
-            type="number"
-            id="semanas"
-            value={semanas}
-            onChange={(e) => setSemanas(parseInt(e.target.value))}
-            className="w-full px-3 py-2 border rounded"
-            min="1"
-            required
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="tipo" className="block mb-1 font-medium">
-            Tipo
-          </label>
-          <select
-            id="tipo"
-            value={tipo}
-            onChange={(e) => setTipo(e.target.value)}
-            className={`w-full px-3 py-2 border rounded ${
-              theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
-            }`}
-          >
-            <option value="Planificacion">Planificación</option>
-            <option value="Plantilla">Plantilla</option>
-          </select>
-        </div>
-
-        {tipo === 'Planificacion' && (
           <div className="mb-4">
-            <label htmlFor="clienteId" className="block mb-1 font-medium">
-              Cliente (opcional)
+            <label htmlFor="descripcion" className="block mb-2 font-medium">
+              Descripción
+            </label>
+            <textarea
+              id="descripcion"
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 ${
+                theme === 'dark'
+                  ? 'bg-gray-700 border-gray-600 text-white focus:ring-blue-500'
+                  : 'bg-white border-gray-300 text-gray-900 focus:ring-blue-500'
+              }`}
+              required
+              rows={4}
+            ></textarea>
+          </div>
+
+          {tipo === 'Planificacion' && (
+            <div className="mb-4">
+              <label htmlFor="fechaInicio" className="block mb-2 font-medium">
+                Fecha de Inicio
+              </label>
+              <input
+                type="date"
+                id="fechaInicio"
+                value={fechaInicio}
+                onChange={(e) => setFechaInicio(e.target.value)}
+                className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 ${
+                  theme === 'dark'
+                    ? 'bg-gray-700 border-gray-600 text-white focus:ring-blue-500'
+                    : 'bg-white border-gray-300 text-gray-900 focus:ring-blue-500'
+                }`}
+                required
+              />
+            </div>
+          )}
+
+          <div className="mb-4">
+            <label htmlFor="meta" className="block mb-2 font-medium">
+              Meta
             </label>
             <select
-              id="clienteId"
-              value={clienteId}
-              onChange={(e) => setClienteId(e.target.value)}
-              className={`w-full px-3 py-2 border rounded ${
-                theme === 'dark' ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-800 border-gray-300'
+              id="meta"
+              value={meta}
+              onChange={(e) => {
+                setMeta(e.target.value);
+                if (e.target.value !== 'Otra') {
+                  setOtraMeta('');
+                }
+              }}
+              className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 ${
+                theme === 'dark'
+                  ? 'bg-gray-700 border-gray-600 text-white focus:ring-blue-500'
+                  : 'bg-white border-gray-300 text-gray-900 focus:ring-blue-500'
               }`}
+              required
             >
-              <option value="">Sin cliente</option>
-              {clientes.map((cliente) => (
-                <option key={cliente._id} value={cliente._id}>
-                  {cliente.nombre} ({cliente.email})
-                </option>
-              ))}
+              <option value="">Selecciona una meta</option>
+              <option value="Cardio">Cardio</option>
+              <option value="Fuerza">Fuerza</option>
+              <option value="Hipertrofia">Hipertrofia</option>
+              <option value="Resistencia">Resistencia</option>
+              <option value="Movilidad">Movilidad</option>
+              <option value="Coordinación">Coordinación</option>
+              <option value="Definición">Definición</option>
+              <option value="Recomposición">Recomposición</option>
+              <option value="Rehabilitación">Rehabilitación</option>
+              <option value="Otra">Otra</option>
             </select>
           </div>
-        )}
 
-        <div className="flex justify-end">
-          <Button
-            variant="normal"
-            onClick={onClose}
-            className="mr-2"
-            disabled={loading}
-          >
-            Cancelar
-          </Button>
-          <Button variant="create" type="submit" disabled={loading}>
-            {loading ? 'Creando...' : 'Crear'}
-          </Button>
-        </div>
-      </form>
+          {meta === 'Otra' && (
+            <div className="mb-4">
+              <label htmlFor="otraMeta" className="block mb-2 font-medium">
+                Especifica la meta
+              </label>
+              <input
+                type="text"
+                id="otraMeta"
+                value={otraMeta}
+                onChange={(e) => setOtraMeta(e.target.value)}
+                className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 ${
+                  theme === 'dark'
+                    ? 'bg-gray-700 border-gray-600 text-white focus:ring-blue-500'
+                    : 'bg-white border-gray-300 text-gray-900 focus:ring-blue-500'
+                }`}
+                required
+                placeholder="Describe la meta específica"
+              />
+            </div>
+          )}
+
+          <div className="mb-4">
+            <label htmlFor="semanas" className="block mb-2 font-medium">
+              Semanas
+            </label>
+            <input
+              type="number"
+              id="semanas"
+              value={semanas}
+              onChange={(e) => setSemanas(parseInt(e.target.value))}
+              className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 ${
+                theme === 'dark'
+                  ? 'bg-gray-700 border-gray-600 text-white focus:ring-blue-500'
+                  : 'bg-white border-gray-300 text-gray-900 focus:ring-blue-500'
+              }`}
+              min="1"
+              required
+            />
+          </div>
+
+          <div className="mb-4">
+            <label htmlFor="tipo" className="block mb-2 font-medium">
+              Tipo
+            </label>
+            <select
+              id="tipo"
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value)}
+              className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 ${
+                theme === 'dark'
+                  ? 'bg-gray-700 border-gray-600 text-white focus:ring-blue-500'
+                  : 'bg-white border-gray-300 text-gray-900 focus:ring-blue-500'
+              }`}
+            >
+              <option value="Planificacion">Planificación</option>
+              <option value="Plantilla">Plantilla</option>
+            </select>
+          </div>
+
+          {tipo === 'Planificacion' && (
+            <div className="mb-4">
+              <label htmlFor="clienteId" className="block mb-2 font-medium">
+                Cliente (opcional)
+              </label>
+              <select
+                id="clienteId"
+                value={clienteId}
+                onChange={(e) => setClienteId(e.target.value)}
+                className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 ${
+                  theme === 'dark'
+                    ? 'bg-gray-700 border-gray-600 text-white focus:ring-blue-500'
+                    : 'bg-white border-gray-300 text-gray-900 focus:ring-blue-500'
+                }`}
+              >
+                <option value="">Sin cliente</option>
+                {clientes.map((cliente) => (
+                  <option key={cliente._id} value={cliente._id}>
+                    {cliente.nombre} ({cliente.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="flex justify-end mt-6">
+            <Button
+              variant="normal"
+              onClick={onClose}
+              className="mr-2"
+              disabled={loading}
+            >
+              Cancelar
+            </Button>
+            <Button variant="create" type="submit" disabled={loading}>
+              {loading ? 'Creando...' : 'Crear'}
+            </Button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

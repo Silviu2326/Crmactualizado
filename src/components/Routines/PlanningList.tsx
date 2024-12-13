@@ -65,8 +65,8 @@ const PlanningList: React.FC = () => {
   const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
   const [isFormulasModalOpen, setIsFormulasModalOpen] = useState(false);
   const [isEsqueletoModalOpen, setIsEsqueletoModalOpen] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('todos');
-  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState({
     tipo: 'todos',
     estado: 'todos',
@@ -234,38 +234,58 @@ const PlanningList: React.FC = () => {
       console.log('Plannings Data:', planningsData);
 
       // Procesar datos de planificaciones
-      const processedPlannings = planningsData.map((planning: any) => ({
-        _id: planning._id,
-        nombre: planning.nombre,
-        descripcion: planning.descripcion,
-        duracion: `${planning.semanas} semanas`,
-        fechaInicio: new Date(planning.fechaInicio).toLocaleDateString(),
-        meta: planning.meta,
-        tipo: planning.tipo || 'Planificacion',
-        esqueleto: planning.esqueleto,
-        clientesAsociados: 1,
-        estado: 'En progreso',
-        completado: '65%',
-        acciones: 'Editar'
-      }));
+      const processedPlannings = planningsData.map((planning: any) => {
+        // Normalizar la meta para que coincida con nuestros filtros
+        const normalizeMeta = (meta: string) => {
+          if (!meta) return 'No especificada';
+          const metaLower = meta.toLowerCase();
+          if (metaLower.includes('fuerza')) return 'Fuerza';
+          if (metaLower.includes('peso') || metaLower.includes('adelgazar')) return 'Pérdida de Peso';
+          return meta;
+        };
 
-      console.log('Processed Plannings:', processedPlannings);
+        return {
+          _id: planning._id,
+          nombre: planning.nombre,
+          descripcion: planning.descripcion,
+          duracion: `${planning.semanas} semanas`,
+          fechaInicio: new Date(planning.fechaInicio).toLocaleDateString(),
+          meta: normalizeMeta(planning.meta),
+          tipo: planning.tipo || 'Planificacion',
+          esqueleto: planning.esqueleto,
+          clientesAsociados: 1,
+          estado: 'En progreso',
+          completado: '65%',
+          acciones: 'Editar'
+        };
+      });
 
       // Procesar datos de plantillas
-      const processedTemplates = templatesData.map((template: any) => ({
-        _id: template._id,
-        nombre: template.nombre,
-        descripcion: template.descripcion,
-        duracion: `${template.totalWeeks} semanas`,
-        fechaInicio: new Date(template.createdAt).toLocaleDateString(),
-        meta: template.category,
-        tipo: 'Plantilla',
-        esqueleto: template.esqueleto,
-        clientesAsociados: template.assignedClients?.length || 0,
-        estado: template.isActive ? 'Activo' : 'Inactivo',
-        completado: '100%',
-        acciones: 'Editar'
-      }));
+      const processedTemplates = templatesData.map((template: any) => {
+        // Usar la misma función de normalización para las plantillas
+        const normalizeMeta = (meta: string) => {
+          if (!meta) return 'No especificada';
+          const metaLower = meta.toLowerCase();
+          if (metaLower.includes('fuerza')) return 'Fuerza';
+          if (metaLower.includes('peso') || metaLower.includes('adelgazar')) return 'Pérdida de Peso';
+          return meta;
+        };
+
+        return {
+          _id: template._id,
+          nombre: template.nombre,
+          descripcion: template.descripcion,
+          duracion: `${template.totalWeeks} semanas`,
+          fechaInicio: new Date(template.createdAt).toLocaleDateString(),
+          meta: normalizeMeta(template.category),
+          tipo: 'Plantilla',
+          esqueleto: template.esqueleto,
+          clientesAsociados: template.assignedClients?.length || 0,
+          estado: template.isActive ? 'Activo' : 'Inactivo',
+          completado: '100%',
+          acciones: 'Editar'
+        };
+      });
 
       // Combinar ambos conjuntos de datos
       setPlanningData([...processedPlannings, ...processedTemplates]);
@@ -449,199 +469,207 @@ const PlanningList: React.FC = () => {
         <div className="relative">
           <Button 
             variant="filter" 
-            onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-            className="relative"
+            onClick={() => setIsFilterModalOpen(true)}
+            className={`relative flex items-center px-4 py-2 rounded-lg ${
+              theme === 'dark' 
+                ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+                : 'bg-white hover:bg-gray-50 text-gray-700'
+            } border border-gray-200 dark:border-gray-600 shadow-sm transition-all duration-200`}
           >
             <Filter className="w-5 h-5 mr-2" />
             Filtros
             {activeFilters.tipo !== 'todos' || activeFilters.estado !== 'todos' || activeFilters.meta !== 'todos' || activeFilters.duracion !== 'todos' ? (
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full" />
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white dark:border-gray-700" />
             ) : null}
           </Button>
-          
-          {isFilterDropdownOpen && (
-            <div className={`absolute right-0 mt-2 w-64 rounded-md shadow-lg ${
-              theme === 'dark' ? 'bg-gray-700' : 'bg-white'
-            } ring-1 ring-black ring-opacity-5 z-50`}>
-              <div className="py-1" role="menu" aria-orientation="vertical">
-                {/* Filtro por Tipo */}
-                <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                  Tipo de Planificación
-                </div>
-                <button
-                  className={`${
-                    theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
-                  } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.tipo === 'todos' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
-                  onClick={() => {
-                    setActiveFilters(prev => ({ ...prev, tipo: 'todos' }));
-                  }}
-                >
-                  Todos
-                </button>
-                <button
-                  className={`${
-                    theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
-                  } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.tipo === 'planificacion' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
-                  onClick={() => {
-                    setActiveFilters(prev => ({ ...prev, tipo: 'planificacion' }));
-                  }}
-                >
-                  Planificación
-                </button>
-                <button
-                  className={`${
-                    theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
-                  } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.tipo === 'plantilla' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
-                  onClick={() => {
-                    setActiveFilters(prev => ({ ...prev, tipo: 'plantilla' }));
-                  }}
-                >
-                  Plantilla
-                </button>
+        </div>
+      </motion.div>
 
-                {/* Filtro por Estado */}
-                <div className="border-t border-gray-200 dark:border-gray-600 mt-2">
-                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+      {/* Modal de Filtros */}
+      {isFilterModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={`w-full max-w-lg max-h-[90vh] rounded-xl shadow-xl overflow-hidden ${
+              theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+            }`}
+          >
+            <div className={`p-6 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+                  Filtros de Búsqueda
+                </h2>
+                <button
+                  onClick={() => setIsFilterModalOpen(false)}
+                  className={`p-2 rounded-full transition-colors ${
+                    theme === 'dark' 
+                      ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-300' 
+                      : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto" style={{ maxHeight: 'calc(90vh - 200px)' }}>
+              <div className="p-6 space-y-6">
+                {/* Tipo de Planificación */}
+                <div className="space-y-3">
+                  <h3 className={`text-sm font-semibold ${
+                    theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Tipo de Planificación
+                  </h3>
+                  <div className="grid grid-cols-1 gap-2">
+                    {['todos', 'planificacion', 'plantilla'].map((tipo) => (
+                      <button
+                        key={tipo}
+                        onClick={() => setActiveFilters(prev => ({ ...prev, tipo }))}
+                        className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                          activeFilters.tipo === tipo
+                            ? theme === 'dark'
+                              ? 'bg-blue-900/50 text-blue-200 border border-blue-700'
+                              : 'bg-blue-50 text-blue-700 border border-blue-200'
+                            : theme === 'dark'
+                            ? 'text-white hover:bg-gray-700 border border-gray-700'
+                            : 'text-gray-700 hover:bg-gray-50 border border-gray-200'
+                        }`}
+                      >
+                        {tipo === 'todos' ? 'Todos' : 
+                         tipo === 'planificacion' ? 'Planificación' : 'Plantilla'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Estado */}
+                <div className="space-y-3">
+                  <h3 className={`text-sm font-semibold ${
+                    theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
                     Estado
+                  </h3>
+                  <div className="grid grid-cols-1 gap-2">
+                    {['todos', 'activo', 'completado'].map((estado) => (
+                      <button
+                        key={estado}
+                        onClick={() => setActiveFilters(prev => ({ ...prev, estado }))}
+                        className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                          activeFilters.estado === estado
+                            ? theme === 'dark'
+                              ? 'bg-blue-900/50 text-blue-200 border border-blue-700'
+                              : 'bg-blue-50 text-blue-700 border border-blue-200'
+                            : theme === 'dark'
+                            ? 'text-white hover:bg-gray-700 border border-gray-700'
+                            : 'text-gray-700 hover:bg-gray-50 border border-gray-200'
+                        }`}
+                      >
+                        {estado.charAt(0).toUpperCase() + estado.slice(1)}
+                      </button>
+                    ))}
                   </div>
-                  <button
-                    className={`${
-                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
-                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.estado === 'todos' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
-                    onClick={() => {
-                      setActiveFilters(prev => ({ ...prev, estado: 'todos' }));
-                    }}
-                  >
-                    Todos
-                  </button>
-                  <button
-                    className={`${
-                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
-                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.estado === 'activo' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
-                    onClick={() => {
-                      setActiveFilters(prev => ({ ...prev, estado: 'activo' }));
-                    }}
-                  >
-                    Activo
-                  </button>
-                  <button
-                    className={`${
-                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
-                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.estado === 'completado' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
-                    onClick={() => {
-                      setActiveFilters(prev => ({ ...prev, estado: 'completado' }));
-                    }}
-                  >
-                    Completado
-                  </button>
                 </div>
 
-                {/* Filtro por Meta */}
-                <div className="border-t border-gray-200 dark:border-gray-600 mt-2">
-                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                {/* Meta */}
+                <div className="space-y-3">
+                  <h3 className={`text-sm font-semibold ${
+                    theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
                     Meta
+                  </h3>
+                  <div className="grid grid-cols-1 gap-2">
+                    {['todos', 'fuerza', 'peso'].map((meta) => (
+                      <button
+                        key={meta}
+                        onClick={() => setActiveFilters(prev => ({ ...prev, meta }))}
+                        className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                          activeFilters.meta === meta
+                            ? theme === 'dark'
+                              ? 'bg-blue-900/50 text-blue-200 border border-blue-700'
+                              : 'bg-blue-50 text-blue-700 border border-blue-200'
+                            : theme === 'dark'
+                            ? 'text-white hover:bg-gray-700 border border-gray-700'
+                            : 'text-gray-700 hover:bg-gray-50 border border-gray-200'
+                        }`}
+                      >
+                        {meta === 'todos' ? 'Todas' : 
+                         meta === 'fuerza' ? 'Aumentar Fuerza' : 'Pérdida de Peso'}
+                      </button>
+                    ))}
                   </div>
-                  <button
-                    className={`${
-                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
-                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.meta === 'todos' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
-                    onClick={() => {
-                      setActiveFilters(prev => ({ ...prev, meta: 'todos' }));
-                    }}
-                  >
-                    Todas
-                  </button>
-                  <button
-                    className={`${
-                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
-                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.meta === 'fuerza' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
-                    onClick={() => {
-                      setActiveFilters(prev => ({ ...prev, meta: 'fuerza' }));
-                    }}
-                  >
-                    Aumentar Fuerza
-                  </button>
-                  <button
-                    className={`${
-                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
-                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.meta === 'peso' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
-                    onClick={() => {
-                      setActiveFilters(prev => ({ ...prev, meta: 'peso' }));
-                    }}
-                  >
-                    Pérdida de Peso
-                  </button>
                 </div>
 
-                {/* Filtro por Duración */}
-                <div className="border-t border-gray-200 dark:border-gray-600 mt-2">
-                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                {/* Duración */}
+                <div className="space-y-3">
+                  <h3 className={`text-sm font-semibold ${
+                    theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
                     Duración
+                  </h3>
+                  <div className="grid grid-cols-1 gap-2">
+                    {['todos', 'corta', 'media', 'larga'].map((duracion) => (
+                      <button
+                        key={duracion}
+                        onClick={() => setActiveFilters(prev => ({ ...prev, duracion }))}
+                        className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                          activeFilters.duracion === duracion
+                            ? theme === 'dark'
+                              ? 'bg-blue-900/50 text-blue-200 border border-blue-700'
+                              : 'bg-blue-50 text-blue-700 border border-blue-200'
+                            : theme === 'dark'
+                            ? 'text-white hover:bg-gray-700 border border-gray-700'
+                            : 'text-gray-700 hover:bg-gray-50 border border-gray-200'
+                        }`}
+                      >
+                        {duracion === 'todos' ? 'Todas' : 
+                         duracion === 'corta' ? '1-4 Semanas' :
+                         duracion === 'media' ? '5-12 Semanas' : 'Más de 12 Semanas'}
+                      </button>
+                    ))}
                   </div>
-                  <button
-                    className={`${
-                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
-                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.duracion === 'todos' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
-                    onClick={() => {
-                      setActiveFilters(prev => ({ ...prev, duracion: 'todos' }));
-                    }}
-                  >
-                    Todas
-                  </button>
-                  <button
-                    className={`${
-                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
-                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.duracion === 'corta' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
-                    onClick={() => {
-                      setActiveFilters(prev => ({ ...prev, duracion: 'corta' }));
-                    }}
-                  >
-                    1-4 Semanas
-                  </button>
-                  <button
-                    className={`${
-                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
-                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.duracion === 'media' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
-                    onClick={() => {
-                      setActiveFilters(prev => ({ ...prev, duracion: 'media' }));
-                    }}
-                  >
-                    5-12 Semanas
-                  </button>
-                  <button
-                    className={`${
-                      theme === 'dark' ? 'text-white hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
-                    } group flex items-center w-full px-4 py-2 text-sm ${activeFilters.duracion === 'larga' ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
-                    onClick={() => {
-                      setActiveFilters(prev => ({ ...prev, duracion: 'larga' }));
-                    }}
-                  >
-                    +12 Semanas
-                  </button>
-                </div>
-
-                {/* Botón para limpiar filtros */}
-                <div className="border-t border-gray-200 dark:border-gray-600 mt-2 p-2">
-                  <button
-                    className="w-full px-4 py-2 text-sm text-center text-white bg-blue-500 hover:bg-blue-600 rounded-md"
-                    onClick={() => {
-                      setActiveFilters({
-                        tipo: 'todos',
-                        estado: 'todos',
-                        meta: 'todos',
-                        duracion: 'todos'
-                      });
-                      setIsFilterDropdownOpen(false);
-                    }}
-                  >
-                    Limpiar Filtros
-                  </button>
                 </div>
               </div>
             </div>
-          )}
+
+            <div className={`p-6 border-t ${
+              theme === 'dark' 
+                ? 'border-gray-700 bg-gray-800' 
+                : 'border-gray-200 bg-gray-50'
+            }`}>
+              <div className="flex justify-end space-x-4">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setActiveFilters({
+                      tipo: 'todos',
+                      estado: 'todos',
+                      meta: 'todos',
+                      duracion: 'todos'
+                    });
+                    setIsFilterModalOpen(false);
+                  }}
+                  className={`px-6 py-2 ${
+                    theme === 'dark'
+                      ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                      : 'bg-white hover:bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  Limpiar Filtros
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => setIsFilterModalOpen(false)}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Aplicar Filtros
+                </Button>
+              </div>
+            </div>
+          </motion.div>
         </div>
-      </motion.div>
+      )}
 
       {/* Manejo de estados de carga y error */}
       {loading ? (
@@ -689,11 +717,12 @@ const PlanningList: React.FC = () => {
                   (activeFilters.tipo === 'plantilla' && item.tipo === 'Plantilla');
 
                 const matchesEstado = activeFilters.estado === 'todos' || 
-                  item.estado.toLowerCase() === activeFilters.estado;
+                  item.estado.toLowerCase() === activeFilters.estado.toLowerCase();
 
+                // Filtro de meta mejorado
                 const matchesMeta = activeFilters.meta === 'todos' || 
-                  (activeFilters.meta === 'fuerza' && item.meta.toLowerCase().includes('fuerza')) ||
-                  (activeFilters.meta === 'peso' && item.meta.toLowerCase().includes('peso'));
+                  (activeFilters.meta === 'fuerza' && item.meta === 'Fuerza') ||
+                  (activeFilters.meta === 'peso' && item.meta === 'Pérdida de Peso');
 
                 const semanas = parseInt(item.duracion);
                 const matchesDuracion = activeFilters.duracion === 'todos' || 

@@ -20,15 +20,52 @@ interface Exercise {
   __v?: number;
 }
 
+const gruposMusculares = [
+  'Soleo',
+  'Gemelo',
+  'Tríceps femoral',
+  'Abductor',
+  'Glúteo',
+  'Abdominales',
+  'Lumbar',
+  'Dorsales',
+  'Trapecio',
+  'Hombro anterior',
+  'Hombro lateral',
+  'Hombro posterior',
+  'Pecho',
+  'Tríceps',
+  'Bíceps',
+  'Cuello',
+  'Antebrazo'
+];
+
+const equipamientoDisponible = [
+  'Pesas',
+  'Mancuernas',
+  'Barra',
+  'Kettlebell',
+  'Banda de resistencia',
+  'Esterilla',
+  'Banco',
+  'Máquina de cable',
+  'TRX',
+  'Rueda de abdominales',
+  'Cuerda para saltar',
+  'Balón medicinal',
+  'Plataforma de step'
+];
+
 const ExerciseList: React.FC = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
-  const [selectedFilter, setSelectedFilter] = useState('todos');
-  const [selectedMuscle, setSelectedMuscle] = useState('');
-  const [selectedEquipment, setSelectedEquipment] = useState('');
+  const [selectedMuscleGroups, setSelectedMuscleGroups] = useState<string[]>([]);
+  const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [filteredExercises, setFilteredExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,11 +73,43 @@ const ExerciseList: React.FC = () => {
     fetchExercises();
   }, []);
 
+  useEffect(() => {
+    filterExercises();
+  }, [exercises, searchTerm, selectedMuscleGroups, selectedEquipment]);
+
+  const filterExercises = () => {
+    let filtered = [...exercises];
+
+    // Filtrar por término de búsqueda
+    if (searchTerm) {
+      filtered = filtered.filter(exercise =>
+        exercise.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filtrar por grupos musculares
+    if (selectedMuscleGroups.length > 0) {
+      filtered = filtered.filter(exercise =>
+        exercise.grupoMuscular.some(muscle => selectedMuscleGroups.includes(muscle))
+      );
+    }
+
+    // Filtrar por equipamiento
+    if (selectedEquipment.length > 0) {
+      filtered = filtered.filter(exercise =>
+        exercise.equipo.some(equip => selectedEquipment.includes(equip))
+      );
+    }
+
+    setFilteredExercises(filtered);
+  };
+
   const fetchExercises = async () => {
     try {
       setLoading(true);
       const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/exercises');
       setExercises(response.data.data);
+      setFilteredExercises(response.data.data);
       setError(null);
     } catch (error) {
       console.error('Error al obtener ejercicios:', error);
@@ -54,7 +123,7 @@ const ExerciseList: React.FC = () => {
     { 
       icon: Dumbbell,
       title: "Ejercicios Totales",
-      value: exercises.length.toString(),
+      value: filteredExercises.length.toString(),
       color: "bg-blue-500"
     },
     {
@@ -80,25 +149,17 @@ const ExerciseList: React.FC = () => {
   const renderCell = (key: string, value: any) => {
     switch (key) {
       case 'grupoMuscular':
-        return (
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-            value === 'Pecho' ? 'bg-blue-100 text-blue-800' :
-            value === 'Piernas' ? 'bg-green-100 text-green-800' :
-            'bg-purple-100 text-purple-800'
-          }`}>
-            {value}
+        return value.map((muscle: string, index: number) => (
+          <span key={index} className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 mr-1 mb-1">
+            {muscle}
           </span>
-        );
+        ));
       case 'equipo':
-        return (
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-            value === 'Barra' ? 'bg-amber-100 text-amber-800' :
-            value === 'Peso corporal' ? 'bg-emerald-100 text-emerald-800' :
-            'bg-indigo-100 text-indigo-800'
-          }`}>
-            {value}
+        return value.map((equip: string, index: number) => (
+          <span key={index} className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 mr-1 mb-1">
+            {equip}
           </span>
-        );
+        ));
       default:
         return value;
     }
@@ -110,13 +171,11 @@ const ExerciseList: React.FC = () => {
   };
 
   const handleEditExercise = (exercise: Exercise) => {
-    console.log('Exercise being edited:', exercise);
     setSelectedExercise(exercise);
     setIsExerciseModalOpen(true);
   };
 
   const handleExerciseCreated = () => {
-    console.log('Exercise created/updated');
     fetchExercises();
   };
 
@@ -125,8 +184,7 @@ const ExerciseList: React.FC = () => {
       try {
         setLoading(true);
         await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/exercises/${exercise._id}`);
-        console.log('Ejercicio eliminado con éxito');
-        fetchExercises(); // Recargar la lista después de eliminar
+        fetchExercises();
       } catch (error) {
         console.error('Error al eliminar el ejercicio:', error);
         setError('Error al eliminar el ejercicio. Por favor, intente de nuevo más tarde.');
@@ -134,6 +192,27 @@ const ExerciseList: React.FC = () => {
         setLoading(false);
       }
     }
+  };
+
+  const toggleMuscleGroup = (muscle: string) => {
+    setSelectedMuscleGroups(prev =>
+      prev.includes(muscle)
+        ? prev.filter(m => m !== muscle)
+        : [...prev, muscle]
+    );
+  };
+
+  const toggleEquipment = (equipment: string) => {
+    setSelectedEquipment(prev =>
+      prev.includes(equipment)
+        ? prev.filter(e => e !== equipment)
+        : [...prev, equipment]
+    );
+  };
+
+  const clearFilters = () => {
+    setSelectedMuscleGroups([]);
+    setSelectedEquipment([]);
   };
 
   if (loading) {
@@ -229,9 +308,13 @@ const ExerciseList: React.FC = () => {
           />
           <Search className="absolute right-3 top-3 text-gray-400" />
         </div>
-        <Button variant="filter">
+        <Button 
+          variant="filter"
+          onClick={() => setIsFilterModalOpen(true)}
+          className={selectedMuscleGroups.length > 0 || selectedEquipment.length > 0 ? 'ring-2 ring-blue-500' : ''}
+        >
           <Filter className="w-5 h-5 mr-2" />
-          Filtros
+          Filtros {(selectedMuscleGroups.length > 0 || selectedEquipment.length > 0) && `(${selectedMuscleGroups.length + selectedEquipment.length})`}
         </Button>
       </motion.div>
 
@@ -242,7 +325,7 @@ const ExerciseList: React.FC = () => {
       >
         <Table
           headers={['Seleccionar', 'Nombre', 'Creador', 'Músculo', 'Equipamiento', 'Acciones']}
-          data={exercises.map(exercise => ({
+          data={filteredExercises.map(exercise => ({
             seleccionar: <input type="checkbox" />,
             nombre: exercise.nombre,
             creador: exercise.creador || "sistema",
@@ -268,6 +351,105 @@ const ExerciseList: React.FC = () => {
           variant={theme === 'dark' ? 'dark' : 'white'}
         />
       </motion.div>
+
+      {/* Modal de Filtros */}
+      <AnimatePresence>
+        {isFilterModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className={`${
+                theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'
+              } p-8 rounded-lg shadow-lg relative w-[800px] max-h-[90vh] overflow-y-auto`}
+            >
+              <button
+                onClick={() => setIsFilterModalOpen(false)}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              <h3 className="text-2xl font-bold mb-6">Filtros</h3>
+
+              <div className="grid grid-cols-2 gap-6">
+                {/* Grupos Musculares */}
+                <div>
+                  <h4 className="text-lg font-semibold mb-4">Grupos Musculares</h4>
+                  <div className={`space-y-2 max-h-60 overflow-y-auto p-4 rounded border ${
+                    theme === 'dark' ? 'border-gray-600' : 'border-gray-300'
+                  }`}>
+                    {gruposMusculares.map((muscle) => (
+                      <label key={muscle} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedMuscleGroups.includes(muscle)}
+                          onChange={() => toggleMuscleGroup(muscle)}
+                          className={`form-checkbox h-4 w-4 ${
+                            theme === 'dark'
+                              ? 'text-blue-500 border-gray-600'
+                              : 'text-blue-600 border-gray-300'
+                          }`}
+                        />
+                        <span className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>
+                          {muscle}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Equipamiento */}
+                <div>
+                  <h4 className="text-lg font-semibold mb-4">Equipamiento</h4>
+                  <div className={`space-y-2 max-h-60 overflow-y-auto p-4 rounded border ${
+                    theme === 'dark' ? 'border-gray-600' : 'border-gray-300'
+                  }`}>
+                    {equipamientoDisponible.map((equip) => (
+                      <label key={equip} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedEquipment.includes(equip)}
+                          onChange={() => toggleEquipment(equip)}
+                          className={`form-checkbox h-4 w-4 ${
+                            theme === 'dark'
+                              ? 'text-blue-500 border-gray-600'
+                              : 'text-blue-600 border-gray-300'
+                          }`}
+                        />
+                        <span className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>
+                          {equip}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-4 mt-6">
+                <button
+                  onClick={clearFilters}
+                  className={`px-4 py-2 rounded ${
+                    theme === 'dark'
+                      ? 'bg-gray-600 hover:bg-gray-700 text-white'
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                  }`}
+                >
+                  Limpiar Filtros
+                </button>
+                <button
+                  onClick={() => setIsFilterModalOpen(false)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Aplicar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <CreateExerciseModal
         isOpen={isExerciseModalOpen}
         onClose={() => {
@@ -281,7 +463,7 @@ const ExerciseList: React.FC = () => {
           descripcion: selectedExercise.descripcion,
           gruposMusculares: selectedExercise.grupoMuscular,
           equipamiento: selectedExercise.equipo,
-          videoUrl: selectedExercise.imgUrl || ''
+          videoUrl: selectedExercise.videoUrl || ''
         } : undefined}
         isEditing={!!selectedExercise}
       />

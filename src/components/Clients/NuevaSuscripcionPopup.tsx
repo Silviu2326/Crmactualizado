@@ -90,99 +90,135 @@ const NuevaSuscripcionPopup: React.FC<NuevaSuscripcionPopupProps> = ({ isOpen, o
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
         >
           <motion.div
-            className={`bg-white dark:bg-gray-700 rounded-lg shadow-lg w-full max-w-lg p-6 relative`}
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0.8 }}
-            transition={{ duration: 0.2 }}
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            onClick={(e) => e.stopPropagation()}
+            className={`w-full max-w-md overflow-hidden ${
+              isDarkMode
+                ? 'bg-gray-800 border border-gray-700'
+                : 'bg-white border border-gray-200'
+            } rounded-lg shadow-xl`}
           >
-            <button
-              onClick={onClose}
-              className="absolute top-3 right-3 text-gray-500 dark:text-gray-200 hover:text-gray-700 dark:hover:text-white transition-colors duration-150"
-              aria-label="Cerrar"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Nueva Suscripción</h2>
+            {/* Header del modal */}
+            <div className={`px-6 py-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <div className="flex items-center justify-between">
+                <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Nueva Suscripción
+                </h3>
+                <button
+                  onClick={onClose}
+                  className={`p-1 rounded-full hover:bg-opacity-20 ${
+                    isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <X className={`w-5 h-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                </button>
+              </div>
+            </div>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                {error}
+              <div className="px-6 pt-4">
+                <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                  {error}
+                </div>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="nombre" className={`block text-sm font-medium ${isDarkMode ? 'text-white' : 'text-black'}`}>
-                  Nombre
-                </label>
-                <input
-                  type="text"
-                  name="nombre"
-                  id="nombre"
-                  value={formData.nombre}
-                  onChange={handleChange}
-                  required
-                  className={`mt-1 block w-full px-3 py-2 ${
-                    isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
-                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                />
-              </div>
+            <form onSubmit={handleSubmit} className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="nombre"
+                    className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}
+                  >
+                    Nombre
+                  </label>
+                  <input
+                    type="text"
+                    id="nombre"
+                    name="nombre"
+                    value={formData.nombre}
+                    onChange={handleChange}
+                    required
+                    className={`w-full px-3 py-2 rounded-md ${
+                      isDarkMode
+                        ? 'bg-gray-700 border-gray-600 text-white focus:border-blue-500'
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-blue-600'
+                    } border focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors duration-200`}
+                  />
+                </div>
 
-              <div>
-                <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                  Descripción
-                </label>
-                <textarea
-                  name="descripcion"
-                  id="descripcion"
-                  value={formData.descripcion}
-                  onChange={handleChange}
-                  rows={3}
-                  className={`mt-1 block w-full px-3 py-2 ${
-                    isDarkMode ? 'bg-gray-600 text-white' : 'bg-white text-gray-900'
-                  } border border-gray-300 dark:border-gray-500 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                />
-              </div>
+                <div>
+                  <label
+                    htmlFor="descripcion"
+                    className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}
+                  >
+                    Descripción
+                  </label>
+                  <textarea
+                    id="descripcion"
+                    name="descripcion"
+                    value={formData.descripcion}
+                    onChange={handleChange}
+                    rows={3}
+                    className={`w-full px-3 py-2 rounded-md ${
+                      isDarkMode
+                        ? 'bg-gray-700 border-gray-600 text-white focus:border-blue-500'
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-blue-600'
+                    } border focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors duration-200`}
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                  Servicios Adicionales
-                </label>
-                <div className="mt-2 space-y-2">
-                  {(['Pack de Citas', 'Planificacion', 'Dietas'] as const).map((servicio) => (
-                    <label key={servicio} className="inline-flex items-center mr-4">
-                      <input
-                        type="checkbox"
-                        checked={formData.serviciosAdicionales.includes(servicio)}
-                        onChange={() => handleServicioAdicionalChange(servicio)}
-                        className="form-checkbox h-4 w-4 text-blue-600"
-                      />
-                      <span className="ml-2 text-sm text-gray-700 dark:text-gray-200">{servicio}</span>
-                    </label>
-                  ))}
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                    Servicios Adicionales
+                  </label>
+                  <div className="mt-2 space-y-2">
+                    {(['Pack de Citas', 'Planificacion', 'Dietas'] as const).map((servicio) => (
+                      <label key={servicio} className="inline-flex items-center mr-4">
+                        <input
+                          type="checkbox"
+                          checked={formData.serviciosAdicionales.includes(servicio)}
+                          onChange={() => handleServicioAdicionalChange(servicio)}
+                          className={`form-checkbox h-4 w-4 ${
+                            isDarkMode
+                              ? 'text-blue-500 border-gray-600 bg-gray-700'
+                              : 'text-blue-600 border-gray-300 bg-white'
+                          }`}
+                        />
+                        <span className={`ml-2 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          {servicio}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-3 mt-6">
+              <div className="mt-6 flex justify-end space-x-3">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-500 dark:hover:text-gray-400"
+                  className={`px-4 py-2 rounded-md ${
+                    isDarkMode
+                      ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  } transition-colors duration-200`}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                  className={`px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-200 ${
                     isLoading ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >

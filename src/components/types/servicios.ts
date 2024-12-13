@@ -1,22 +1,26 @@
 import { ReactNode } from 'react';
 
 export interface ServicioBase {
-  id: number;
+  _id: string;
   nombre: string;
   descripcion: string;
+  tipo: string;
+  estado: 'activo' | 'inactivo';
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ClaseGrupal extends ServicioBase {
-  horario: string;
-  instructor: string;
+  horario?: string;
+  instructor?: string;
   capacidad: number;
-  participantes: number;
+  participantes?: string[];
 }
 
 export interface Cita extends ServicioBase {
-  fecha: string;
-  hora: string;
-  cliente: string;
+  fecha?: string;
+  hora?: string;
+  cliente?: string;
   estado: 'Pendiente' | 'Confirmada' | 'Cancelada';
 }
 
@@ -30,24 +34,25 @@ export interface Cliente {
 }
 
 export interface PlanPago {
-  id: number;
+  _id: string;
   nombre: string;
-  precio: string;
+  precio: number;
   duracion: string;
   descripcion: string;
-  clientes: Cliente[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ServicioAsesoriaSubscripcion extends ServicioBase {
-  duracion: string;
-  detalles: string;
-  planes: PlanPago[];
+  duracion?: string;
+  planDePago?: PlanPago[];
+  serviciosAdicionales?: string[];
 }
 
 export interface CategoriaServicio {
   id: string;
   titulo: string;
   icono: ReactNode;
-  tipo: 'clase' | 'asesoria' | 'suscripcion' | 'cita';
+  tipo: string;
   datos: (ClaseGrupal | ServicioAsesoriaSubscripcion | Cita)[];
 }

@@ -197,42 +197,54 @@ const WorkoutList: React.FC = () => {
       </motion.div>
 
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className={`rounded-lg shadow-lg overflow-hidden ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
       >
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
+          <table className="min-w-full">
+            <thead className={`${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'}`}>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Descripción</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tags/Categorías</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Notas Adicionales</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
+                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Nombre</th>
+                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Descripción</th>
+                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Tags/Categorías</th>
+                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Notas Adicionales</th>
+                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Acciones</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
+            <tbody className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
               {routines.map((routine, idx) => (
                 <tr 
                   key={routine._id}
-                  className={`hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 ${
-                    idx % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'
-                  }`}
+                  className={`${
+                    theme === 'dark' 
+                      ? 'hover:bg-gray-700' 
+                      : 'hover:bg-blue-50'
+                  } transition-colors duration-200`}
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">{routine.name}</div>
+                    <div className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`}>
+                      {routine.name}
+                    </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{routine.description}</div>
+                    <div className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {routine.description}
+                    </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1">
                       {routine.tags.map((tag, index) => (
-                        <span key={index} className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          tag.toLowerCase().includes('fuerza') ? 'bg-purple-100 text-purple-800' :
-                          tag.toLowerCase().includes('cardio') ? 'bg-red-100 text-red-800' :
-                          'bg-blue-100 text-blue-800'
+                        <span key={index} className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                          tag.toLowerCase().includes('fuerza') 
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' 
+                          : tag.toLowerCase().includes('cardio') 
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          : tag.toLowerCase().includes('hipertrofia')
+                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                          : tag.toLowerCase().includes('resistencia')
+                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                          : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
                         }`}>
                           {tag}
                         </span>
@@ -240,22 +252,30 @@ const WorkoutList: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{routine.notes}</div>
+                    <div className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {routine.notes}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex space-x-2 justify-end">
-                      <button 
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex justify-center space-x-3 items-center">
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => handleEditRoutine(routine)}
+                        className="text-blue-500 hover:text-blue-600 transition-colors duration-150"
+                        aria-label={`Editar ${routine.name}`}
                       >
                         <Pencil className="w-5 h-5" />
-                      </button>
-                      <button 
-                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => handleDeleteRoutine(routine._id)}
+                        className="text-red-500 hover:text-red-600 transition-colors duration-150"
+                        aria-label={`Eliminar ${routine.name}`}
                       >
                         <Trash2 className="w-5 h-5" />
-                      </button>
+                      </motion.button>
                     </div>
                   </td>
                 </tr>

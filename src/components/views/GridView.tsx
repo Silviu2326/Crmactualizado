@@ -1,5 +1,6 @@
 import React from 'react';
 import { Instagram, Youtube, Music, Plus } from 'lucide-react';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface Publication {
   id: number;
@@ -15,20 +16,61 @@ interface GridViewProps {
 }
 
 const GridView: React.FC<GridViewProps> = ({ publications, getStatusBadge }) => {
+  const { theme } = useTheme();
+
+  const getPlatformIcon = (platform: string) => {
+    switch (platform) {
+      case 'instagram':
+        return <Instagram size={20} className="text-pink-500" />;
+      case 'youtube':
+        return <Youtube size={20} className="text-red-500" />;
+      case 'tiktok':
+        return <Music size={20} className="text-black dark:text-white" />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {publications.map((pub) => (
-        <div key={pub.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-all hover:scale-[1.02]">
-          {getStatusBadge(pub.status)}
-          <h3 className="text-lg font-semibold mt-4 text-gray-900 dark:text-white">{pub.title}</h3>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">{pub.date}</p>
-          <div className="flex justify-between items-center mt-4">
-            {pub.platform === 'instagram' && <Instagram className="text-pink-500 dark:text-pink-400" size={24} />}
-            {pub.platform === 'youtube' && <Youtube className="text-red-500 dark:text-red-400" size={24} />}
-            {pub.platform === 'tiktok' && <Music className="text-gray-900 dark:text-white" size={24} />}
-            <div className="flex space-x-2">
-              <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
-                <Plus size={16} className="text-gray-600 dark:text-gray-400" />
+        <div 
+          key={pub.id} 
+          className={`rounded-xl overflow-hidden ${
+            theme === 'dark' ? 'bg-gray-800/50' : 'bg-white'
+          } shadow-sm hover:shadow-md transition-all`}
+        >
+          <div className="p-4 flex flex-col h-full">
+            <div className="flex justify-between items-start mb-4">
+              {getStatusBadge(pub.status)}
+            </div>
+            
+            <h3 className={`text-lg font-semibold mb-2 ${
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            }`}>
+              {pub.title}
+            </h3>
+            
+            <p className={`text-sm ${
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+            }`}>
+              {pub.date}
+            </p>
+
+            <div className="mt-4 flex justify-between items-center">
+              <div className="flex items-center space-x-2">
+                {getPlatformIcon(pub.platform)}
+              </div>
+              <button 
+                className={`p-2 rounded-full transition-colors ${
+                  theme === 'dark' 
+                    ? 'hover:bg-gray-700' 
+                    : 'hover:bg-gray-100'
+                }`}
+              >
+                <Plus size={20} className={`${
+                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                }`} />
               </button>
             </div>
           </div>

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { User, Clock, CheckCircle, XCircle, Plus, Calendar, AlertCircle } from 'lucide-react';
+import { User, Clock, CheckCircle, XCircle, Plus, Calendar, AlertCircle, Dumbbell } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import PopupRM from '../../Planning/PopupRM';
 
 interface Client {
   _id: string;
@@ -38,6 +39,8 @@ export const VistaClientes: React.FC<VistaClientesProps> = ({
   const [showPopup, setShowPopup] = useState(false);
   const [availableClients, setAvailableClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [isRMModalOpen, setIsRMModalOpen] = useState(false);
 
   const fetchAvailableClients = async () => {
     try {
@@ -215,19 +218,43 @@ export const VistaClientes: React.FC<VistaClientesProps> = ({
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <button
-                      onClick={() => navigateToPlanning(assigned.client._id)}
-                      className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                      <Calendar className="h-4 w-4 mr-1" />
-                      Ver Planificación
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => navigateToPlanning(assigned.client._id)}
+                        className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        <Calendar className="h-4 w-4 mr-1" />
+                        Ver Planificación
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setSelectedClientId(assigned.client._id);
+                          setIsRMModalOpen(true);
+                        }}
+                        className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-violet-500 hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
+                      >
+                        <Dumbbell className="h-4 w-4 mr-1" />
+                        RMs
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+      )}
+      
+      {/* Modal de RMs */}
+      {isRMModalOpen && selectedClientId && (
+        <PopupRM
+          onClose={() => {
+            setIsRMModalOpen(false);
+            setSelectedClientId(null);
+          }}
+          planningId={selectedClientId}
+        />
       )}
     </div>
   );

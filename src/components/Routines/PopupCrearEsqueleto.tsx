@@ -4,10 +4,18 @@ import { X } from 'lucide-react';
 import { WeekSelector } from './WeekSelector';
 import { ExercisePeriod } from './ExercisePeriod';
 import { NavigationButtons } from './NavigationButtons';
+import { EdicionExercisePeriod } from './EdicionExercisePeriod';
+import clsx from 'clsx';
 
 interface WeekRange {
   start: number;
   end: number;
+  name: string;
+  semanaInicio: number;
+  diaInicio: number;
+  semanaFin: number;
+  diaFin: number;
+  variants: any[];
 }
 
 interface RenderConfig {
@@ -19,49 +27,36 @@ interface RenderConfig {
 interface Set {
   reps: number;
   weight: number;
-  weightType: 'absolute' | 'relative';
   rest: number;
-  rpe: number;
-  renderConfig: RenderConfig;
 }
 
 interface Exercise {
   exercise: string;
-  orden: number;
   sets: Set[];
-  notas: string;
-}
-
-interface Session {
-  nombre: string;
-  descripcion: string;
-  exercises: Exercise[];
 }
 
 interface Variant {
+  color: string;
+  exercises: Exercise[];
+}
+
+interface Period {
   nombre: string;
-  descripcion: string;
-  sessions: Session[];
-}
-
-interface Day {
-  dayNumber: number;
+  semanaInicio: number;
+  diaInicio: number;
+  semanaFin: number;
+  diaFin: number;
   variants: Variant[];
-}
-
-interface Plan {
-  semanas: number;
-  days: Day[];
 }
 
 interface Skeleton {
   _id?: string;
   nombre: string;
   descripcion: string;
-  tipo: string;
-  dificultad: string;
-  plan: Plan;
-  semanas?: number;
+  periodos: Period[];
+  plannings: any[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface PopupCrearEsqueletoProps {
@@ -74,20 +69,18 @@ const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onSu
   const [skeletonData, setSkeletonData] = useState<Skeleton>({
     nombre: '',
     descripcion: '',
-    tipo: '',
-    dificultad: '',
-    plan: {
-      semanas: 4,
-      days: []
-    }
+    periodos: []
   });
+  const [editingSkeletonId, setEditingSkeletonId] = useState<string | null>(null);
   const [skeletons, setSkeletons] = useState<Skeleton[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedWeeks, setSelectedWeeks] = useState<WeekRange[]>([]);
-  const [selectionStart, setSelectionStart] = useState<number | null>(null);
   const [hoveredWeek, setHoveredWeek] = useState<number | null>(null);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [selectionStart, setSelectionStart] = useState<number | null>(null);
+  const [editingPeriod, setEditingPeriod] = useState<Period | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState<Period | null>(null);
 
   useEffect(() => {
     const fetchSkeletons = async () => {
@@ -97,7 +90,7 @@ const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onSu
           throw new Error('No se encontró el token de autenticación');
         }
 
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/esqueleto/esqueletos', {
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/esqueleto', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -120,90 +113,183 @@ const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onSu
   }, []);
 
   const handleWeekSelect = (weekNumber: number) => {
+    console.log('handleWeekSelect - Número seleccionado:', weekNumber);
+    console.log('handleWeekSelect - Estado actual:', { selectionStart, selectedWeeks });
+
     if (!selectionStart) {
       setSelectionStart(weekNumber);
+      console.log('handleWeekSelect - Estableciendo inicio:', weekNumber);
     } else {
       const start = Math.min(selectionStart, weekNumber);
       const end = Math.max(selectionStart, weekNumber);
-      
-      const overlaps = selectedWeeks.some(range => 
+
+      const hasOverlap = selectedWeeks.some(range => 
         (start <= range.end && end >= range.start)
       );
 
-      if (!overlaps) {
-        setSelectedWeeks([...selectedWeeks, { start, end }]);
-        // Actualizar el plan con las semanas seleccionadas
-        setSkeletonData(prev => ({
-          ...prev,
-          plan: {
-            ...prev.plan,
-            semanas: Math.max(...selectedWeeks.map(w => w.end), end)
-          }
-        }));
+      console.log('handleWeekSelect - Verificando solapamiento:', { start, end, hasOverlap });
+
+      if (!hasOverlap) {
+        const startWeek = Math.ceil(start / 7);
+        const startDay = start % 7 === 0 ? 7 : start % 7;
+        const endWeek = Math.ceil(end / 7);
+        const endDay = end % 7 === 0 ? 7 : end % 7;
+
+        const newPeriod = { 
+          start, 
+          end, 
+          name: `Período ${selectedWeeks.length + 1}`,
+          semanaInicio: startWeek,
+          diaInicio: startDay,
+          semanaFin: endWeek,
+          diaFin: endDay,
+          variants: []
+        };
+
+        console.log('handleWeekSelect - Nuevo período creado:', newPeriod);
+        setSelectedWeeks([...selectedWeeks, newPeriod]);
       }
-      
+
       setSelectionStart(null);
     }
   };
 
-  const getPreviewRange = () => {
-    if (!selectionStart || !hoveredWeek) return null;
-    return {
-      start: Math.min(selectionStart, hoveredWeek),
-      end: Math.max(selectionStart, hoveredWeek)
+  const handleUpdatePeriodName = (index: number, name: string) => {
+    console.log('handleUpdatePeriodName:', { index, name });
+    const newSelectedWeeks = [...selectedWeeks];
+    newSelectedWeeks[index] = { ...newSelectedWeeks[index], name };
+    setSelectedWeeks(newSelectedWeeks);
+  };
+
+  const handleSaveExercise = (periodIndex: number, variants: Variant[]) => {
+    console.log('handleSaveExercise - Inicio:', { periodIndex, variants });
+    
+    const newPeriodos = [...skeletonData.periodos];
+    const period = selectedWeeks[periodIndex];
+    
+    const newPeriod = {
+      nombre: period.name,
+      semanaInicio: period.semanaInicio,
+      diaInicio: period.diaInicio,
+      semanaFin: period.semanaFin,
+      diaFin: period.diaFin,
+      variants: variants
     };
+
+    console.log('handleSaveExercise - Nuevo período:', newPeriod);
+    
+    newPeriodos[periodIndex] = newPeriod;
+
+    const newSkeletonData = {
+      ...skeletonData,
+      periodos: newPeriodos
+    };
+
+    console.log('handleSaveExercise - Nuevo estado del esqueleto:', newSkeletonData);
+    setSkeletonData(newSkeletonData);
   };
 
-  const handleRemovePeriod = (index: number) => {
-    setSelectedWeeks(selectedWeeks.filter((_, i) => i !== index));
-  };
-
-  const handleNext = () => {
-    if (step === 1) {
-      if (!skeletonData.nombre.trim() || !skeletonData.descripcion.trim() || !skeletonData.tipo || !skeletonData.dificultad) {
-        alert('Por favor, complete todos los campos obligatorios');
-        return;
+  const handleEditSkeleton = async (skeletonId: string) => {
+    try {
+      console.log('Obteniendo esqueleto para editar:', skeletonId);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
       }
-    }
 
-    if (step === 2 && selectedWeeks.length === 0) {
-      alert('Por favor, seleccione al menos un período de semanas');
-      return;
-    }
-
-    if (step === 3 && onSubmit) {
-      // Convertir los períodos seleccionados a la estructura del plan
-      const days: Day[] = [];
-      selectedWeeks.forEach(week => {
-        for (let i = week.start; i <= week.end; i++) {
-          days.push({
-            dayNumber: i,
-            variants: [{
-              nombre: "Variante A",
-              descripcion: "Entrenamiento principal",
-              sessions: [{
-                nombre: "Sesión Principal",
-                descripcion: "Entrenamiento del día",
-                exercises: exercises
-              }]
-            }]
-          });
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/esqueleto/${skeletonId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
       });
 
-      const finalData = {
-        ...skeletonData,
-        plan: {
-          ...skeletonData.plan,
-          days
-        }
-      };
+      if (!response.ok) {
+        throw new Error('Error al obtener el esqueleto');
+      }
 
-      onSubmit(finalData);
-      onClose();
-    } else {
-      setStep(step + 1);
+      const data = await response.json();
+      console.log('Datos del esqueleto a editar:', data);
+      setSkeletonData(data);
+      setEditingSkeletonId(skeletonId);
+      setStep(0);
+    } catch (err) {
+      console.error('Error al obtener el esqueleto para editar:', err);
+      setError(err instanceof Error ? err.message : 'Error desconocido');
     }
+  };
+
+  const handleEditPeriod = (skeleton: Skeleton) => {
+    console.log('PopupCrearEsqueleto - Editando periodos del esqueleto:', skeleton);
+    setSelectedPeriod(skeleton.periodos[0]);
+    setSkeletonData(skeleton);
+    setIsEditing(true);
+  };
+
+  const handleSavePeriods = (updatedPeriods: Period[]) => {
+    console.log('PopupCrearEsqueleto - Guardando periodos actualizados:', updatedPeriods);
+    setSkeletonData({
+      ...skeletonData,
+      periodos: updatedPeriods
+    });
+    setIsEditing(false);
+    setSelectedPeriod(null);
+  };
+
+  const handleSubmit = async () => {
+    try {
+      console.log('handleSubmit - Iniciando envío con datos:', skeletonData);
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const url = editingSkeletonId 
+        ? `https://fitoffice2-f70b52bef77e.herokuapp.com/api/esqueleto/${editingSkeletonId}`
+        : 'https://fitoffice2-f70b52bef77e.herokuapp.com/api/esqueleto';
+
+      const method = editingSkeletonId ? 'PUT' : 'POST';
+
+      console.log(`handleSubmit - Preparando petición ${method} a ${url}`);
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(skeletonData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error al ${editingSkeletonId ? 'actualizar' : 'crear'} el esqueleto`);
+      }
+
+      const data = await response.json();
+      console.log('handleSubmit - Respuesta del servidor:', data);
+
+      if (onSubmit) {
+        onSubmit(data);
+      }
+      onClose();
+    } catch (error) {
+      console.error('handleSubmit - Error:', error);
+    }
+  };
+
+  const handleNext = () => {
+    if (step === 1 && (!skeletonData.nombre || !skeletonData.descripcion)) {
+      return;
+    }
+    setStep(step + 1);
+  };
+
+  const handleStartCreation = () => {
+    setSkeletonData({
+      nombre: '',
+      descripcion: '',
+      periodos: []
+    });
+    setStep(1);
   };
 
   const handleBack = () => {
@@ -214,81 +300,136 @@ const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onSu
     }
   };
 
-  const handleStartCreation = () => {
-    setStep(1);
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm flex justify-center items-center"
     >
       <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-gray-100 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-auto"
+        initial={{ scale: 0.95 }}
+        animate={{ scale: 1 }}
+        exit={{ scale: 0.95 }}
+        className="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-auto"
       >
-        <div className="p-6 bg-white border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">
-              {step === 0 ? 'Esqueletos de Rutina' : 'Crear Esqueleto de Rutina'}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <X size={24} />
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6">
-          {step === 0 ? (
-            <div>
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-4">Esqueletos Existentes</h3>
-                {loading ? (
-                  <p>Cargando esqueletos...</p>
-                ) : error ? (
-                  <p className="text-red-500">{error}</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full bg-white border border-gray-200">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                          <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-                          <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semanas</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {skeletons.map((skeleton) => (
-                          <tr key={skeleton._id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap border-b">{skeleton.nombre}</td>
-                            <td className="px-6 py-4 whitespace-nowrap border-b">{skeleton.descripcion}</td>
-                            <td className="px-6 py-4 whitespace-nowrap border-b">{skeleton.semanas}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-              <div className="mt-6 flex justify-center">
+        {isEditing ? (
+          <EdicionExercisePeriod
+            periods={skeletonData.periodos}
+            onSave={handleSavePeriods}
+            onClose={() => {
+              setIsEditing(false);
+              setSelectedPeriod(null);
+            }}
+          />
+        ) : (
+          <>
+            <div className="p-6 bg-white border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {step === 0 ? 'Esqueletos de Rutina' : 'Crear Esqueleto de Rutina'}
+                </h2>
                 <button
-                  onClick={handleStartCreation}
-                  className="px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                  onClick={onClose}
+                  className="text-gray-400 hover:text-gray-500"
                 >
-                  Crear Nuevo Esqueleto
+                  <X className="h-6 w-6" />
                 </button>
               </div>
             </div>
-          ) : (
-            <>
-              {step === 1 && (
+
+            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 200px)' }}>
+              {step === 0 ? (
+                <div>
+                  <div className="mb-6">
+                    {/* Lista de periodos con botón de editar */}
+                    {skeletonData.periodos.map((period, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 border rounded mb-2">
+                        <span>{period.nombre}</span>
+                        <button
+                          onClick={() => handleEditPeriod(skeletonData)}
+                          className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 flex items-center"
+                        >
+                          Editar
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mb-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold">Esqueletos Existentes</h3>
+                      <button
+                        onClick={handleStartCreation}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
+                      >
+                        Crear Nuevo Esqueleto
+                      </button>
+                    </div>
+                    {loading ? (
+                      <div className="flex justify-center items-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                      </div>
+                    ) : error ? (
+                      <div className="text-red-500 p-4 rounded bg-red-50">
+                        {error}
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full bg-white border border-gray-200">
+                          <thead>
+                            <tr className="bg-gray-50">
+                              <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Nombre
+                              </th>
+                              <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Descripción
+                              </th>
+                              <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Períodos
+                              </th>
+                              <th className="px-6 py-3 border-b text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Acciones
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {skeletons.map((skeleton) => (
+                              <tr key={skeleton._id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  {skeleton.nombre}
+                                </td>
+                                <td className="px-6 py-4">
+                                  {skeleton.descripcion}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  {skeleton.periodos?.length || 0} períodos
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                  <div className="flex justify-center space-x-2">
+                                    <button
+                                      onClick={() => handleEditPeriod(skeleton)}
+                                      className="text-indigo-600 hover:text-indigo-900 font-medium"
+                                    >
+                                      Editar
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                            {skeletons.length === 0 && (
+                              <tr>
+                                <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
+                                  No hay esqueletos creados
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : step === 1 ? (
                 <div className="mt-6">
                   <h3 className="text-lg font-semibold mb-4">Crear Nuevo Esqueleto</h3>
                   <div className="space-y-6">
@@ -318,80 +459,60 @@ const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onSu
                         required
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Tipo *
-                      </label>
-                      <select
-                        value={skeletonData.tipo}
-                        onChange={(e) => setSkeletonData({...skeletonData, tipo: e.target.value})}
-                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        required
-                      >
-                        <option value="">Seleccione un tipo</option>
-                        <option value="Fuerza">Fuerza</option>
-                        <option value="Hipertrofia">Hipertrofia</option>
-                        <option value="Resistencia">Resistencia</option>
-                        <option value="Pérdida de peso">Pérdida de peso</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Dificultad *
-                      </label>
-                      <select
-                        value={skeletonData.dificultad}
-                        onChange={(e) => setSkeletonData({...skeletonData, dificultad: e.target.value})}
-                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        required
-                      >
-                        <option value="">Seleccione una dificultad</option>
-                        <option value="Principiante">Principiante</option>
-                        <option value="Intermedio">Intermedio</option>
-                        <option value="Avanzado">Avanzado</option>
-                      </select>
-                    </div>
                   </div>
                 </div>
+              ) : step === 2 ? (
+                <div className="mt-6">
+                  <WeekSelector
+                    selectedWeeks={selectedWeeks}
+                    onWeekSelect={handleWeekSelect}
+                    hoveredWeek={hoveredWeek}
+                    onWeekHover={setHoveredWeek}
+                    onUpdatePeriodName={handleUpdatePeriodName}
+                  />
+                </div>
+              ) : (
+                <div className="mt-6">
+                  {selectedWeeks.map((period, index) => (
+                    <ExercisePeriod
+                      key={index}
+                      period={period}
+                      onSave={(variants) => handleSaveExercise(index, variants)}
+                    />
+                  ))}
+                </div>
               )}
+            </div>
 
-              {step === 2 && (
-                <WeekSelector
-                  selectedWeeks={selectedWeeks}
-                  onWeekSelect={handleWeekSelect}
-                  onNext={handleNext}
-                  selectionStart={selectionStart}
-                  hoveredWeek={hoveredWeek}
-                  setHoveredWeek={setHoveredWeek}
-                  onRemovePeriod={handleRemovePeriod}
-                  getPreviewRange={getPreviewRange}
-                />
-              )}
-
-              {step === 3 && selectedWeeks.map((period, index) => (
-                <ExercisePeriod
-                  key={index}
-                  period={period}
-                  exercises={exercises}
-                  onModify={(exercise) => {
-                    setExercises(prev => [...prev, exercise]);
-                  }}
-                  onMakeConditional={() => {}}
-                  onRemoveConditional={() => {}}
-                />
-              ))}
-
-              <div className="mt-6">
-                <NavigationButtons
-                  onBack={handleBack}
-                  onNext={handleNext}
-                  nextLabel={step === 3 ? "Finalizar" : "Siguiente"}
-                  showNext={true}
-                />
+            <div className="p-6 bg-gray-50 border-t border-gray-200">
+              <div className="flex justify-between">
+                <button
+                  onClick={() => step === 1 ? setStep(0) : setStep(step - 1)}
+                  className={clsx(
+                    "px-4 py-2 rounded",
+                    "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  )}
+                  disabled={step === 0}
+                >
+                  {step === 1 ? 'Volver a la lista' : 'Anterior'}
+                </button>
+                <button
+                  onClick={step === 3 ? handleSubmit : handleNext}
+                  disabled={step === 1 && (!skeletonData.nombre || !skeletonData.descripcion)}
+                  className={clsx(
+                    "px-4 py-2 rounded",
+                    step === 3
+                      ? "bg-green-600 text-white hover:bg-green-700"
+                      : "bg-indigo-600 text-white hover:bg-indigo-700",
+                    (step === 1 && (!skeletonData.nombre || !skeletonData.descripcion)) && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  {step === 3 ? 'Guardar' : 'Siguiente'}
+                </button>
               </div>
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </motion.div>
     </motion.div>
   );

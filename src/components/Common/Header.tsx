@@ -43,7 +43,7 @@ const Header: React.FC = () => {
           return;
         }
 
-        const response = await fetch('http://localhost:3000/api/economic-alerts', {
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/economic-alerts', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

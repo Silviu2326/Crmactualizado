@@ -15,6 +15,7 @@ import {
   Clock,
   Target,
   Trash2,
+  Check,
 } from 'lucide-react';
 import Button from '../Common/Button';
 import Table from '../Common/Table';
@@ -24,6 +25,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import PopupCrearPlanificacion from './PopupCrearPlanificacion';
 import PopupCrearEsqueleto from './PopupCrearEsqueleto';
+import ArchivosplanificacionesComponent from './ArchivosplanificacionesComponent'; // Importar el nuevo componente
 // Importa otros componentes si es necesario
 
 interface PlanningSchema {
@@ -62,6 +64,8 @@ const PlanningList: React.FC = () => {
   const { theme } = useTheme();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPlannings, setSelectedPlannings] = useState<string[]>([]);
+  const [selectMode, setSelectMode] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
   const [isFormulasModalOpen, setIsFormulasModalOpen] = useState(false);
@@ -243,6 +247,7 @@ const PlanningList: React.FC = () => {
       const planningsData = await planningsResponse.json();
       const templatesData = await templatesResponse.json();
 
+      console.log('Raw Planning Data:', planningsData.map((p: any) => ({ id: p._id, semanas: p.semanas })));
       console.log('Plannings Data:', planningsData);
 
       // Procesar datos de planificaciones
@@ -256,11 +261,15 @@ const PlanningList: React.FC = () => {
           return meta;
         };
 
+        // Asegurarse de que semanas sea un número
+        const semanas = typeof planning.semanas === 'number' ? planning.semanas : 
+                       typeof planning.semanas === 'string' ? parseInt(planning.semanas) : 0;
+
         return {
           _id: planning._id,
           nombre: planning.nombre,
           descripcion: planning.descripcion,
-          duracion: `${planning.semanas} semanas`,
+          duracion: `${semanas} semanas`,
           fechaInicio: new Date(planning.fechaInicio).toLocaleDateString(),
           meta: normalizeMeta(planning.meta),
           tipo: planning.tipo || 'Planificacion',
@@ -268,7 +277,8 @@ const PlanningList: React.FC = () => {
           clientesAsociados: 1,
           estado: 'En progreso',
           completado: '65%',
-          acciones: 'Editar'
+          acciones: 'Editar',
+          semanas: semanas // Añadimos el campo semanas al objeto procesado
         };
       });
 
@@ -317,7 +327,7 @@ const PlanningList: React.FC = () => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/esqueleto/esqueletos/${esqueletoId}`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/esqueleto/${esqueletoId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -407,12 +417,55 @@ const PlanningList: React.FC = () => {
     }
   };
 
+  const handleExportClick = () => {
+    setSelectMode(true);
+  };
+
+  const handleCheckboxChange = (planningId: string) => {
+    setSelectedPlannings(prev => {
+      if (prev.includes(planningId)) {
+        return prev.filter(id => id !== planningId);
+      } else {
+        return [...prev, planningId];
+      }
+    });
+  };
+
+  const handleExportSelected = () => {
+    // Aquí implementar la lógica de exportación
+    console.log('Planificaciones seleccionadas:', selectedPlannings);
+    setSelectMode(false);
+    setSelectedPlannings([]);
+  };
+
   // useEffect para obtener las planificaciones al montar el componente
   useEffect(() => {
     fetchPlannings();
   }, []);
 
   const [selectedItemId, setSelectedItemId] = useState('');
+  const [selectedPlanningId, setSelectedPlanningId] = useState<string | null>(null);
+
+  const handleOpenFiles = (planningId: string) => {
+    setSelectedPlanningId(planningId);
+    setIsFilesModalOpen(true);
+  };
+
+  const filteredPlannings = planningData
+    .filter((item) => {
+      const searchString = searchTerm.toLowerCase();
+      const matchesSearch = !searchTerm
+        || item.nombre.toLowerCase().includes(searchString)
+        || item.descripcion.toLowerCase().includes(searchString)
+        || item.meta.toLowerCase().includes(searchString);
+
+      const matchesTipo = activeFilters.tipo === 'todos' || item.tipo === activeFilters.tipo;
+      const matchesEstado = activeFilters.estado === 'todos' || item.estado === activeFilters.estado;
+      const matchesMeta = activeFilters.meta === 'todos' || item.meta === activeFilters.meta;
+      const matchesDuracion = activeFilters.duracion === 'todos' || item.semanas.toString() === activeFilters.duracion;
+
+      return matchesSearch && matchesTipo && matchesEstado && matchesMeta && matchesDuracion;
+    }) || [];
 
   return (
     <div
@@ -473,7 +526,7 @@ const PlanningList: React.FC = () => {
             <Plus className="w-5 h-5 mr-2" />
             Crear Planificación
           </Button>
-          <Button variant="normal" onClick={() => setIsFilesModalOpen(true)}>
+          <Button variant="normal" onClick={() => handleOpenFiles(selectedItemId)}>
             <FileText className="w-5 h-5 mr-2" />
             Ver Archivos
           </Button>
@@ -481,10 +534,33 @@ const PlanningList: React.FC = () => {
             <Plus className="w-5 h-5 mr-2" />
             Crear Fórmula
           </Button>
-          <Button variant="normal">
-            <Download className="w-5 h-5 mr-2" />
-            Exportar
-          </Button>
+          {!selectMode ? (
+            <Button variant="normal" onClick={handleExportClick}>
+              <Download className="w-5 h-5 mr-2" />
+              Exportar
+            </Button>
+          ) : (
+            <>
+              <Button 
+                variant="primary" 
+                onClick={handleExportSelected}
+                disabled={selectedPlannings.length === 0}
+              >
+                <Download className="w-5 h-5 mr-2" />
+                Exportar Seleccionados ({selectedPlannings.length})
+              </Button>
+              <Button 
+                variant="secondary" 
+                onClick={() => {
+                  setSelectMode(false);
+                  setSelectedPlannings([]);
+                }}
+              >
+                <X className="w-5 h-5 mr-2" />
+                Cancelar
+              </Button>
+            </>
+          )}
         </div>
       </motion.div>
 
@@ -544,7 +620,7 @@ const PlanningList: React.FC = () => {
                 <button
                   onClick={() => setIsFilterModalOpen(false)}
                   className={`p-2 rounded-full transition-colors ${
-                    theme === 'dark' 
+                    theme === 'dark'
                       ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-300' 
                       : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'
                   }`}
@@ -731,6 +807,7 @@ const PlanningList: React.FC = () => {
         >
           <Table
             headers={[
+              ...(selectMode ? [''] : []),
               'Nombre',
               'Descripción',
               'Duración',
@@ -741,50 +818,53 @@ const PlanningList: React.FC = () => {
               'Estado',
               'Completado',
               'Esqueleto',
-              'Acciones',
+              'Acciones'
             ]}
-            data={planningData
-              .filter((item) => {
-                // Aplicar filtro de búsqueda
-                const matchesSearch = searchTerm === '' || 
-                  item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  item.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  item.meta.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  item.estado.toLowerCase().includes(searchTerm.toLowerCase());
-
-                // Aplicar filtros múltiples
-                const matchesTipo = activeFilters.tipo === 'todos' || 
-                  (activeFilters.tipo === 'planificacion' && item.tipo === 'Planificacion') ||
-                  (activeFilters.tipo === 'plantilla' && item.tipo === 'Plantilla');
-
-                const matchesEstado = activeFilters.estado === 'todos' || 
-                  item.estado.toLowerCase() === activeFilters.estado.toLowerCase();
-
-                // Filtro de meta mejorado
-                const matchesMeta = activeFilters.meta === 'todos' || 
-                  (activeFilters.meta === 'fuerza' && item.meta === 'Fuerza') ||
-                  (activeFilters.meta === 'peso' && item.meta === 'Pérdida de Peso');
-
-                const semanas = parseInt(item.duracion);
-                const matchesDuracion = activeFilters.duracion === 'todos' || 
-                  (activeFilters.duracion === 'corta' && semanas <= 4) ||
-                  (activeFilters.duracion === 'media' && semanas > 4 && semanas <= 12) ||
-                  (activeFilters.duracion === 'larga' && semanas > 12);
-
-                return matchesSearch && matchesTipo && matchesEstado && matchesMeta && matchesDuracion;
-              })
+            data={filteredPlannings
               .map((item) => ({
+                ...(selectMode ? {
+                  checkbox: (
+                    <input
+                      type="checkbox"
+                      checked={selectedPlannings.includes(item._id)}
+                      onChange={() => handleCheckboxChange(item._id)}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                  )
+                } : {}),
                 nombre: item.nombre,
                 descripcion: item.descripcion,
-                duracion: item.duracion,
-                fechaInicio: item.fechaInicio,
+                duracion: `${item.semanas} semanas`,
+                fechaInicio: new Date(item.fechaInicio).toLocaleDateString(),
                 meta: item.meta,
                 tipo: renderCell('tipo', item.tipo, item),
-                clientesAsociados: renderCell('clientesAsociados', item.clientesAsociados, item),
+                clientes: item.cliente?.nombre || 'Sin cliente',
                 estado: renderCell('estado', item.estado, item),
                 completado: renderCell('completado', item.completado, item),
                 esqueleto: renderCell('esqueleto', item.esqueleto, item),
-                acciones: renderCell('acciones', item.acciones, { ...item, _id: item._id }),
+                acciones: (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleOpenFiles(item._id)}
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                    <button
+              onClick={() => {
+                if (item.tipo === 'Plantilla') {
+                  navigate(`/plantilla/${item._id}`);
+                } else {
+                  navigate(`/edit-planning/${item._id}`);
+                }
+              }}
+              className="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+              title="Editar planificación"
+            >
+              <Edit className="w-5 h-5" />
+            </button>                  </div>
+                )
               }))}
             variant={theme === 'dark' ? 'dark' : 'white'}
           />
@@ -840,25 +920,10 @@ const PlanningList: React.FC = () => {
       {/* Modal para Ver Archivos */}
       <AnimatePresence>
         {isFilesModalOpen && (
-          <motion.div
-            key="modal-ver-archivos"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
-          >
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg relative">
-              <button
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                onClick={() => setIsFilesModalOpen(false)}
-              >
-                <X className="w-5 h-5" />
-              </button>
-              {/* Aquí iría el contenido para ver archivos */}
-              <h3 className="text-2xl font-bold mb-4">Archivos Asociados</h3>
-              {/* Lista de archivos o componentes relacionados */}
-            </div>
-          </motion.div>
+          <ArchivosplanificacionesComponent
+            onClose={() => setIsFilesModalOpen(false)}
+            planningId={selectedPlanningId || undefined}
+          />
         )}
       </AnimatePresence>
 

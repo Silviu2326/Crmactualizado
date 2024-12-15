@@ -14,6 +14,7 @@ interface Week {
 interface WeekRange {
   start: number;
   end: number;
+  name: string;
 }
 
 // WeekGrid Component
@@ -99,10 +100,12 @@ function WeekGrid({
 // SelectedPeriods Component
 function SelectedPeriods({ 
   selectedWeeks, 
-  onRemovePeriod 
+  onRemovePeriod,
+  onUpdatePeriodName 
 }: {
   selectedWeeks: WeekRange[];
   onRemovePeriod: (index: number) => void;
+  onUpdatePeriodName: (index: number, name: string) => void;
 }) {
   const formatDateRange = (start: number, end: number) => {
     // Calcular semana y día para el inicio
@@ -125,17 +128,26 @@ function SelectedPeriods({
         {selectedWeeks.map((range, index) => (
           <div 
             key={index}
-            className="flex items-center justify-between bg-white p-2 rounded"
+            className="flex flex-col bg-white p-2 rounded"
           >
-            <span className="text-sm text-gray-700">
+            <div className="flex items-center justify-between mb-2">
+              <input
+                type="text"
+                value={range.name}
+                onChange={(e) => onUpdatePeriodName(index, e.target.value)}
+                placeholder="Nombre del período"
+                className="text-sm text-gray-700 border rounded px-2 py-1 flex-grow mr-2"
+              />
+              <button 
+                className="text-gray-400 hover:text-gray-600"
+                onClick={() => onRemovePeriod(index)}
+              >
+                ×
+              </button>
+            </div>
+            <span className="text-sm text-gray-500">
               {formatDateRange(range.start, range.end)}
             </span>
-            <button 
-              className="text-gray-400 hover:text-gray-600"
-              onClick={() => onRemovePeriod(index)}
-            >
-              ×
-            </button>
           </div>
         ))}
       </div>
@@ -152,6 +164,7 @@ interface WeekSelectorProps {
   hoveredWeek: number | null;
   setHoveredWeek: (weekNumber: number | null) => void;
   onRemovePeriod: (index: number) => void;
+  onUpdatePeriodName: (index: number, name: string) => void;
   getPreviewRange: () => WeekRange | null;
 }
 
@@ -163,6 +176,7 @@ export function WeekSelector({
   hoveredWeek,
   setHoveredWeek,
   onRemovePeriod,
+  onUpdatePeriodName,
   getPreviewRange 
 }: WeekSelectorProps) {
   // Helper function to generate week days
@@ -221,6 +235,7 @@ export function WeekSelector({
       <SelectedPeriods 
         selectedWeeks={selectedWeeks}
         onRemovePeriod={onRemovePeriod}
+        onUpdatePeriodName={onUpdatePeriodName}
       />
 
       <button

@@ -39,6 +39,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid'; // Importar para generar IDs únicos
 import PlanningTutorial from '../components/Tutorial/PlanningTutorial';
+import PopupRM from '../components/Planning/PopupRM';
 
 const EditPlanningPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -66,6 +67,7 @@ const EditPlanningPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [isCommandAssisterOpen, setIsCommandAssisterOpen] = useState(false);
+  const [isRMModalOpen, setIsRMModalOpen] = useState(false);
 
   const isHomeRoute = location.pathname === '/';
 
@@ -460,6 +462,14 @@ const EditPlanningPage: React.FC = () => {
                   Configuración
                 </Button>
                 <Button
+                  variant="secondary"
+                  onClick={() => setIsRMModalOpen(true)}
+                  className="flex items-center transform hover:scale-105 transition-transform duration-300 bg-violet-500 hover:bg-violet-600 text-white px-4 py-2 rounded-lg"
+                >
+                  <Dumbbell className="w-5 h-5 mr-2" />
+                  RMs
+                </Button>
+                <Button
                   variant="create"
                   className="flex items-center transform hover:scale-105 transition-transform duration-300"
                   onClick={handleSaveChanges}
@@ -504,8 +514,6 @@ const EditPlanningPage: React.FC = () => {
                     />
                   </div>
                 </motion.div>
-
-                
 
                 <div id="vista-selector" className="mb-8">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -565,6 +573,14 @@ const EditPlanningPage: React.FC = () => {
           </motion.div>
         </div>
       </div>
+      <AnimatePresence>
+        {isRMModalOpen && (
+          <PopupRM
+            onClose={() => setIsRMModalOpen(false)}
+            planningId={id || ''}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

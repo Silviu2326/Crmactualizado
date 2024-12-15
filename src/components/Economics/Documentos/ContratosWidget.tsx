@@ -5,7 +5,7 @@ import Button from '../../Common/Button';
 import { useTheme } from '../../../contexts/ThemeContext';
 import axios from 'axios';
 import { motion } from 'framer-motion';
-import AddDocumentoModal from './AddDocumentoModal';
+import AddContratoModal from './AddContratoModal';
 import EditContratoModal from './EditContratoModal';
 
 interface Contrato {
@@ -88,6 +88,10 @@ const ContratosWidget: React.FC = () => {
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  const truncateText = (text: string, maxLength: number = 14) => {
+    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
   };
 
   const filteredContratos = useMemo(() => {
@@ -190,7 +194,7 @@ const ContratosWidget: React.FC = () => {
             type="text"
             placeholder="Buscar contratos..."
             value={searchTerm}
-            onChange={handleSearchChange}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className={`w-full pl-4 pr-10 py-2 rounded-full ${
               theme === 'dark' 
                 ? 'bg-gray-700 border-gray-600 text-white' 
@@ -200,7 +204,7 @@ const ContratosWidget: React.FC = () => {
           <Search className={`absolute right-3 top-[50%] transform translate-y-[-50%] ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
         </div>
         <div className="relative">
-          <Button variant="filter" onClick={handleFilter}>
+          <Button variant="filter" onClick={() => setIsFilterOpen(!isFilterOpen)}>
             <Filter className="w-4 h-4" />
           </Button>
           {isFilterOpen && (
@@ -208,10 +212,10 @@ const ContratosWidget: React.FC = () => {
               theme === 'dark' ? 'bg-gray-800' : 'bg-white'
             } ring-1 ring-black ring-opacity-5 z-50`}>
               <div className="py-1">
-                {['todos', 'Activo', 'Pendiente', 'Finalizado', 'Cancelado'].map((estado) => (
+                {['todos', 'Activo', 'Finalizado', 'Cancelado', 'Pendiente'].map((estado) => (
                   <button
                     key={estado}
-                    onClick={() => handleFilterSelect(estado)}
+                    onClick={() => setSelectedFilter(estado)}
                     className={`block w-full text-left px-4 py-2 text-sm ${
                       theme === 'dark'
                         ? 'text-gray-200 hover:bg-gray-700'
@@ -225,17 +229,10 @@ const ContratosWidget: React.FC = () => {
             </div>
           )}
         </div>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setIsAddModalOpen(true)}
-          className={`inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-            theme === 'dark' ? 'focus:ring-offset-gray-800' : ''
-          }`}
-        >
+        <Button variant="create" onClick={() => setIsAddModalOpen(true)}>
           <Plus className="w-4 h-4 mr-1" />
           Añadir
-        </motion.button>
+        </Button>
       </div>
       {filteredContratos.length === 0 ? (
         <div className={`text-center py-4 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -246,9 +243,9 @@ const ContratosWidget: React.FC = () => {
           headers={['Nombre', 'Fecha de Inicio', 'Fecha de Fin', 'Estado', 'Acciones']}
           data={filteredContratos.map(contrato => ({
             Nombre: (
-              <div className="flex items-center">
+              <div className="flex items-center" title={contrato.nombre}>
                 <FileSignature className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
-                {contrato.nombre}
+                <span className="truncate max-w-[120px]">{truncateText(contrato.nombre)}</span>
               </div>
             ),
             'Fecha de Inicio': (
@@ -309,10 +306,11 @@ const ContratosWidget: React.FC = () => {
           variant={theme === 'dark' ? 'dark' : 'white'}
         />
       )}
-      <AddDocumentoModal
+      {/* Modales */}
+      <AddContratoModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onDocumentoAdded={fetchContratos}
+        onContratoAdded={fetchContratos}
       />
       {selectedContrato && (
         <EditContratoModal

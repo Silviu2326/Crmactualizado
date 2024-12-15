@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { FileText, Search, Filter, Plus, Eye, Edit2, Trash2, Calendar, ChevronDown } from 'lucide-react';
+import { FileText, Search, Filter, Plus, Eye, Edit2, Trash2, Calendar, ChevronDown, Key } from 'lucide-react';
 import Table from '../../Common/Table';
 import Button from '../../Common/Button';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -132,6 +132,10 @@ const LicenciasWidget: React.FC = () => {
     }
   };
 
+  const truncateText = (text: string, maxLength: number = 14) => {
+    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+  };
+
   const filteredLicencias = useMemo(() => {
     return licencias.filter(licencia => {
       const matchesSearch = licencia.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -218,7 +222,12 @@ const LicenciasWidget: React.FC = () => {
         <Table
           headers={['Nombre', 'Fecha de Expiración', 'Estado', 'Acciones']}
           data={filteredLicencias.map(licencia => ({
-            Nombre: licencia.nombre,
+            Nombre: (
+              <div className="flex items-center" title={licencia.nombre}>
+                <Key className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`} />
+                <span className="truncate max-w-[120px]">{truncateText(licencia.nombre)}</span>
+              </div>
+            ),
             'Fecha de Expiración': (
               <div className="flex items-center">
                 <Calendar className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}`} />

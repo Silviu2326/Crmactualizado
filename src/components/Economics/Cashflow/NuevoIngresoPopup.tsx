@@ -40,7 +40,8 @@ const NuevoIngresoPopup: React.FC<NuevoIngresoPopupProps> = ({ onClose, onSubmit
     clienteId: '',
     planId: '',
     servicioId: '',
-    metodoPago: 'efectivo'
+    metodoPago: 'efectivo',
+    tipoAsociacion: ''
   });
 
   useEffect(() => {
@@ -186,10 +187,10 @@ const NuevoIngresoPopup: React.FC<NuevoIngresoPopupProps> = ({ onClose, onSubmit
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Cliente</label>
+            <label className="block text-sm font-medium mb-1">Tipo de Asociación</label>
             <select
-              name="clienteId"
-              value={formData.clienteId}
+              name="tipoAsociacion"
+              value={formData.tipoAsociacion}
               onChange={handleChange}
               className={`w-full p-2 rounded border ${
                 theme === 'dark' 
@@ -197,56 +198,81 @@ const NuevoIngresoPopup: React.FC<NuevoIngresoPopupProps> = ({ onClose, onSubmit
                   : 'bg-white border-gray-300'
               }`}
             >
-              <option value="">Seleccionar cliente</option>
-              {clientes.map(cliente => (
-                <option key={cliente._id} value={cliente._id}>
-                  {cliente.nombre}
-                </option>
-              ))}
+              <option value="">Seleccionar tipo</option>
+              <option value="cliente">Cliente</option>
+              <option value="servicio">Servicio</option>
+              <option value="plan">Plan de Pago</option>
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Plan de Pago</label>
-            <select
-              name="planId"
-              value={formData.planId}
-              onChange={handleChange}
-              className={`w-full p-2 rounded border ${
-                theme === 'dark' 
-                  ? 'bg-gray-700 border-gray-600 text-white' 
-                  : 'bg-white border-gray-300'
-              }`}
-            >
-              <option value="">Seleccionar plan</option>
-              {planesDePago.map(plan => (
-                <option key={plan._id} value={plan._id}>
-                  {plan.nombre} - {plan.precio}€
-                </option>
-              ))}
-            </select>
-          </div>
+          {formData.tipoAsociacion === 'cliente' && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Cliente</label>
+              <select
+                name="clienteId"
+                value={formData.clienteId}
+                onChange={handleChange}
+                className={`w-full p-2 rounded border ${
+                  theme === 'dark' 
+                    ? 'bg-gray-700 border-gray-600 text-white' 
+                    : 'bg-white border-gray-300'
+                }`}
+              >
+                <option value="">Seleccionar cliente</option>
+                {clientes.map(cliente => (
+                  <option key={cliente._id} value={cliente._id}>
+                    {cliente.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Servicio</label>
-            <select
-              name="servicioId"
-              value={formData.servicioId}
-              onChange={handleChange}
-              className={`w-full p-2 rounded border ${
-                theme === 'dark' 
-                  ? 'bg-gray-700 border-gray-600 text-white' 
-                  : 'bg-white border-gray-300'
-              }`}
-            >
-              <option value="">Seleccionar servicio</option>
-              {servicios.map(servicio => (
-                <option key={servicio._id} value={servicio._id}>
-                  {servicio.nombre} - {servicio.precio}€
-                </option>
-              ))}
-            </select>
-          </div>
+          {formData.tipoAsociacion === 'servicio' && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Servicio</label>
+              <select
+                name="servicioId"
+                value={formData.servicioId}
+                onChange={handleChange}
+                className={`w-full p-2 rounded border ${
+                  theme === 'dark' 
+                    ? 'bg-gray-700 border-gray-600 text-white' 
+                    : 'bg-white border-gray-300'
+                }`}
+              >
+                <option value="">Seleccionar servicio</option>
+                {servicios.map(servicio => (
+                  <option key={servicio._id} value={servicio._id}>
+                    {servicio.nombre} - {servicio.precio}€
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {formData.tipoAsociacion === 'plan' && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Plan de Pago</label>
+              <select
+                name="planId"
+                value={formData.planId}
+                onChange={handleChange}
+                className={`w-full p-2 rounded border ${
+                  theme === 'dark' 
+                    ? 'bg-gray-700 border-gray-600 text-white' 
+                    : 'bg-white border-gray-300'
+                }`}
+              >
+                <option value="">Seleccionar plan</option>
+                {planesDePago.map(plan => (
+                  <option key={plan._id} value={plan._id}>
+                    {plan.nombre} - {plan.precio}€
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium mb-1">Método de Pago</label>

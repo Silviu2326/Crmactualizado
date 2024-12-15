@@ -4,6 +4,7 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { Search, Filter, Plus, Edit2, Trash2, CheckCircle } from 'lucide-react';
 import Button from '../../Common/Button';
 import NuevoIngresoPopup from './NuevoIngresoPopup';
+import EdicionDeIngresos from './EdicionDeIngresos';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Cliente {
@@ -45,6 +46,7 @@ const IngresosTabla: React.FC = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [ingresos, setIngresos] = useState<Ingreso[]>([]);
+  const [ingresosOriginales, setIngresosOriginales] = useState<Ingreso[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -108,6 +110,7 @@ const IngresosTabla: React.FC = () => {
       });
 
       setIngresos(data);
+      setIngresosOriginales(data);
       console.log('Total de ingresos cargados:', data.length);
     } catch (err: any) {
       console.error('Error al obtener ingresos:', err);
@@ -166,48 +169,51 @@ const IngresosTabla: React.FC = () => {
 
   // Aplicar filtros
   useEffect(() => {
-    const applyFilters = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = getToken();
-        if (!token) {
-          throw new Error('Token no encontrado');
-        }
+    const filtrarDatosLocalmente = () => {
+      let datosFiltrados = [...ingresosOriginales];
 
-        const queryParams = new URLSearchParams();
-        if (filterOptions.fechaInicio) queryParams.append('fechaInicio', filterOptions.fechaInicio);
-        if (filterOptions.fechaFin) queryParams.append('fechaFin', filterOptions.fechaFin);
-        if (filterOptions.estado) queryParams.append('estado', filterOptions.estado);
-        if (filterOptions.planDePago) queryParams.append('planDePago', filterOptions.planDePago);
-        if (filterOptions.metodoPago) queryParams.append('metodoPago', filterOptions.metodoPago);
-        if (filterOptions.montoMinimo) queryParams.append('montoMinimo', filterOptions.montoMinimo);
-        if (filterOptions.montoMaximo) queryParams.append('montoMaximo', filterOptions.montoMaximo);
-
-        const url = `https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos?${queryParams.toString()}`;
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('Error al obtener los ingresos filtrados');
-        }
-
-        const data = await response.json();
-        setIngresos(data);
-      } catch (err: any) {
-        console.error('Error al filtrar ingresos:', err);
-        setError(err.message || 'Error al filtrar los ingresos');
-      } finally {
-        setLoading(false);
+      // Aplicar filtros
+      if (filterOptions.fechaInicio) {
+        datosFiltrados = datosFiltrados.filter(ingreso => 
+          new Date(ingreso.fecha) >= new Date(filterOptions.fechaInicio)
+        );
       }
+      if (filterOptions.fechaFin) {
+        datosFiltrados = datosFiltrados.filter(ingreso => 
+          new Date(ingreso.fecha) <= new Date(filterOptions.fechaFin)
+        );
+      }
+      if (filterOptions.estado) {
+        datosFiltrados = datosFiltrados.filter(ingreso => 
+          ingreso.estado.toLowerCase() === filterOptions.estado.toLowerCase()
+        );
+      }
+      if (filterOptions.planDePago) {
+        datosFiltrados = datosFiltrados.filter(ingreso => 
+          ingreso.planDePago._id === filterOptions.planDePago
+        );
+      }
+      if (filterOptions.metodoPago) {
+        datosFiltrados = datosFiltrados.filter(ingreso => 
+          ingreso.metodoPago.toLowerCase() === filterOptions.metodoPago.toLowerCase()
+        );
+      }
+      if (filterOptions.montoMinimo) {
+        datosFiltrados = datosFiltrados.filter(ingreso => 
+          ingreso.monto >= parseFloat(filterOptions.montoMinimo)
+        );
+      }
+      if (filterOptions.montoMaximo) {
+        datosFiltrados = datosFiltrados.filter(ingreso => 
+          ingreso.monto <= parseFloat(filterOptions.montoMaximo)
+        );
+      }
+
+      setIngresos(datosFiltrados);
     };
 
-    applyFilters();
-  }, [filterOptions]);
+    filtrarDatosLocalmente();
+  }, [filterOptions, ingresosOriginales]);
 
   const handleAdd = () => {
     setShowAddModal(true);
@@ -231,6 +237,7 @@ const IngresosTabla: React.FC = () => {
 
       const newIngreso = await response.json();
       setIngresos([...ingresos, newIngreso]);
+      setIngresosOriginales([...ingresosOriginales, newIngreso]);
       setShowAddModal(false);
     } catch (error) {
       console.error('Error al crear ingreso:', error);
@@ -240,6 +247,17 @@ const IngresosTabla: React.FC = () => {
   const handleEdit = (ingreso: Ingreso) => {
     setSelectedIngreso(ingreso);
     setShowEditModal(true);
+  };
+
+  const handleEditSave = async (ingresoActualizado: Ingreso) => {
+    setIngresos(ingresos.map(ing => 
+      ing._id === ingresoActualizado._id ? ingresoActualizado : ing
+    ));
+    setIngresosOriginales(ingresosOriginales.map(ing => 
+      ing._id === ingresoActualizado._id ? ingresoActualizado : ing
+    ));
+    setShowEditModal(false);
+    setSelectedIngreso(null);
   };
 
   const handleDelete = async (ingresoId: string) => {
@@ -258,6 +276,7 @@ const IngresosTabla: React.FC = () => {
         }
 
         setIngresos(ingresos.filter(ing => ing._id !== ingresoId));
+        setIngresosOriginales(ingresosOriginales.filter(ing => ing._id !== ingresoId));
       } catch (error) {
         console.error('Error al eliminar:', error);
       }
@@ -283,6 +302,9 @@ const IngresosTabla: React.FC = () => {
       const updatedIngreso = await response.json();
       // Actualizar el estado del ingreso en la lista con los datos devueltos por el servidor
       setIngresos(ingresos.map(ing => 
+        ing._id === ingresoId ? updatedIngreso : ing
+      ));
+      setIngresosOriginales(ingresosOriginales.map(ing => 
         ing._id === ingresoId ? updatedIngreso : ing
       ));
     } catch (error) {
@@ -612,6 +634,17 @@ const IngresosTabla: React.FC = () => {
         <NuevoIngresoPopup
           onClose={() => setShowAddModal(false)}
           onSubmit={handleAddSubmit}
+        />
+      )}
+      
+      {showEditModal && selectedIngreso && (
+        <EdicionDeIngresos
+          ingreso={selectedIngreso}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedIngreso(null);
+          }}
+          onSave={handleEditSave}
         />
       )}
     </div>

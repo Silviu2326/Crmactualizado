@@ -3,22 +3,48 @@ import axios from 'axios';
 import { X } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 
-interface AddLicenciaModalProps {
+interface AddContratoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLicenciaAdded: () => void;
+  onContratoAdded: () => void;
 }
 
-const AddLicenciaModal: React.FC<AddLicenciaModalProps> = ({ isOpen, onClose, onLicenciaAdded }) => {
+const AddContratoModal: React.FC<AddContratoModalProps> = ({ isOpen, onClose, onContratoAdded }) => {
   const { theme } = useTheme();
   const [formData, setFormData] = useState({
     nombre: '',
-    fechaExpiracion: '',
-    estado: 'Activa',
-    descripcion: '',
-    campo: ''
+    fechaInicio: '',
+    fechaFin: '',
+    estado: 'Pendiente',
+    cliente: '',
+    notas: ''
   });
   const [error, setError] = useState<string>('');
+  const [clientes, setClientes] = useState<Array<{ _id: string; nombre: string }>>([]);
+
+  // Cargar lista de clientes al abrir el modal
+  React.useEffect(() => {
+    if (isOpen) {
+      const fetchClientes = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          const response = await axios.get(
+            'https://fitoffice2-f70b52bef77e.herokuapp.com/api/clients',
+            {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            }
+          );
+          setClientes(response.data.data);
+        } catch (error) {
+          console.error('Error al cargar clientes:', error);
+          setError('Error al cargar la lista de clientes');
+        }
+      };
+      fetchClientes();
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,17 +53,24 @@ const AddLicenciaModal: React.FC<AddLicenciaModalProps> = ({ isOpen, onClose, on
     try {
       const token = localStorage.getItem('token');
       
-      // Convertir la fecha al formato ISO y ajustar a medianoche UTC
-      const fechaExpiracion = new Date(formData.fechaExpiracion);
-      fechaExpiracion.setUTCHours(0, 0, 0, 0);
+      // Convertir las fechas al formato ISO
+      const fechaInicio = new Date(formData.fechaInicio);
+      const fechaFin = new Date(formData.fechaFin);
+      
+      // Validar que la fecha de fin sea posterior a la fecha de inicio
+      if (fechaFin <= fechaInicio) {
+        setError('La fecha de finalización debe ser posterior a la fecha de inicio');
+        return;
+      }
 
       const dataToSend = {
         ...formData,
-        fechaExpiracion: fechaExpiracion.toISOString()
+        fechaInicio: fechaInicio.toISOString(),
+        fechaFin: fechaFin.toISOString()
       };
 
       const response = await axios.post(
-        'https://fitoffice2-f70b52bef77e.herokuapp.com/api/licenses',
+        'https://fitoffice2-f70b52bef77e.herokuapp.com/api/contracts',
         dataToSend,
         {
           headers: {
@@ -48,22 +81,22 @@ const AddLicenciaModal: React.FC<AddLicenciaModalProps> = ({ isOpen, onClose, on
       );
 
       if (response.data.status === 'success') {
-        onLicenciaAdded();
+        onContratoAdded();
         onClose();
       } else {
-        setError('Error al crear la licencia');
+        setError('Error al crear el contrato');
       }
     } catch (error: any) {
-      console.error('Error al crear licencia:', error);
-      setError(error.response?.data?.message || 'Error al crear la licencia');
+      console.error('Error al crear contrato:', error);
+      setError(error.response?.data?.message || 'Error al crear el contrato');
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // Validación especial para la fecha de expiración
-    if (name === 'fechaExpiracion') {
+    // Validación especial para fechas
+    if (name === 'fechaInicio' || name === 'fechaFin') {
       const selectedDate = new Date(value);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -98,7 +131,7 @@ const AddLicenciaModal: React.FC<AddLicenciaModalProps> = ({ isOpen, onClose, on
         <h2 className={`text-xl font-semibold mb-4 ${
           theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
         }`}>
-          Añadir Nueva Licencia
+          Crear Nuevo Contrato
         </h2>
 
         {error && (
@@ -109,7 +142,7 @@ const AddLicenciaModal: React.FC<AddLicenciaModalProps> = ({ isOpen, onClose, on
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block mb-1">Nombre *</label>
+            <label className="block mb-1">Nombre del Contrato *</label>
             <input
               type="text"
               name="nombre"
@@ -125,13 +158,51 @@ const AddLicenciaModal: React.FC<AddLicenciaModalProps> = ({ isOpen, onClose, on
           </div>
 
           <div>
-            <label className="block mb-1">Fecha de Expiración *</label>
+            <label className="block mb-1">Cliente</label>
+            <select
+              name="cliente"
+              value={formData.cliente}
+              onChange={handleChange}
+              className={`w-full p-2 rounded border ${
+                theme === 'dark'
+                  ? 'bg-gray-700 border-gray-600 text-white'
+                  : 'bg-white border-gray-300'
+              }`}
+            >
+              <option value="">Sin cliente asignado</option>
+              {clientes.map(cliente => (
+                <option key={cliente._id} value={cliente._id}>
+                  {cliente.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block mb-1">Fecha de Inicio *</label>
             <input
               type="date"
-              name="fechaExpiracion"
-              value={formData.fechaExpiracion}
+              name="fechaInicio"
+              value={formData.fechaInicio}
               onChange={handleChange}
               min={new Date().toISOString().split('T')[0]}
+              className={`w-full p-2 rounded border ${
+                theme === 'dark'
+                  ? 'bg-gray-700 border-gray-600 text-white'
+                  : 'bg-white border-gray-300'
+              }`}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block mb-1">Fecha de Finalización *</label>
+            <input
+              type="date"
+              name="fechaFin"
+              value={formData.fechaFin}
+              onChange={handleChange}
+              min={formData.fechaInicio || new Date().toISOString().split('T')[0]}
               className={`w-full p-2 rounded border ${
                 theme === 'dark'
                   ? 'bg-gray-700 border-gray-600 text-white'
@@ -153,34 +224,18 @@ const AddLicenciaModal: React.FC<AddLicenciaModalProps> = ({ isOpen, onClose, on
                   : 'bg-white border-gray-300'
               }`}
             >
-              <option value="Activa">Activa</option>
-              <option value="Expirada">Expirada</option>
-              <option value="Suspendida">Suspendida</option>
-              <option value="En Proceso">En Proceso</option>
+              <option value="Pendiente">Pendiente</option>
+              <option value="Activo">Activo</option>
+              <option value="Finalizado">Finalizado</option>
+              <option value="Cancelado">Cancelado</option>
             </select>
           </div>
 
           <div>
-            <label className="block mb-1">Campo *</label>
-            <input
-              type="text"
-              name="campo"
-              value={formData.campo}
-              onChange={handleChange}
-              className={`w-full p-2 rounded border ${
-                theme === 'dark'
-                  ? 'bg-gray-700 border-gray-600 text-white'
-                  : 'bg-white border-gray-300'
-              }`}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1">Descripción</label>
+            <label className="block mb-1">Notas</label>
             <textarea
-              name="descripcion"
-              value={formData.descripcion}
+              name="notas"
+              value={formData.notas}
               onChange={handleChange}
               className={`w-full p-2 rounded border ${
                 theme === 'dark'
@@ -199,7 +254,7 @@ const AddLicenciaModal: React.FC<AddLicenciaModalProps> = ({ isOpen, onClose, on
                 : 'bg-purple-500 hover:bg-purple-600 text-white'
             }`}
           >
-            Crear Licencia
+            Crear Contrato
           </button>
         </form>
       </div>
@@ -207,4 +262,4 @@ const AddLicenciaModal: React.FC<AddLicenciaModalProps> = ({ isOpen, onClose, on
   );
 };
 
-export default AddLicenciaModal;
+export default AddContratoModal;

@@ -7,6 +7,9 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import GastoPopup from '../../modals/GastoPopup';
 import AsociarGastoPopup from '../../modals/AsociarGastoPopup';
+import EdicionDeGastos from './EdicionDeGastos';
+import FiltroGastosPopup from './FiltroGastosPopup';
+import NuevoGastoPopup from './NuevoGastoPopup';
 
 interface GastoWidgetProps { }
 
@@ -31,10 +34,21 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
   const [isAsociando, setIsAsociando] = useState(false);
   const [expandedServices, setExpandedServices] = useState<number[]>([]);
   const [gastos, setGastos] = useState<Gasto[]>([]);
+  const [selectedGasto, setSelectedGasto] = useState<Gasto | null>(null);
   const { theme } = useTheme();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isAsociacionPopupOpen, setIsAsociacionPopupOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filterOptions, setFilterOptions] = useState({
+    fechaInicio: '',
+    fechaFin: '',
+    estado: '',
+    categoria: '',
+    tipo: '',
+    montoMinimo: '',
+    montoMaximo: ''
+  });
 
   // Función para obtener el token del localStorage
   const getToken = (): string | null => {
@@ -131,10 +145,17 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
     // Implementa aquí la lógica de filtrado avanzada si es necesario
   };
 
-  const handleEdit = async (gasto: Gasto) => {
-    setSelectedGastoId(gasto._id);
+  const handleEdit = (gasto: Gasto) => {
+    setSelectedGasto(gasto);
     setIsEditing(true);
-    setIsPopupOpen(true);
+  };
+
+  const handleEditSave = async (gastoActualizado: Gasto) => {
+    setGastos(gastos.map(g => 
+      g._id === gastoActualizado._id ? gastoActualizado : g
+    ));
+    setIsEditing(false);
+    setSelectedGasto(null);
   };
 
   const handleDelete = async (gastoId: string) => {
@@ -196,47 +217,26 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
     }
   };
 
-  const handleAddOrUpdateGasto = async (formData: any) => {
+  const handleSubmit = async (nuevoGasto: any) => {
     try {
-      const token = getToken();
-      if (!token) {
-        throw new Error('Token no encontrado');
-      }
-
-      const gastoData = {
-        monto: formData.importe,
-        moneda: formData.moneda,
-        descripcion: formData.descripcion,
-        categoria: formData.categoria,
-        tipo: formData.tipo,
-        estado: formData.estado || 'pendiente'
-      };
-
-      const url = isEditing && selectedGastoId
-        ? `https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos/${selectedGastoId}`
-        : 'https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos';
-
-      const method = isEditing ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
+      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${getToken()}`,
         },
-        body: JSON.stringify(gastoData),
+        body: JSON.stringify(nuevoGasto),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Error al ${isEditing ? 'actualizar' : 'crear'} el gasto`);
+        throw new Error('Error al crear el gasto');
       }
 
-      await fetchGastos();
-      handleClosePopup();
-    } catch (err) {
-      console.error('Error:', err);
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      const gastoCreado = await response.json();
+      setGastos([...gastos, gastoCreado]);
+      setIsPopupOpen(false);
+    } catch (error) {
+      console.error('Error:', error);
     }
   };
 
@@ -342,6 +342,43 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
     handleClosePopup();
   };
 
+  // Función para contar filtros activos
+  const getActiveFiltersCount = () => {
+    return Object.values(filterOptions).filter(value => value !== '').length;
+  };
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFilterOptions(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleClearFilters = () => {
+    setFilterOptions({
+      fechaInicio: '',
+      fechaFin: '',
+      estado: '',
+      categoria: '',
+      tipo: '',
+      montoMinimo: '',
+      montoMaximo: ''
+    });
+  };
+
+  const applyFilters = () => {
+    const filteredGastos = gastos.filter(gasto => {
+      if (filterOptions.fechaInicio && new Date(gasto.fecha) < new Date(filterOptions.fechaInicio)) return false;
+      if (filterOptions.fechaFin && new Date(gasto.fecha) > new Date(filterOptions.fechaFin)) return false;
+      if (filterOptions.estado && gasto.estado !== filterOptions.estado) return false;
+      if (filterOptions.categoria && gasto.categoria !== filterOptions.categoria) return false;
+      if (filterOptions.tipo && gasto.tipo !== filterOptions.tipo) return false;
+      if (filterOptions.montoMinimo && getImporte(gasto) < parseFloat(filterOptions.montoMinimo)) return false;
+      if (filterOptions.montoMaximo && getImporte(gasto) > parseFloat(filterOptions.montoMaximo)) return false;
+      return true;
+    });
+
+    setGastos(filteredGastos);
+  };
+
   // Filtrar los gastos según el término de búsqueda
   const filteredGastos = gastos.filter((gasto) => {
     console.log('Procesando gasto:', gasto); // Log para depuración
@@ -383,10 +420,35 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
           />
           <Search className={`absolute right-3 top-2.5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
         </div>
-        <Button variant="filter" onClick={handleFilter} className="px-4 py-2">
-          <Filter className="w-5 h-5 mr-2" />
-          Filtrar
-        </Button>
+        <div className="relative">
+          <Button
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            variant="filter"
+          >
+            <Filter className="w-4 h-4" />
+            {getActiveFiltersCount() > 0 && (
+              <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                {getActiveFiltersCount()}
+              </span>
+            )}
+          </Button>
+          {isFilterOpen && (
+            <div className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg ${
+              theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+            } ring-1 ring-black ring-opacity-5 z-50`}>
+              <FiltroGastosPopup
+                filterOptions={filterOptions}
+                onFilterChange={handleFilterChange}
+                onClose={() => setIsFilterOpen(false)}
+                onApplyFilters={() => {
+                  applyFilters();
+                  setIsFilterOpen(false);
+                }}
+                onClearFilters={handleClearFilters}
+              />
+            </div>
+          )}
+        </div>
         <Button variant="create" onClick={() => setIsPopupOpen(true)} className="px-4 py-2">
           <Plus className="w-5 h-5 mr-2" />
           Añadir Gasto
@@ -463,18 +525,28 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
 
       <AnimatePresence>
         {isPopupOpen && (
-          <GastoPopup
-            onClose={handleClosePopup}
-            onSubmit={handleAddOrUpdateGasto}
-            gastoInicial={gastos.find(g => g._id === selectedGastoId)}
-            isEditing={isEditing}
+          <NuevoGastoPopup
+            onClose={() => setIsPopupOpen(false)}
+            onSubmit={handleSubmit}
           />
         )}
+
+        {isEditing && selectedGasto && (
+          <EdicionDeGastos
+            gasto={selectedGasto}
+            onClose={() => {
+              setIsEditing(false);
+              setSelectedGasto(null);
+            }}
+            onSave={handleEditSave}
+          />
+        )}
+
         {isAsociacionPopupOpen && selectedGastoId && (
           <AsociarGastoPopup
+            gastoId={selectedGastoId}
             onClose={() => setIsAsociacionPopupOpen(false)}
             onSubmit={handleAsociacionSubmit}
-            gastoId={selectedGastoId}
           />
         )}
       </AnimatePresence>

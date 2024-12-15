@@ -818,7 +818,8 @@ const PlanningList: React.FC = () => {
               'Estado',
               'Completado',
               'Esqueleto',
-              'Acciones'
+              'Acciones',
+              'Esqueleto',
             ]}
             data={filteredPlannings
               .map((item) => ({
@@ -863,8 +864,73 @@ const PlanningList: React.FC = () => {
               title="Editar planificación"
             >
               <Edit className="w-5 h-5" />
-            </button>                  </div>
-                )
+            </button>
+                    <button
+                      onClick={() => {
+                        setSelectedItemId(item._id);
+                        setIsEsqueletoModalOpen(true);
+                      }}
+                      className="p-2 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
+                      title={item.esqueleto ? "Modificar Esqueleto" : "Asignar Esqueleto"}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}
+                      >
+                        <path d="M12 3v18" />
+                        <path d="M8 4.75a8 8 0 0 0 8 0" />
+                        <path d="m7 3 1.5 1.5M17 3l-1.5 1.5" />
+                        <path d="M8 8.75a8 8 0 0 0 8 0" />
+                        <path d="m7 7 1.5 1.5M17 7l-1.5 1.5" />
+                        <path d="M8 12.75a8 8 0 0 0 8 0" />
+                        <path d="m7 11 1.5 1.5M17 11l-1.5 1.5" />
+                        <path d="M8 16.75a8 8 0 0 0 8 0" />
+                        <path d="m7 15 1.5 1.5M17 15l-1.5 1.5" />
+                      </svg>
+                    </button>
+                  </div>
+                ),
+                esqueleto: (
+                  <button
+                    onClick={() => {
+                      setSelectedItemId(item._id);
+                      setIsEsqueletoModalOpen(true);
+                    }}
+                    className="p-2 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
+                    title={item.esqueleto ? "Modificar Esqueleto" : "Asignar Esqueleto"}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}
+                    >
+                      <path d="M12 3v18" />
+                      <path d="M8 4.75a8 8 0 0 0 8 0" />
+                      <path d="m7 3 1.5 1.5M17 3l-1.5 1.5" />
+                      <path d="M8 8.75a8 8 0 0 0 8 0" />
+                      <path d="m7 7 1.5 1.5M17 7l-1.5 1.5" />
+                      <path d="M8 12.75a8 8 0 0 0 8 0" />
+                      <path d="m7 11 1.5 1.5M17 11l-1.5 1.5" />
+                      <path d="M8 16.75a8 8 0 0 0 8 0" />
+                      <path d="m7 15 1.5 1.5M17 15l-1.5 1.5" />
+                    </svg>
+                  </button>
+                ),
               }))}
             variant={theme === 'dark' ? 'dark' : 'white'}
           />

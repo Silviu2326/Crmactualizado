@@ -85,6 +85,11 @@ const OtrosDocumentosWidget: React.FC = () => {
     }
   };
 
+  // Función auxiliar para truncar texto
+  const truncateText = (text: string, maxLength: number = 14) => {
+    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+  };
+
   const filteredDocumentos = useMemo(() => {
     if (!Array.isArray(documentos)) return [];
     
@@ -224,9 +229,9 @@ const OtrosDocumentosWidget: React.FC = () => {
             headers={['Nombre', 'Tipo', 'Fecha de Creación', 'Trainer', 'Notas', 'Acciones']}
             data={filteredDocumentos.map(doc => ({
               Nombre: (
-                <div className="flex items-center">
+                <div className="flex items-center" title={doc.nombre}>
                   <File className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-600'}`} />
-                  {doc.nombre}
+                  <span className="truncate max-w-[120px]">{truncateText(doc.nombre)}</span>
                 </div>
               ),
               Tipo: (

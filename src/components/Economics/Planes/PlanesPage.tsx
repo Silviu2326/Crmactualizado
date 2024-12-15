@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { motion } from 'framer-motion';
+import { Users, Clock, FileText, UserPlus } from 'react-feather';
 import MetricCard from './MetricCard';
 import ClientesServicioWidget from './ClientesServicioWidget';
 

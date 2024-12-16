@@ -120,7 +120,7 @@ const LicenciasWidget: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/licencias/${licenciaId}`, {
+      await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/licenses/${licenciaId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

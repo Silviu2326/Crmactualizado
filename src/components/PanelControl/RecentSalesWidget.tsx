@@ -20,7 +20,6 @@ interface FormattedIncome {
   'Descripción': string;
   'Importe': string;
   'Acciones': React.ReactNode;
-  _id: string; // Añadido para mantener referencia al ID original
 }
 
 const IncomeWidget: React.FC = () => {
@@ -41,7 +40,7 @@ const IncomeWidget: React.FC = () => {
       }
 
       // Mock API call
-      const response = await fetch(`https://api.ejemplo.com/ingresos/${id}`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -54,7 +53,7 @@ const IncomeWidget: React.FC = () => {
       }
 
       // Actualizar la lista de ingresos después de eliminar
-      setIngresos(prevIngresos => prevIngresos.filter(ingreso => ingreso._id !== id));
+      setIngresos(prevIngresos => prevIngresos.filter(ingreso => ingreso !== ingresos.find(i => i.Acciones.props.onClick.toString().includes(id))));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
       console.error('Error deleting income:', err);
@@ -99,7 +98,6 @@ const IncomeWidget: React.FC = () => {
               <Trash2 className="w-5 h-5" />
             </button>
           ),
-          _id: item._id
         }));
         setIngresos(formattedData);
       } catch (err) {

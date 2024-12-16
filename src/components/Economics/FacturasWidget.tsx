@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Search, Filter, Trash2 } from 'lucide-react';
+import { FileText, Search, Filter } from 'lucide-react';
 import Table from '../Common/Table';
 import Button from '../Common/Button';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -119,7 +119,7 @@ const FacturasWidget: React.FC<FacturasWidgetProps> = ({ isEditMode, onRemove })
 
   // Función para formatear la fecha
   const formatFecha = (fecha: string): string => {
-    if (!fecha) return 'Fecha no disponible';
+    if (!fecha) return 'Fecha no disponible'
 
     const date = new Date(fecha);
     const options: Intl.DateTimeFormatOptions = {
@@ -165,35 +165,6 @@ const FacturasWidget: React.FC<FacturasWidgetProps> = ({ isEditMode, onRemove })
 
       return matchesSearch && matchesEstado && matchesTipo && matchesFechaInicio && matchesFechaFin;
     });
-  };
-
-  // Función para eliminar una factura
-  const deleteFactura = async (id: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No se encontró el token de autenticación');
-      }
-
-      // Mock API call
-      const response = await fetch(`https://api.ejemplo.com/facturas/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al eliminar la factura');
-      }
-
-      // Actualizar la lista de facturas después de eliminar
-      setFacturas(prevFacturas => prevFacturas.filter(factura => factura.id !== id));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
-      console.error('Error deleting factura:', err);
-    }
   };
 
   if (loading) {
@@ -344,26 +315,13 @@ const FacturasWidget: React.FC<FacturasWidgetProps> = ({ isEditMode, onRemove })
 
       <div className="flex-grow overflow-auto custom-scrollbar">
         <Table
-          headers={['Número', 'Importe', 'Estado', 'Tipo', 'Fecha', 'Acciones']}
+          headers={['Número', 'Importe', 'Estado', 'Tipo', 'Fecha']}
           data={applyFilters(facturas).map((factura) => ({
             Número: factura.numero,
             Importe: `${factura.monto} ${factura.currency}`,
             Estado: factura.estado,
             Tipo: factura.tipo,
             Fecha: factura.fecha,
-            Acciones: (
-              <button
-                onClick={() => {
-                  if (window.confirm('¿Estás seguro de que deseas eliminar esta factura?')) {
-                    deleteFactura(factura.id);
-                  }
-                }}
-                className="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
-                title="Eliminar factura"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
-            ),
           }))}
           variant={theme === 'dark' ? 'dark' : 'white'}
         />

@@ -3,6 +3,14 @@ import axios from 'axios';
 import { X } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 
+// Define an enum for contract states
+enum ContratoEstado {
+  Activo = 'Activo',
+  Finalizado = 'Finalizado',
+  Cancelado = 'Cancelado',
+  Pendiente = 'Pendiente'
+}
+
 interface AddContratoModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -15,7 +23,7 @@ const AddContratoModal: React.FC<AddContratoModalProps> = ({ isOpen, onClose, on
     nombre: '',
     fechaInicio: '',
     fechaFin: '',
-    estado: 'Pendiente',
+    estado: ContratoEstado.Pendiente,
     cliente: '',
     notas: ''
   });
@@ -29,17 +37,25 @@ const AddContratoModal: React.FC<AddContratoModalProps> = ({ isOpen, onClose, on
         try {
           const token = localStorage.getItem('token');
           const response = await axios.get(
-            'https://fitoffice2-f70b52bef77e.herokuapp.com/api/clients',
+            'https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes',
             {
               headers: {
                 Authorization: `Bearer ${token}`
               }
             }
           );
-          setClientes(response.data.data);
+          const clientesData = response.data?.data || response.data?.clientes || response.data;
+          if (Array.isArray(clientesData)) {
+            setClientes(clientesData);
+          } else {
+            console.error('Formato de respuesta inesperado:', response.data);
+            setError('Error en el formato de datos de clientes');
+            setClientes([]); // Establecer un array vacío como fallback
+          }
         } catch (error) {
           console.error('Error al cargar clientes:', error);
           setError('Error al cargar la lista de clientes');
+          setClientes([]); // Establecer un array vacío en caso de error
         }
       };
       fetchClientes();
@@ -170,7 +186,7 @@ const AddContratoModal: React.FC<AddContratoModalProps> = ({ isOpen, onClose, on
               }`}
             >
               <option value="">Sin cliente asignado</option>
-              {clientes.map(cliente => (
+              {Array.isArray(clientes) && clientes.map(cliente => (
                 <option key={cliente._id} value={cliente._id}>
                   {cliente.nombre}
                 </option>
@@ -213,7 +229,7 @@ const AddContratoModal: React.FC<AddContratoModalProps> = ({ isOpen, onClose, on
           </div>
 
           <div>
-            <label className="block mb-1">Estado</label>
+            <label className="block mb-1">Estado del Contrato</label>
             <select
               name="estado"
               value={formData.estado}
@@ -224,10 +240,11 @@ const AddContratoModal: React.FC<AddContratoModalProps> = ({ isOpen, onClose, on
                   : 'bg-white border-gray-300'
               }`}
             >
-              <option value="Pendiente">Pendiente</option>
-              <option value="Activo">Activo</option>
-              <option value="Finalizado">Finalizado</option>
-              <option value="Cancelado">Cancelado</option>
+              {Object.values(ContratoEstado).map(estado => (
+                <option key={estado} value={estado}>
+                  {estado}
+                </option>
+              ))}
             </select>
           </div>
 

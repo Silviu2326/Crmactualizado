@@ -194,7 +194,7 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({
       }
 
       // Mock API call
-      const response = await fetch(`https://api.ejemplo.com/gastos/${id}`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

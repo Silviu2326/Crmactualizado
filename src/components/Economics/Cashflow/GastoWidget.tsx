@@ -24,6 +24,11 @@ interface Gasto {
   categoria: string;
   tipo: 'fijo' | 'variable';
   estado?: string;
+  client?: {
+    _id: string;
+    nombre: string;
+    email: string;
+  };
 }
 
 const GastoWidget: React.FC<GastoWidgetProps> = () => {
@@ -104,7 +109,7 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
       console.log('Datos recibidos del servidor:', data);
 
       // Mapear los datos recibidos a la interfaz Gasto
-      const gastosFormateados = data.map((gasto: any) => {
+      const gastosFormateados = data.data.gastos.map((gasto: any) => {
         const importeValor = getImporte(gasto);
         console.log('Procesando gasto:', gasto, 'Importe calculado:', importeValor);
         
@@ -117,7 +122,8 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
           descripcion: gasto.descripcion || '',
           categoria: gasto.categoria || 'Sin categoría',
           tipo: gasto.tipo || 'fijo',
-          estado: gasto.estado || 'pendiente'
+          estado: gasto.estado || 'pendiente',
+          client: gasto.client || null
         };
       });
 
@@ -461,63 +467,40 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
           <p className="text-red-500">{error}</p>
         ) : (
           <Table
-            headers={['Fecha', 'Categoría', 'Descripción', 'Tipo', 'Importe', 'Estado', 'Acciones']}
-            data={filteredGastos.map(gasto => {
-              const importeValor = getImporte(gasto);
-              console.log('Renderizando gasto:', gasto, 'Importe calculado:', importeValor);
-              
-              return {
-                'Fecha': new Date(gasto.fecha).toLocaleDateString(),
-                'Categoría': gasto.categoria || 'Sin categoría',
-                'Descripción': gasto.descripcion || '-',
-                'Tipo': gasto.tipo || 'fijo',
-                'Importe': formatImporte(importeValor, gasto.moneda),
-                'Estado': (gasto.estado || 'pendiente').charAt(0).toUpperCase() + 
-                         (gasto.estado || 'pendiente').slice(1),
-                'Acciones': (
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => handleAsociarGasto(gasto._id)}
-                      className={`p-1.5 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors ${
-                        theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                      }`}
-                      title="Asociar Gasto"
-                    >
-                      <Link size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleEdit(gasto)}
-                      className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                        theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
-                      }`}
-                      title="Modificar"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(gasto._id)}
-                      className={`p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors ${
-                        theme === 'dark' ? 'text-red-400' : 'text-red-600'
-                      }`}
-                      title="Eliminar"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                    {(!gasto.estado || gasto.estado !== 'pagado') && (
-                      <button
-                        onClick={() => handleConfirmPayment(gasto._id)}
-                        className={`p-1.5 rounded-full hover:bg-green-100 dark:hover:bg-green-900 transition-colors ${
-                          theme === 'dark' ? 'text-green-400' : 'text-green-600'
-                        }`}
-                        title="Confirmar pago"
-                      >
-                        <CheckCircle size={16} />
-                      </button>
-                    )}
-                  </div>
-                )
-              };
-            })}
+            headers={['Fecha', 'Descripción', 'Importe', 'Categoría', 'Tipo', 'Asociado a', 'Acciones']}
+            data={filteredGastos.map(gasto => ({
+              'Fecha': new Date(gasto.fecha).toLocaleDateString(),
+              'Descripción': gasto.descripcion || '-',
+              'Importe': formatImporte(gasto.importe, gasto.moneda),
+              'Categoría': gasto.categoria || 'Sin categoría',
+              'Tipo': gasto.tipo || 'fijo',
+              'Asociado a': gasto.client?.nombre || 'No asociado',
+              'Acciones': (
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleEdit(gasto)}
+                    className="p-1 hover:bg-gray-100 rounded-full dark:hover:bg-gray-700"
+                  >
+                    <Edit2 className="w-4 h-4 text-blue-500" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(gasto._id)}
+                    className="p-1 hover:bg-gray-100 rounded-full dark:hover:bg-gray-700"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedGastoId(gasto._id);
+                      setIsAsociacionPopupOpen(true);
+                    }}
+                    className="p-1 hover:bg-gray-100 rounded-full dark:hover:bg-gray-700"
+                  >
+                    <Link className="w-4 h-4 text-green-500" />
+                  </button>
+                </div>
+              )
+            }))}
             variant={theme === 'dark' ? 'dark' : 'white'}
           />
         )}

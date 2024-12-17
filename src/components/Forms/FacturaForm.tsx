@@ -46,7 +46,7 @@ interface TokenPayload {
 const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
   const [formData, setFormData] = useState<FormData>({
     numeroFactura: '',
-    fecha: new Date().getFullYear().toString(),
+    fecha: '',
     metodoPago: '',
     servicios: [{ codigo: '', iva: 21, cantidad: 1, precioUnitario: 0, descuento: 0 }],
     tipoFactura: '',
@@ -136,7 +136,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
     const { name, value } = e.target;
     console.log(`Campo modificado: ${name}, Nuevo valor: ${value}`);
     
-    if (name === 'numeroFactura') {
+    if (name === 'numeroFactura' || name === 'fecha') {
       // Asegurarse de que solo se ingresen números y máximo 4 dígitos
       const numeroLimpio = value.replace(/\D/g, '').slice(0, 4);
       console.log('Número de factura procesado:', numeroLimpio);
@@ -310,40 +310,44 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
       </div>
 
       {/* Sección 1: Información Básica */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <div className="flex items-center gap-2 mb-6">
-          <Receipt className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Información Básica</h3>
+      <div className="bg-white p-6 rounded-lg shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <h2 className="text-xl font-semibold text-gray-800">Información Básica</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Campos de información básica */}
+        
+        <div className="flex flex-wrap gap-6">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               Número de Factura
             </label>
-            <input
-              type="text"
-              name="numeroFactura"
-              value={formData.numeroFactura}
-              onChange={handleChange}
-              pattern="[0-9]{4}"
-              maxLength={4}
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              required
-            />
+            <div className="flex items-center space-x-2">
+              <input
+                type="text"
+                name="fecha"
+                value={formData.fecha}
+                onChange={handleChange}
+                pattern="[0-9]{4}"
+                maxLength={4}
+                placeholder="YYYY"
+                className="w-24 px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
+              <span className="text-xl font-medium text-gray-700">-</span>
+              <input
+                type="text"
+                name="numeroFactura"
+                value={formData.numeroFactura}
+                onChange={handleChange}
+                pattern="[0-9]{4}"
+                maxLength={4}
+                placeholder="0000"
+                className="w-24 px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Año
-            </label>
-            <input
-              type="text"
-              name="fecha"
-              value={formData.fecha}
-              readOnly
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-gray-100 cursor-not-allowed"
-            />
-          </div>
+
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               Método de Pago
@@ -352,16 +356,16 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
               name="metodoPago"
               value={formData.metodoPago}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-40 px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             >
-              <option value="">Seleccionar método</option>
-              <option value="transferencia">Transferencia Bancaria</option>
-              <option value="tarjeta">Tarjeta de Crédito/Débito</option>
+              <option value="">Seleccionar</option>
               <option value="efectivo">Efectivo</option>
+              <option value="tarjeta">Tarjeta</option>
+              <option value="transferencia">Transferencia</option>
             </select>
           </div>
-          {/* Campo Moneda */}
+
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               Moneda
@@ -370,23 +374,23 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
               name="currency"
               value={formData.currency}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-32 px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             >
               <option value="USD">USD</option>
               <option value="EUR">EUR</option>
-              <option value="MXN">MXN</option>
+              <option value="GBP">GBP</option>
             </select>
           </div>
         </div>
       </div>
 
       {/* Sección 2: Servicios */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <div className="flex justify-between items-center mb-6">
+      <div className="bg-white p-6 rounded-lg shadow-sm">
+        <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Servicios</h3>
+            <h2 className="text-xl font-semibold text-gray-800">Servicios</h2>
           </div>
           <button
             type="button"
@@ -400,7 +404,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
 
         <div className="space-y-4">
           {formData.servicios.map((servicio, index) => (
-            <div key={index} className="relative p-5 bg-gray-50 rounded-xl border border-gray-100">
+            <div key={index} className="relative p-5 bg-gray-50 rounded-lg border border-gray-100">
               <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
@@ -410,7 +414,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
                     type="text"
                     value={servicio.codigo}
                     onChange={(e) => handleServicioChange(index, 'codigo', e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     required
                   />
                 </div>
@@ -422,7 +426,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
                     type="number"
                     value={servicio.iva}
                     onChange={(e) => handleServicioChange(index, 'iva', Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     required
                   />
                 </div>
@@ -434,7 +438,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
                     type="number"
                     value={servicio.cantidad}
                     onChange={(e) => handleServicioChange(index, 'cantidad', Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     required
                     min="1"
                   />
@@ -447,7 +451,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
                     type="number"
                     value={servicio.precioUnitario}
                     onChange={(e) => handleServicioChange(index, 'precioUnitario', Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     required
                     min="0"
                     step="0.01"
@@ -462,7 +466,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
                       type="number"
                       value={servicio.descuento}
                       onChange={(e) => handleServicioChange(index, 'descuento', Number(e.target.value))}
-                      className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                       min="0"
                       max="100"
                     />
@@ -485,10 +489,10 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
       </div>
 
       {/* Sección 3: Datos de la Empresa */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <div className="flex items-center gap-2 mb-6">
+      <div className="bg-white p-6 rounded-lg shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
           <Building2 className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Datos de la Empresa</h3>
+          <h2 className="text-xl font-semibold text-gray-800">Datos de la Empresa</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-2">
@@ -500,7 +504,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
               name="nombreEmpresa"
               value={formData.nombreEmpresa}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               required
             />
           </div>
@@ -513,7 +517,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
               name="nifEmpresa"
               value={formData.nifEmpresa}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               required
             />
           </div>
@@ -526,7 +530,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
               name="emailEmpresa"
               value={formData.emailEmpresa}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               required
             />
           </div>
@@ -534,10 +538,10 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
       </div>
 
       {/* Sección 4: Información Adicional */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <div className="flex items-center gap-2 mb-6">
+      <div className="bg-white p-6 rounded-lg shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
           <Users className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Información Adicional</h3>
+          <h2 className="text-xl font-semibold text-gray-800">Información Adicional</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -550,7 +554,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
               name="tipoFactura"
               value={formData.tipoFactura}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               required
             >
               <option value="">Seleccionar tipo</option>
@@ -569,7 +573,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
               name="clienteId"
               value={formData.clienteId}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               required
             >
               <option value="">Seleccionar cliente</option>
@@ -589,7 +593,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
               value={formData.comentario}
               onChange={handleChange}
               rows={3}
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               placeholder="Añade cualquier nota o comentario relevante..."
             />
           </div>

@@ -239,72 +239,97 @@ const ContratosWidget: React.FC = () => {
           No hay contratos disponibles
         </div>
       ) : (
-        <Table
-          headers={['Nombre', 'Fecha de Inicio', 'Fecha de Fin', 'Estado', 'Acciones']}
-          data={filteredContratos.map(contrato => ({
-            Nombre: (
-              <div className="flex items-center" title={contrato.nombre}>
-                <FileSignature className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
-                <span className="truncate max-w-[120px]">{truncateText(contrato.nombre)}</span>
-              </div>
-            ),
-            'Fecha de Inicio': (
-              <div className="flex items-center">
-                <Calendar className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`} />
-                {formatDate(contrato.fechaInicio)}
-              </div>
-            ),
-            'Fecha de Fin': (
-              <div className="flex items-center">
-                <Calendar className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`} />
-                {formatDate(contrato.fechaFin)}
-              </div>
-            ),
-            Estado: (
-              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(contrato.estado)}`}>
-                {contrato.estado}
-              </span>
-            ),
-            Acciones: (
-              <div className="flex items-center space-x-2">
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => handleView(contrato)}
-                  className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                    theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
-                  }`}
-                  title="Ver contrato"
-                >
-                  <Eye size={16} />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => handleEdit(contrato)}
-                  className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                    theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
-                  }`}
-                  title="Modificar"
-                >
-                  <Edit2 size={16} />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => handleDelete(contrato._id)}
-                  className={`p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors ${
-                    theme === 'dark' ? 'text-red-400' : 'text-red-600'
-                  }`}
-                  title="Eliminar"
-                >
-                  <Trash2 size={16} />
-                </motion.button>
-              </div>
-            )
-          }))}
-          variant={theme === 'dark' ? 'dark' : 'white'}
-        />
+        <div className="overflow-x-auto">
+          <div className="min-w-full">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Nombre
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Fecha de Inicio
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Fecha de Fin
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredContratos.map(contrato => (
+                  <tr key={contrato._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center" title={contrato.nombre}>
+                        <FileSignature className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+                        <span className="truncate max-w-[120px]">{truncateText(contrato.nombre)}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <Calendar className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`} />
+                        {formatDate(contrato.fechaInicio)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <Calendar className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`} />
+                        {formatDate(contrato.fechaFin)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(contrato.estado)}`}>
+                        {contrato.estado}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="flex gap-2">
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleView(contrato)}
+                          className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                            theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
+                          }`}
+                          title="Ver contrato"
+                        >
+                          <Eye size={16} />
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleEdit(contrato)}
+                          className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                            theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
+                          }`}
+                          title="Modificar"
+                        >
+                          <Edit2 size={16} />
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleDelete(contrato._id)}
+                          className={`p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors ${
+                            theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                          }`}
+                          title="Eliminar"
+                        >
+                          <Trash2 size={16} />
+                        </motion.button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
       {/* Modales */}
       <AddContratoModal

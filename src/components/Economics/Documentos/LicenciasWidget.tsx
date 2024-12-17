@@ -219,65 +219,69 @@ const LicenciasWidget: React.FC = () => {
           No hay licencias disponibles
         </div>
       ) : (
-        <Table
-          headers={['Nombre', 'Fecha de Expiración', 'Estado', 'Acciones']}
-          data={filteredLicencias.map(licencia => ({
-            Nombre: (
-              <div className="flex items-center" title={licencia.nombre}>
-                <Key className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`} />
-                <span className="truncate max-w-[120px]">{truncateText(licencia.nombre)}</span>
-              </div>
-            ),
-            'Fecha de Expiración': (
-              <div className="flex items-center">
-                <Calendar className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}`} />
-                {formatDate(licencia.fechaExpiracion)}
-              </div>
-            ),
-            Estado: (
-              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                licencia.estado === 'Activa' ? 'bg-green-200 text-green-800' :
-                licencia.estado === 'En Proceso' ? 'bg-blue-200 text-blue-800' :
-                licencia.estado === 'Suspendida' ? 'bg-yellow-200 text-yellow-800' :
-                'bg-red-200 text-red-800'
-              }`}>
-                {licencia.estado}
-              </span>
-            ),
-            Acciones: (
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => handleView(licencia)}
-                  className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                    theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
-                  }`}
-                  title="Ver licencia"
-                >
-                  <Eye size={16} />
-                </button>
-                <button
-                  onClick={() => handleEdit(licencia)}
-                  className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                    theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
-                  }`}
-                  title="Modificar"
-                >
-                  <Edit2 size={16} />
-                </button>
-                <button
-                  onClick={() => handleDelete(licencia._id)}
-                  className={`p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors ${
-                    theme === 'dark' ? 'text-red-400' : 'text-red-600'
-                  }`}
-                  title="Eliminar"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            )
-          }))}
-          variant={theme === 'dark' ? 'dark' : 'white'}
-        />
+        <div className="overflow-x-auto">
+          <div className="min-w-full">
+            <Table
+              headers={['Nombre', 'Fecha de Expiración', 'Estado', 'Acciones']}
+              data={filteredLicencias.map(licencia => ({
+                Nombre: (
+                  <div className="flex items-center" title={licencia.nombre}>
+                    <Key className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`} />
+                    <span className="truncate max-w-[120px]">{truncateText(licencia.nombre)}</span>
+                  </div>
+                ),
+                'Fecha de Expiración': (
+                  <div className="flex items-center">
+                    <Calendar className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}`} />
+                    {formatDate(licencia.fechaExpiracion)}
+                  </div>
+                ),
+                Estado: (
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                    licencia.estado === 'Activa' ? 'bg-green-200 text-green-800' :
+                    licencia.estado === 'En Proceso' ? 'bg-blue-200 text-blue-800' :
+                    licencia.estado === 'Suspendida' ? 'bg-yellow-200 text-yellow-800' :
+                    'bg-red-200 text-red-800'
+                  }`}>
+                    {licencia.estado}
+                  </span>
+                ),
+                Acciones: (
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleView(licencia)}
+                      className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                        theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
+                      }`}
+                      title="Ver licencia"
+                    >
+                      <Eye size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleEdit(licencia)}
+                      className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                        theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
+                      }`}
+                      title="Modificar"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(licencia._id)}
+                      className={`p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors ${
+                        theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                      }`}
+                      title="Eliminar"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                )
+              }))}
+              variant={theme === 'dark' ? 'dark' : 'white'}
+            />
+          </div>
+        </div>
       )}
       <AddLicenciaModal
         isOpen={isModalOpen}

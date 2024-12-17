@@ -176,60 +176,133 @@ const OtrosDocumentosWidget: React.FC = () => {
 
   return (
     <>
-      <div className={`p-4 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-lg shadow-md`}>
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center space-x-2">
-            <File className={theme === 'dark' ? 'text-orange-400' : 'text-orange-600'} />
+      <div className={`bg-white rounded-lg p-6 shadow-sm ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
+          <div className="flex items-center gap-2">
+            <File className={`w-5 h-5 mr-2 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-600'}`} />
             <h2 className="text-xl font-semibold">Otros Documentos</h2>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <div className="flex flex-wrap gap-2 items-center">
+            <div className="relative flex-1 sm:flex-none min-w-[200px]">
+              <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Buscar documentos..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={`pl-10 pr-4 py-2 rounded-lg border ${
-                  theme === 'dark'
-                    ? 'bg-gray-700 border-gray-600 text-white'
-                    : 'bg-white border-gray-300'
-                }`}
+                className={`w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`}
               />
             </div>
-            <div className="relative">
-              <Button variant="filter" onClick={() => setIsFilterOpen(!isFilterOpen)}>
-                <Filter className="w-4 h-4" />
-              </Button>
-              {isFilterOpen && (
-                <div className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg ${
-                  theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-                } ring-1 ring-black ring-opacity-5 z-50`}>
-                  <div className="py-1">
-                    {['todos', ...tiposUnicos].map((tipo) => (
-                      <button
-                        key={tipo}
-                        onClick={() => {
-                          setSelectedFilter(tipo);
-                          setIsFilterOpen(false);
-                        }}
-                        className={`block w-full text-left px-4 py-2 text-sm ${
-                          theme === 'dark'
-                            ? 'text-gray-200 hover:bg-gray-700'
-                            : 'text-gray-700 hover:bg-gray-100'
-                        } ${selectedFilter === tipo ? 'bg-blue-100 text-blue-600' : ''}`}
-                      >
-                        {tipo === 'todos' ? 'Todos' : tipo}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            <Button variant="create" onClick={() => setIsAddModalOpen(true)}>
-              <Plus className="w-4 h-4 mr-1" />
-              Añadir
+            <Button variant="filter" onClick={() => setIsFilterOpen(!isFilterOpen)}>
+              <Filter className={`w-5 h-5 ${isFilterOpen ? 'text-green-600' : 'text-gray-600'}`} />
             </Button>
+            <Button variant="create" onClick={() => setIsAddModalOpen(true)}>
+              <Plus className="w-5 h-5 mr-1" />
+              <span className="whitespace-nowrap">Añadir</span>
+            </Button>
+          </div>
+        </div>
+
+        {isFilterOpen && (
+          <div className={`mb-4 p-4 bg-gray-50 rounded-lg ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {['todos', ...tiposUnicos].map((tipo) => (
+                <button
+                  key={tipo}
+                  onClick={() => {
+                    setSelectedFilter(tipo);
+                    setIsFilterOpen(false);
+                  }}
+                  className={`block w-full text-left px-4 py-2 text-sm ${theme === 'dark' ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'} ${selectedFilter === tipo ? 'bg-blue-100 text-blue-600' : ''}`}
+                >
+                  {tipo === 'todos' ? 'Todos' : tipo}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="overflow-x-auto">
+          <div className="min-w-full">
+            <Table
+              headers={['Nombre', 'Tipo', 'Fecha de Creación', 'Trainer', 'Notas', 'Acciones']}
+              data={filteredDocumentos.map(doc => ({
+                Nombre: (
+                  <div className="flex items-center" title={doc.nombre}>
+                    <File className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-600'}`} />
+                    <span className="truncate max-w-[120px]">{truncateText(doc.nombre)}</span>
+                  </div>
+                ),
+                Tipo: (
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                    doc.tipo === 'Legal' ? 'bg-blue-200 text-blue-800' :
+                    doc.tipo === 'RRHH' ? 'bg-green-200 text-green-800' :
+                    doc.tipo === 'Procedimiento' ? 'bg-purple-200 text-purple-800' :
+                    'bg-yellow-200 text-yellow-800'
+                  }`}>
+                    {doc.tipo}
+                  </span>
+                ),
+                'Fecha de Creación': (
+                  <div className="flex items-center">
+                    <Calendar className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}`} />
+                    {formatDate(doc.fechaCreacion)}
+                  </div>
+                ),
+                Trainer: doc.trainer ? (
+                  <div className="text-sm">
+                    {doc.trainer.nombre}
+                  </div>
+                ) : (
+                  <span className="text-gray-400">-</span>
+                ),
+                Notas: doc.notas ? (
+                  <div className="max-w-xs truncate">
+                    {doc.notas}
+                  </div>
+                ) : (
+                  <span className="text-gray-400">-</span>
+                ),
+                Acciones: (
+                  <div className="flex items-center space-x-2">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => handleView(doc)}
+                      className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                        theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
+                      }`}
+                      title="Ver documento"
+                    >
+                      <Eye size={16} />
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => handleEdit(doc)}
+                      className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                        theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
+                      }`}
+                      title="Modificar"
+                    >
+                      <Edit2 size={16} />
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => handleDelete(doc._id)}
+                      className={`p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors ${
+                        theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                      }`}
+                      title="Eliminar"
+                    >
+                      <Trash2 size={16} />
+                    </motion.button>
+                  </div>
+                )
+              }))}
+              variant={theme === 'dark' ? 'dark' : 'white'}
+            />
           </div>
         </div>
 
@@ -248,87 +321,7 @@ const OtrosDocumentosWidget: React.FC = () => {
           }`}>
             No se encontraron documentos
           </div>
-        ) : (
-          <Table
-            headers={['Nombre', 'Tipo', 'Fecha de Creación', 'Trainer', 'Notas', 'Acciones']}
-            data={filteredDocumentos.map(doc => ({
-              Nombre: (
-                <div className="flex items-center" title={doc.nombre}>
-                  <File className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-orange-400' : 'text-orange-600'}`} />
-                  <span className="truncate max-w-[120px]">{truncateText(doc.nombre)}</span>
-                </div>
-              ),
-              Tipo: (
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                  doc.tipo === 'Legal' ? 'bg-blue-200 text-blue-800' :
-                  doc.tipo === 'RRHH' ? 'bg-green-200 text-green-800' :
-                  doc.tipo === 'Procedimiento' ? 'bg-purple-200 text-purple-800' :
-                  'bg-yellow-200 text-yellow-800'
-                }`}>
-                  {doc.tipo}
-                </span>
-              ),
-              'Fecha de Creación': (
-                <div className="flex items-center">
-                  <Calendar className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}`} />
-                  {formatDate(doc.fechaCreacion)}
-                </div>
-              ),
-              Trainer: doc.trainer ? (
-                <div className="text-sm">
-                  {doc.trainer.nombre}
-                </div>
-              ) : (
-                <span className="text-gray-400">-</span>
-              ),
-              Notas: doc.notas ? (
-                <div className="max-w-xs truncate">
-                  {doc.notas}
-                </div>
-              ) : (
-                <span className="text-gray-400">-</span>
-              ),
-              Acciones: (
-                <div className="flex items-center space-x-2">
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => handleView(doc)}
-                    className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                      theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
-                    }`}
-                    title="Ver documento"
-                  >
-                    <Eye size={16} />
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => handleEdit(doc)}
-                    className={`p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                      theme === 'dark' ? 'text-gray-200' : 'text-gray-600'
-                    }`}
-                    title="Modificar"
-                  >
-                    <Edit2 size={16} />
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => handleDelete(doc._id)}
-                    className={`p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors ${
-                      theme === 'dark' ? 'text-red-400' : 'text-red-600'
-                    }`}
-                    title="Eliminar"
-                  >
-                    <Trash2 size={16} />
-                  </motion.button>
-                </div>
-              )
-            }))}
-            variant={theme === 'dark' ? 'dark' : 'white'}
-          />
-        )}
+        ) : null}
       </div>
 
       <AddDocumentoModal
@@ -336,6 +329,7 @@ const OtrosDocumentosWidget: React.FC = () => {
         onClose={() => setIsAddModalOpen(false)}
         onDocumentoAdded={fetchDocumentos}
       />
+      
       {selectedDocumento && (
         <EditDocumentoModal
           isOpen={isEditModalOpen}

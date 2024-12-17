@@ -34,9 +34,12 @@ interface Ingreso {
 interface Gasto {
   _id: string;
   entrenador: string;
-  monto: number;
+  importe: number;
+  moneda: string;
   fecha: string;
   descripcion: string;
+  categoria: string;
+  tipo: string;
 }
 
 const GraficoCashflow: React.FC = () => {
@@ -90,7 +93,8 @@ const GraficoCashflow: React.FC = () => {
         }
 
         const ingresosData: Ingreso[] = await ingresosResponse.json();
-        const gastosData: Gasto[] = await gastosResponse.json();
+        const gastosJson = await gastosResponse.json();
+        const gastosData = gastosJson.data.gastos; // Accedemos a los gastos dentro de data.gastos
 
         console.log('Datos de ingresos recibidos:', ingresosData);
         console.log('Datos de gastos recibidos:', gastosData);
@@ -144,7 +148,7 @@ const GraficoCashflow: React.FC = () => {
         const currentData = monthlyData.get(monthKey) || { ingresos: 0, gastos: 0 };
         monthlyData.set(monthKey, {
           ...currentData,
-          gastos: currentData.gastos + gasto.monto
+          gastos: currentData.gastos + gasto.importe
         });
       }
     });

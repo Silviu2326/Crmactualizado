@@ -43,6 +43,8 @@ const OtrosDocumentosWidget: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedDocumento, setSelectedDocumento] = useState<OtroDocumento | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState<string>('todos');
   const { theme } = useTheme();
 
   const fetchDocumentos = async () => {
@@ -100,11 +102,11 @@ const OtrosDocumentosWidget: React.FC = () => {
         doc.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (doc.notas?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
       
-      const matchesTipo = !tipoFilter || doc.tipo === tipoFilter;
+      const matchesTipo = selectedFilter === 'todos' || doc.tipo === selectedFilter;
       
       return matchesSearch && matchesTipo;
     });
-  }, [documentos, searchTerm, tipoFilter]);
+  }, [documentos, searchTerm, selectedFilter]);
 
   const tiposUnicos = useMemo(() => {
     if (!Array.isArray(documentos)) return [];
@@ -195,17 +197,39 @@ const OtrosDocumentosWidget: React.FC = () => {
                 }`}
               />
             </div>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleAddDocumento}
-              className={`inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                theme === 'dark' ? 'focus:ring-offset-gray-800' : ''
-              }`}
-            >
-              <Plus size={20} className="mr-2" />
-              <span>Nuevo Documento</span>
-            </motion.button>
+            <div className="relative">
+              <Button variant="filter" onClick={() => setIsFilterOpen(!isFilterOpen)}>
+                <Filter className="w-4 h-4" />
+              </Button>
+              {isFilterOpen && (
+                <div className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg ${
+                  theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+                } ring-1 ring-black ring-opacity-5 z-50`}>
+                  <div className="py-1">
+                    {['todos', ...tiposUnicos].map((tipo) => (
+                      <button
+                        key={tipo}
+                        onClick={() => {
+                          setSelectedFilter(tipo);
+                          setIsFilterOpen(false);
+                        }}
+                        className={`block w-full text-left px-4 py-2 text-sm ${
+                          theme === 'dark'
+                            ? 'text-gray-200 hover:bg-gray-700'
+                            : 'text-gray-700 hover:bg-gray-100'
+                        } ${selectedFilter === tipo ? 'bg-blue-100 text-blue-600' : ''}`}
+                      >
+                        {tipo === 'todos' ? 'Todos' : tipo}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <Button variant="create" onClick={() => setIsAddModalOpen(true)}>
+              <Plus className="w-4 h-4 mr-1" />
+              Añadir
+            </Button>
           </div>
         </div>
 

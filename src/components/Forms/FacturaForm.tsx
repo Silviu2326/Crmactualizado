@@ -36,10 +36,17 @@ interface Cliente {
   // otros campos si los necesitas
 }
 
+interface TokenPayload {
+  id: string;
+  rol: string;
+  iat: number;
+  exp: number;
+}
+
 const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
   const [formData, setFormData] = useState<FormData>({
     numeroFactura: '',
-    fecha: '',
+    fecha: new Date().getFullYear().toString(),
     metodoPago: '',
     servicios: [{ codigo: '', iva: 21, cantidad: 1, precioUnitario: 0, descuento: 0 }],
     tipoFactura: '',
@@ -53,6 +60,51 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
+
+  useEffect(() => {
+    const fetchLastInvoiceNumber = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/invoice/last-number', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error('Error al obtener el último número de factura');
+        }
+
+        const data = await response.json();
+        const lastNumber = data.lastNumber || '0000';
+        const currentYear = new Date().getFullYear().toString();
+        const numberPart = lastNumber.slice(-4);
+        const yearPart = lastNumber.slice(0, 4);
+        
+        let nextNumber;
+        if (yearPart === currentYear) {
+          nextNumber = (parseInt(numberPart) + 1).toString().padStart(4, '0');
+        } else {
+          nextNumber = '0001';
+        }
+
+        setFormData(prev => ({
+          ...prev,
+          numeroFactura: nextNumber,
+        }));
+      } catch (error) {
+        console.error('Error:', error);
+        // Si hay un error, usar el número por defecto
+        setFormData(prev => ({
+          ...prev,
+          numeroFactura: '0001',
+        }));
+      }
+    };
+
+    fetchLastInvoiceNumber();
+  }, []);
 
   useEffect(() => {
     const fetchClientes = async () => {
@@ -80,12 +132,27 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
     fetchClientes();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    console.log(`Campo modificado: ${name}, Nuevo valor: ${value}`);
+    
+    if (name === 'numeroFactura') {
+      // Asegurarse de que solo se ingresen números y máximo 4 dígitos
+      const numeroLimpio = value.replace(/\D/g, '').slice(0, 4);
+      console.log('Número de factura procesado:', numeroLimpio);
+      
+      setFormData(prevData => ({
+        ...prevData,
+        [name]: numeroLimpio
+      }));
+    } else {
+      setFormData(prevData => ({
+        ...prevData,
+        [name]: value
+      }));
+    }
+    
+    console.log('Nuevo estado del formulario:', formData);
   };
 
   const handleServicioChange = (index: number, field: keyof Servicio, value: string | number) => {
@@ -125,83 +192,75 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-      alert('No se encontró el token de autenticación.');
-      return;
-    }
-
-    // Decodificar el token para obtener el trainerId
-    interface TokenPayload {
-      id: string;
-      // otros campos que puedas tener en el token
-    }
-
-    const decodedToken = jwt_decode<TokenPayload>(token);
-    const trainerId = decodedToken.id; // Ajusta según el campo en tu token
-
-    if (!trainerId) {
-      alert('No se pudo obtener el ID del entrenador del token.');
-      return;
-    }
-
+    
     try {
-      const formDataToSend = new FormData();
+      const token = localStorage.getItem('token');
+      console.log('Token:', token);
+      
+      if (!token) {
+        throw new Error('No se encontró el token');
+      }
 
-      formDataToSend.append('numeroFactura', formData.numeroFactura);
-      formDataToSend.append('fecha', formData.fecha);
-      formDataToSend.append('metodoPago', formData.metodoPago);
-      formDataToSend.append('tipoFactura', formData.tipoFactura);
-      formDataToSend.append('nombreEmpresa', formData.nombreEmpresa);
-      formDataToSend.append('nifEmpresa', formData.nifEmpresa);
-      formDataToSend.append('emailEmpresa', formData.emailEmpresa);
-      formDataToSend.append('comentario', formData.comentario);
-      formDataToSend.append('clienteId', formData.clienteId);
-      formDataToSend.append('currency', formData.currency);
-      formDataToSend.append('trainerId', trainerId);
+      // Decodificar el token para obtener el trainerId
+      const decodedToken = jwt_decode<TokenPayload>(token);
+      const trainerId = decodedToken.id;
+      console.log('TrainerId decodificado del token:', trainerId);
+      
+      console.log('Form Data antes de procesar:', formData);
 
-      // Agregar servicios como JSON
-      formDataToSend.append('servicios', JSON.stringify(formData.servicios));
+      // Combinar el año y el número de factura
+      const numeroFacturaCompleto = `${formData.fecha}${formData.numeroFactura}`;
+      console.log('Número de factura generado:', numeroFacturaCompleto);
+      
+      const formDataToSend = {
+        ...formData,
+        numeroFactura: numeroFacturaCompleto,
+        trainerId: trainerId,
+        servicios: JSON.stringify(formData.servicios)
+      };
 
-      // Agregar archivos
-      selectedFiles.forEach((file) => {
-        formDataToSend.append('documentosAdicionales', file);
-      });
+      console.log('Datos que se enviarán al servidor:', formDataToSend);
+      console.log('URL de la API:', 'https://fitoffice2-f70b52bef77e.herokuapp.com/api/invoice');
 
       const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/invoice', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
-        body: formDataToSend,
+        body: JSON.stringify(formDataToSend)
       });
 
-      const data = await response.json();
-
+      console.log('Respuesta del servidor - status:', response.status);
+      
       if (!response.ok) {
-        console.error('Error al crear la factura:', data.error);
-        alert('Error al crear la factura: ' + data.message);
-      } else {
-        console.log('Factura creada:', data);
-        alert('Factura creada exitosamente');
-        setFormData({
-          numeroFactura: '',
-          fecha: '',
-          metodoPago: '',
-          servicios: [{ codigo: '', iva: 21, cantidad: 1, precioUnitario: 0, descuento: 0 }],
-          tipoFactura: '',
-          nombreEmpresa: '',
-          nifEmpresa: '',
-          emailEmpresa: '',
-          comentario: '',
-          clienteId: '',
-          currency: 'USD',
-        });
-        setSelectedFiles([]);
-        onSubmit(data);
+        const errorData = await response.json();
+        console.error('Error del servidor:', errorData);
+        throw new Error('Error al crear la factura');
       }
+
+      const data = await response.json();
+      console.log('Respuesta exitosa del servidor:', data);
+      alert('Factura creada exitosamente');
+      
+      // Mostrar el estado final del formulario antes de reiniciarlo
+      console.log('Estado del formulario antes de reiniciar:', formData);
+      
+      setFormData({
+        numeroFactura: '0001',
+        fecha: new Date().getFullYear().toString(),
+        metodoPago: '',
+        servicios: [{ codigo: '', iva: 21, cantidad: 1, precioUnitario: 0, descuento: 0 }],
+        tipoFactura: '',
+        nombreEmpresa: '',
+        nifEmpresa: '',
+        emailEmpresa: '',
+        comentario: '',
+        clienteId: '',
+        currency: 'USD',
+      });
+      setSelectedFiles([]);
+      onSubmit(data);
     } catch (error) {
       console.error('Error al crear la factura:', error);
       alert('Error al crear la factura');
@@ -211,14 +270,14 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
   // Función para generar una factura de prueba
   const generarFacturaPrueba = () => {
     // Obtener la fecha actual en formato ISO
-    const fechaActual = new Date().toISOString().split('T')[0];
+    const fechaActual = new Date().getFullYear().toString();
 
     // Seleccionar un cliente aleatorio
     const clienteSeleccionado = clientes.length > 0 ? clientes[0]._id : '';
 
     // Datos de prueba
     const datosPrueba: FormData = {
-      numeroFactura: `INV-${Date.now()}`,
+      numeroFactura: '0001',  // Solo el número, se combinará con el año al enviar
       fecha: fechaActual,
       metodoPago: 'tarjeta',
       servicios: [
@@ -267,21 +326,22 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
               name="numeroFactura"
               value={formData.numeroFactura}
               onChange={handleChange}
+              pattern="[0-9]{4}"
+              maxLength={4}
               className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               required
             />
           </div>
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Fecha
+              Año
             </label>
             <input
-              type="date"
+              type="text"
               name="fecha"
               value={formData.fecha}
-              onChange={handleChange}
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              required
+              readOnly
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-gray-100 cursor-not-allowed"
             />
           </div>
           <div className="space-y-2">

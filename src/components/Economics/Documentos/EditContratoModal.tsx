@@ -138,9 +138,9 @@ const EditContratoModal: React.FC<EditContratoModalProps> = ({
               required
             >
               <option value="">Seleccionar estado</option>
-              <option value="activo">Activo</option>
-              <option value="expirado">Expirado</option>
-              <option value="pendiente">Pendiente</option>
+              <option value="Activo">Activo</option>
+              <option value="Expirado">Expirado</option>
+              <option value="Pendiente">Pendiente</option>
             </select>
           </div>
 

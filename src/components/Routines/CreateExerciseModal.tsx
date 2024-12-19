@@ -134,13 +134,13 @@ const CreateExerciseModal: React.FC<CreateExerciseModalProps> = ({
       }
 
       if (isEditing && initialData?._id) {
-        await axios.put(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/exercises/${initialData._id}`, {
+        await axios.put(`http://localhost:3000/api/exercises/${initialData._id}`, {
           ...formData,
           grupoMuscular: formData.gruposMusculares,
           equipo: formData.equipamiento
         });
       } else {
-        await axios.post('https://fitoffice2-f70b52bef77e.herokuapp.com/api/exercises', {
+        await axios.post('http://localhost:3000/api/exercises', {
           ...formData,
           grupoMuscular: formData.gruposMusculares,
           equipo: formData.equipamiento

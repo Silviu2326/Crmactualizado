@@ -39,7 +39,7 @@ const EditDocumentoModal: React.FC<EditDocumentoModalProps> = ({
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `https://fitoffice2-f70b52bef77e.herokuapp.com/api/otros-documentos/${documento?._id}`,
+        `http://localhost:3000/api/otros-documentos/${documento?._id}`,
         {
           nombre,
           tipo,

@@ -30,7 +30,7 @@ const AsociarPlanClientePopup: React.FC<Props> = ({ isOpen, onClose, paymentPlan
   const fetchClientes = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes');
+      const response = await axios.get('http://localhost:3000/api/clientes');
       setClientes(response.data);
     } catch (error) {
       console.error('Error al obtener clientes:', error);
@@ -49,7 +49,7 @@ const AsociarPlanClientePopup: React.FC<Props> = ({ isOpen, onClose, paymentPlan
           throw new Error('No se encontró el token de autenticación');
         }
 
-        const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/paymentplans/${paymentPlanId}/associate`, {
+        const response = await fetch(`http://localhost:3000/api/servicios/paymentplans/${paymentPlanId}/associate`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

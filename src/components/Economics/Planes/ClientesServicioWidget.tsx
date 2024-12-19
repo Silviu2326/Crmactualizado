@@ -37,18 +37,30 @@ interface PlanDePago {
   _id: string;
   nombre: string;
   precio: number;
-  duracion: string;
-  descripcion: string;
-  ingresosTotales: number;
+  moneda: string;
+  frecuencia: string;
+  detalles: string;
+  stripeProductId: string;
+  stripePriceId: string;
+  servicio: Servicio;
   clientes: Cliente[];
+  fechaCreacion: string;
 }
 
 interface Servicio {
   _id: string;
   nombre: string;
   tipo: string;
-  planDePago: PlanDePago[];
   descripcion: string;
+  entrenador: string;
+  planDePago: string | string[];
+  clientes: Cliente[];
+  serviciosAdicionales: string[];
+  sesiones: any[];
+  ingresos: any[];
+  planificaciones: any[];
+  dietas: any[];
+  fechaCreacion: string;
 }
 
 const ClientesServicioWidget: React.FC = () => {
@@ -57,56 +69,77 @@ const ClientesServicioWidget: React.FC = () => {
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [planesDePago, setPlanesDePago] = useState<{ [key: string]: PlanDePago }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { theme } = useTheme();
 
-  const fetchServicios = async () => {
+  const fetchPlanDePago = async (planId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services', {
+      const response = await axios.get(`http://localhost:3000/api/servicios/paymentplans/${planId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      return response.data;
+    } catch (err) {
+      console.error(`Error fetching plan de pago ${planId}:`, err);
+      return null;
+    }
+  };
+
+  const fetchServicios = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:3000/api/servicios/services', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       
-      console.log('Datos recibidos de la API:', response.data);
+      const serviciosData = response.data;
+      console.log('Servicios recibidos:', serviciosData);
 
-      // Transformar los datos para mantener la estructura existente
-      const serviciosTransformados = response.data.map((servicio: any) => {
-        console.log('Procesando servicio:', servicio);
-        console.log('planDePago:', servicio.planDePago);
+      // Asegurarse de que serviciosData es un array
+      if (!Array.isArray(serviciosData)) {
+        console.error('serviciosData no es un array:', serviciosData);
+        throw new Error('Formato de datos inválido');
+      }
 
-        // Si planDePago no existe o no es un array, crear un array vacío
-        let planesDePago = [];
-        
-        // Verificar si planDePago existe y es un objeto (no un array)
-        if (servicio.planDePago && typeof servicio.planDePago === 'object' && !Array.isArray(servicio.planDePago)) {
-          // Si es un objeto, convertirlo en un array con ese único objeto
-          planesDePago = [servicio.planDePago];
-        } else if (Array.isArray(servicio.planDePago)) {
-          // Si ya es un array, usarlo directamente
-          planesDePago = servicio.planDePago;
+      setServicios(serviciosData);
+
+      // Recolectar todos los IDs de planes de pago
+      const planesDePagoIds = serviciosData.reduce((ids: string[], servicio) => {
+        if (servicio.planDePago) {
+          // Si planDePago es una cadena, convertirla en array
+          const planesArray = typeof servicio.planDePago === 'string' 
+            ? [servicio.planDePago]
+            : Array.isArray(servicio.planDePago)
+              ? servicio.planDePago
+              : [];
+          
+          return [...ids, ...planesArray];
         }
-        
-        return {
-          _id: servicio._id || '',
-          nombre: servicio.nombre || '',
-          tipo: (servicio.tipo || '').toLowerCase(),
-          planDePago: planesDePago.map((plan: any) => ({
-            _id: plan._id || '',
-            nombre: plan.nombre || '',
-            precio: plan.precio || 0,
-            duracion: plan.duracion || '',
-            descripcion: plan.descripcion || '',
-            ingresosTotales: (plan.precio || 0) * ((plan.clientes && Array.isArray(plan.clientes)) ? plan.clientes.length : 0),
-            clientes: (plan.clientes && Array.isArray(plan.clientes)) ? plan.clientes : []
-          }))
-        };
-      });
+        return ids;
+      }, []);
+
+      console.log('IDs de planes de pago a buscar:', planesDePagoIds);
+
+      // Fetch planes de pago
+      const planesPromises = planesDePagoIds.map(planId => fetchPlanDePago(planId));
+      const planesResults = await Promise.all(planesPromises);
       
-      console.log('Servicios transformados:', serviciosTransformados);
-      setServicios(serviciosTransformados);
+      const planesMap: { [key: string]: PlanDePago } = {};
+      planesResults.forEach(plan => {
+        if (plan && plan._id) {
+          planesMap[plan._id] = plan;
+        }
+      });
+
+      console.log('Planes de pago obtenidos:', planesMap);
+      setPlanesDePago(planesMap);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching servicios:', err);
@@ -328,184 +361,159 @@ const ClientesServicioWidget: React.FC = () => {
         ) : (
           filteredServices.map((servicio) => (
             <motion.div
-              key={servicio._id}
+              key={`servicio-${servicio._id}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6"
             >
-              <h4
-                className={`font-bold text-2xl ${
-                  theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
-                }`}
-              >
+              <h4 className={`font-bold text-2xl ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>
                 {servicio.nombre}
               </h4>
 
               <div className="grid gap-8">
-                {servicio.planDePago.map((plan) => {
-                  const clientesActivos = plan.clientes?.filter(cliente => cliente.estado === 'Activo').length || 0;
-                  return (
-                    <motion.div
-                      key={plan._id}
-                      whileHover={{ y: -5 }}
-                      className={`rounded-3xl border ${
-                        theme === 'dark'
-                          ? 'border-gray-700 bg-gradient-to-br from-gray-800 to-gray-700'
-                          : 'border-gray-200 bg-gradient-to-br from-white to-gray-50'
-                      } shadow-2xl overflow-hidden`}
-                    >
-                      <div className="p-8">
-                        <div className="flex justify-between items-start mb-8">
-                          <div>
-                            <h5 className="font-bold text-2xl mb-3">{plan.nombre || `Plan ${plan.duracion}`}</h5>
-                            <p
-                              className={`text-base ${
-                                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                              }`}
-                            >
-                              {plan.descripcion}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p
-                              className={`font-bold text-3xl ${
+                {servicio.planDePago ? (
+                  // Convertir planDePago a array si es necesario
+                  (typeof servicio.planDePago === 'string' 
+                    ? [servicio.planDePago]
+                    : Array.isArray(servicio.planDePago)
+                      ? servicio.planDePago
+                      : []
+                  ).map((planId) => {
+                    const planDePago = planesDePago[planId];
+                    if (!planDePago) return null;
+
+                    const clientesActivos = planDePago.clientes?.filter(cliente => cliente.estado === 'Activo').length || 0;
+
+                    return (
+                      <motion.div
+                        key={`plan-${planId}`}
+                        whileHover={{ y: -5 }}
+                        className={`rounded-3xl border ${
+                          theme === 'dark'
+                            ? 'bg-gray-900 border-gray-700'
+                            : 'bg-white border-gray-200'
+                        }`}
+                      >
+                        <div className="p-8">
+                          <div className="flex justify-between items-start mb-8">
+                            <div>
+                              <h5 className="font-bold text-2xl mb-3">{planDePago.nombre}</h5>
+                              <p className={`text-base ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                                {planDePago.detalles}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className={`font-bold text-3xl ${
                                 theme === 'dark'
                                   ? 'bg-gradient-to-r from-violet-400 via-purple-400 to-fuchsia-400'
                                   : 'bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600'
-                              } bg-clip-text text-transparent`}
-                            >
-                              ${plan.precio}
-                            </p>
-                            <p
-                              className={`text-sm ${
-                                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                              }`}
-                            >
-                              por {plan.duracion || 'mes'}
-                            </p>
+                              } bg-clip-text text-transparent`}>
+                                ${planDePago.precio}
+                              </p>
+                              <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                                por {planDePago.frecuencia}
+                              </p>
+                            </div>
                           </div>
-                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                          <FinancialMetric
-                            label="Ingresos Totales"
-                            value={`$${plan.ingresosTotales}`}
-                            icon={
-                              <DollarSign
-                                className={`w-7 h-7 ${
-                                  theme === 'dark'
-                                    ? 'text-violet-400'
-                                    : 'text-violet-500'
-                                }`}
-                              />
-                            }
-                            trend="+12%"
-                          />
-                          <FinancialMetric
-                            label="Clientes Activos"
-                            value={clientesActivos}
-                            icon={
-                              <Users
-                                className={`w-7 h-7 ${
-                                  theme === 'dark'
-                                    ? 'text-purple-400'
-                                    : 'text-purple-500'
-                                }`}
-                              />
-                            }
-                          />
-                        </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <FinancialMetric
+                              label="Ingresos Totales"
+                              value={`$${planDePago.precio * clientesActivos}`}
+                              icon={<DollarSign className={`w-7 h-7 ${theme === 'dark' ? 'text-violet-400' : 'text-violet-500'}`} />}
+                              trend="+12%"
+                            />
+                            <FinancialMetric
+                              label="Clientes Activos"
+                              value={clientesActivos}
+                              icon={<Users className={`w-7 h-7 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-500'}`} />}
+                            />
+                          </div>
 
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() =>
-                            setExpandedPlan(
-                              expandedPlan === plan._id ? null : plan._id
-                            )
-                          }
-                          className={`w-full flex items-center justify-center gap-2 py-4 rounded-xl transition-all duration-300 ${
-                            theme === 'dark'
-                              ? 'bg-gray-800 hover:bg-gray-700'
-                              : 'bg-white hover:bg-gray-50'
-                          } shadow-lg border ${
-                            theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-                          }`}
-                        >
-                          {expandedPlan === plan._id ? (
-                            <>
-                              <ChevronUp className="w-5 h-5" />
-                              <span>Ocultar Clientes</span>
-                            </>
-                          ) : (
-                            <>
-                              <ChevronDown className="w-5 h-5" />
-                              <span>Ver Clientes ({plan.clientes?.length || 0})</span>
-                            </>
-                          )}
-                        </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setExpandedPlan(expandedPlan === planId ? null : planId)}
+                            className={`w-full flex items-center justify-center gap-2 py-4 rounded-xl transition-all duration-300 ${
+                              theme === 'dark' ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-50'
+                            } shadow-lg border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}
+                          >
+                            {expandedPlan === planId ? (
+                              <>
+                                <ChevronUp className="w-5 h-5" />
+                                <span>Ocultar Clientes</span>
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown className="w-5 h-5" />
+                                <span>Ver Clientes ({planDePago.clientes?.length || 0})</span>
+                              </>
+                            )}
+                          </motion.button>
 
-                        <AnimatePresence>
-                          {expandedPlan === plan._id && plan.clientes && plan.clientes.length > 0 && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.3 }}
-                              className="overflow-hidden"
-                            >
-                              <div
-                                className={`mt-8 border-t ${
-                                  theme === 'dark'
-                                    ? 'border-gray-700'
-                                    : 'border-gray-200'
-                                }`}
+                          <AnimatePresence>
+                            {expandedPlan === planId && planDePago.clientes && planDePago.clientes.length > 0 && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="overflow-hidden"
                               >
-                                <div className="pt-8">
-                                  <Table
-                                    headers={[
-                                      'Cliente',
-                                      'Email',
-                                      'Teléfono',
-                                      'Inicio',
-                                      'Estado',
-                                      'Pagos',
-                                      'Último Pago',
-                                    ]}
-                                    data={plan.clientes.map((cliente) => ({
-                                      Cliente: cliente.nombre,
-                                      Email: cliente.email,
-                                      Teléfono: cliente.telefono,
-                                      Inicio: cliente.fechaInicio,
-                                      Estado: (
-                                        <span
-                                          className={`px-4 py-1.5 rounded-full text-xs font-medium ${
-                                            cliente.estado === 'Activo'
-                                              ? theme === 'dark'
-                                                ? 'bg-gradient-to-r from-green-900 to-emerald-900 text-green-100'
-                                                : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
-                                              : theme === 'dark'
-                                              ? 'bg-gradient-to-r from-yellow-900 to-orange-900 text-yellow-100'
-                                              : 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white'
-                                          } shadow-lg`}
-                                        >
-                                          {cliente.estado}
-                                        </span>
-                                      ),
-                                      Pagos: cliente.pagosRealizados,
-                                      'Último Pago': cliente.ultimoPago,
-                                    }))}
-                                    variant={theme === 'dark' ? 'dark' : 'white'}
-                                  />
+                                <div className={`mt-8 border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+                                  <div className="pt-8">
+                                    <Table
+                                      headers={['Cliente', 'Email', 'Teléfono', 'Inicio', 'Estado', 'Pagos', 'Último Pago']}
+                                      data={planDePago.clientes.map((cliente) => ({
+                                        key: `cliente-${cliente._id || Math.random().toString()}`,
+                                        Cliente: cliente.nombre,
+                                        Email: cliente.email,
+                                        Teléfono: cliente.telefono,
+                                        Inicio: cliente.fechaInicio,
+                                        Estado: (
+                                          <span
+                                            key={`estado-${cliente._id}`}
+                                            className={`px-4 py-1.5 rounded-full text-xs font-medium ${
+                                              cliente.estado === 'Activo'
+                                                ? theme === 'dark'
+                                                  ? 'bg-gradient-to-r from-green-900 to-emerald-900 text-green-100'
+                                                  : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
+                                                : theme === 'dark'
+                                                ? 'bg-gradient-to-r from-yellow-900 to-orange-900 text-yellow-100'
+                                                : 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white'
+                                            } shadow-lg`}
+                                          >
+                                            {cliente.estado}
+                                          </span>
+                                        ),
+                                        Pagos: cliente.pagosRealizados,
+                                        'Último Pago': cliente.ultimoPago
+                                      }))}
+                                      variant={theme === 'dark' ? 'dark' : 'white'}
+                                    />
+                                  </div>
                                 </div>
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    </motion.div>
-                  );
-                })}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                ) : (
+                  <motion.div
+                    key={`no-plan-${servicio._id}`}
+                    className={`rounded-3xl border p-8 text-center ${
+                      theme === 'dark'
+                        ? 'border-gray-700 bg-gradient-to-br from-gray-800 to-gray-700'
+                        : 'border-gray-200 bg-gradient-to-br from-white to-gray-50'
+                    } shadow-2xl`}
+                  >
+                    <p className={`text-lg ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Este servicio no tiene plan de pago
+                    </p>
+                  </motion.div>
+                )}
               </div>
             </motion.div>
           ))

@@ -40,7 +40,7 @@ const CreateEventPopup: React.FC<CreateEventPopupProps> = ({
 
       console.log('clientId:', clientId); // Adding console.log to debug clientId
 
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/events/client-event', {
+      const response = await fetch('http://localhost:3000/api/events/client-event', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

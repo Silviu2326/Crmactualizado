@@ -8,7 +8,7 @@ interface CashFlowChartProps {
   viewType: 'daily' | 'monthly' | 'annual';
   currentDate: Date;
   ingresos: any[];
-  gastos: any[];
+  gastos: any;
 }
 
 const CashFlowChart: React.FC<CashFlowChartProps> = ({ viewType, currentDate, ingresos, gastos }) => {
@@ -81,20 +81,21 @@ const CashFlowChart: React.FC<CashFlowChartProps> = ({ viewType, currentDate, in
     });
 
     // Procesar gastos (convertir a valores negativos)
-    gastos.forEach(gasto => {
-      const fecha = new Date(gasto.fecha);
-      const key = formatDateKey(fecha);
-      if (dataMap.has(key)) {
-        const existing = dataMap.get(key);
-        existing.gastos -= gasto.importe; // Convertir a negativo
-        dataMap.set(key, existing);
-      }
-    });
+    if (Array.isArray(gastos?.data?.gastos)) {
+      gastos.data.gastos.forEach(gasto => {
+        const fecha = new Date(gasto.fecha);
+        const key = formatDateKey(fecha);
+        if (dataMap.has(key)) {
+          const existing = dataMap.get(key);
+          existing.gastos -= gasto.importe; // Convertir a negativo
+          dataMap.set(key, existing);
+        }
+      });
+    }
 
     // Convertir el mapa a array y calcular beneficios
     return Array.from(dataMap.values())
       .map(item => ({
-
         ...item,
         beneficio: item.ingresos + item.gastos // Sumamos porque gastos ya es negativo
       }));

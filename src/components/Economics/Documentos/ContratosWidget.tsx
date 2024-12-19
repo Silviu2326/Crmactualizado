@@ -51,7 +51,7 @@ const ContratosWidget: React.FC = () => {
       setError(null);
       const token = localStorage.getItem('token');
       const response = await axios.get<ApiResponse>(
-        'https://fitoffice2-f70b52bef77e.herokuapp.com/api/contracts',
+        'http://localhost:3000/api/contracts',
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -122,7 +122,7 @@ const ContratosWidget: React.FC = () => {
   const handleView = async (contrato: Contrato) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/contracts/${contrato._id}/download`, {
+      const response = await axios.get(`http://localhost:3000/api/contracts/${contrato._id}/download`, {
         headers: {
           'Authorization': `Bearer ${token}`
         },
@@ -154,7 +154,7 @@ const ContratosWidget: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/contracts/${contratoId}`, {
+      await axios.delete(`http://localhost:3000/api/contracts/${contratoId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

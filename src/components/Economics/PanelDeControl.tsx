@@ -106,7 +106,7 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
           return;
         }
 
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes', {
+        const response = await fetch('http://localhost:3000/api/clientes', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -148,7 +148,7 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
           return;
         }
 
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos', {
+        const response = await fetch('http://localhost:3000/api/ingresos', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -197,7 +197,7 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
           return;
         }
 
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos', {
+        const response = await fetch('http://localhost:3000/api/gastos', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -208,8 +208,15 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
           throw new Error('Error al obtener los gastos');
         }
 
-        const gastos = await response.json();
+        const responseData = await response.json();
+        const gastos = responseData.data.gastos;
         
+        // Verificar que gastos sea un array
+        if (!Array.isArray(gastos)) {
+          console.error('Los gastos recibidos no son un array:', gastos);
+          throw new Error('El formato de los datos recibidos es incorrecto');
+        }
+
         // Calcular gastos del mes actual
         const ahora = new Date();
         const primerDiaMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);

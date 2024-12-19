@@ -47,7 +47,7 @@ const NuevoGastoPopup: React.FC<NuevoGastoPopupProps> = ({ onClose, onSubmit }) 
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos', {
+      const response = await fetch('http://localhost:3000/api/gastos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

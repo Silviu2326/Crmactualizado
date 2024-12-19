@@ -218,14 +218,14 @@ const PlanningList: React.FC = () => {
 
       // Realizar ambas peticiones en paralelo
       const [planningsResponse, templatesResponse] = await Promise.all([
-        fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/schemas', {
+        fetch('http://localhost:3000/api/plannings/schemas', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
         }),
-        fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/planningtemplate/templates', {
+        fetch('http://localhost:3000/api/planningtemplate/templates', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -327,7 +327,7 @@ const PlanningList: React.FC = () => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/esqueleto/${esqueletoId}`, {
+      const response = await fetch(`http://localhost:3000/api/esqueleto/${esqueletoId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

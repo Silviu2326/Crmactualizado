@@ -69,7 +69,7 @@ const ClassList: React.FC = () => {
       try {
         setLoading(true);
         const response = await axios.get<ClaseGrupal[]>(
-          'https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services/tipo/ClaseGrupal',
+          'http://localhost:3000/api/servicios/services/tipo/ClaseGrupal',
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -105,7 +105,7 @@ const ClassList: React.FC = () => {
     try {
       setLoading(true);
       const response = await axios.get<ClaseGrupal[]>(
-        'https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services/tipo/ClaseGrupal',
+        'http://localhost:3000/api/servicios/services/tipo/ClaseGrupal',
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -254,7 +254,7 @@ const ClassList: React.FC = () => {
     if (!confirmDelete) return;
 
     try {
-      await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services/${id}`, {
+      await axios.delete(`http://localhost:3000/api/servicios/services/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

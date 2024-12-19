@@ -50,7 +50,7 @@ const TablaClienteEnPlanServicio: React.FC<TablaClienteEnPlanServicioProps> = ({
 
         console.log('TablaClienteEnPlanServicio - Obteniendo clientes del plan...');
         // Primero obtenemos la lista de clientes del plan
-        const responsePlan = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/planes-servicio/${planId}/clientes`, {
+        const responsePlan = await fetch(`http://localhost:3000/api/planes-servicio/${planId}/clientes`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -70,7 +70,7 @@ const TablaClienteEnPlanServicio: React.FC<TablaClienteEnPlanServicioProps> = ({
         // Luego obtenemos los detalles de cada cliente
         const detallesPromises = clientesDelPlan.map(async (cliente: any) => {
           console.log('TablaClienteEnPlanServicio - Solicitando detalles para cliente:', cliente._id);
-          const responseCliente = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes/${cliente._id}`, {
+          const responseCliente = await fetch(`http://localhost:3000/api/clientes/${cliente._id}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }

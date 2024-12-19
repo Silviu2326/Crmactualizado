@@ -50,7 +50,7 @@ const OtrosDocumentosWidget: React.FC = () => {
   const fetchDocumentos = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get<ApiResponse>('https://fitoffice2-f70b52bef77e.herokuapp.com/api/otros-documentos', {
+      const response = await axios.get<ApiResponse>('http://localhost:3000/api/otros-documentos', {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -129,7 +129,7 @@ const OtrosDocumentosWidget: React.FC = () => {
   const handleView = async (documento: OtroDocumento) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/otros-documentos/${documento._id}/download`, {
+      const response = await axios.get(`http://localhost:3000/api/otros-documentos/${documento._id}/download`, {
         headers: {
           'Authorization': `Bearer ${token}`
         },
@@ -161,7 +161,7 @@ const OtrosDocumentosWidget: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/otros-documentos/${documentoId}`, {
+      await axios.delete(`http://localhost:3000/api/otros-documentos/${documentoId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

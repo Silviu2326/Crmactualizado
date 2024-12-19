@@ -43,7 +43,7 @@ const PopupCrearPlanificacion: React.FC<PopupCrearPlanificacionProps> = ({
           throw new Error('No se encontró el token de autenticación');
         }
 
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes', {
+        const response = await fetch('http://localhost:3000/api/clientes', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -80,7 +80,7 @@ const PopupCrearPlanificacion: React.FC<PopupCrearPlanificacionProps> = ({
         throw new Error('No se encontró el token de autenticación');
       }
 
-      let endpoint = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings';
+      let endpoint = 'http://localhost:3000/api/plannings';
       let requestBody: any = {
         nombre,
         descripcion,
@@ -94,7 +94,7 @@ const PopupCrearPlanificacion: React.FC<PopupCrearPlanificacionProps> = ({
         requestBody.clienteId = clienteId || null;
       } else {
         // Si es una plantilla, usar el endpoint específico para plantillas
-        endpoint = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api/planningtemplate/templates';
+        endpoint = 'http://localhost:3000/api/planningtemplate/templates';
       }
 
       const response = await fetch(endpoint, {

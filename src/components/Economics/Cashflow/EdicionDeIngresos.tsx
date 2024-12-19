@@ -44,7 +44,7 @@ const EdicionDeIngresos: React.FC<EdicionDeIngresosProps> = ({ ingreso, onClose,
     const fetchPlanesDePago = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/payment-plans', {
+        const response = await fetch('http://localhost:3000/api/payment-plans', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!response.ok) throw new Error('Error al cargar planes de pago');
@@ -74,7 +74,7 @@ const EdicionDeIngresos: React.FC<EdicionDeIngresosProps> = ({ ingreso, onClose,
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos/${ingreso._id}`, {
+      const response = await fetch(`http://localhost:3000/api/ingresos/${ingreso._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -7,6 +7,10 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import FacturaPopup from '../../modals/FacturaPopup';
 import EscanearFacturaPopup from '../../modals/EscanearFacturaPopup';
 import FacturasFilter, { FilterValues } from './FacturasFilter';
+import { Viewer, Worker } from '@react-pdf-viewer/core';
+import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
+import '@react-pdf-viewer/core/lib/styles/index.css';
+import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 
 interface FacturasPageProps {
   isFacturaPopupOpen: boolean;
@@ -57,6 +61,7 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
   const [activeTab, setActiveTab] = useState<TabType>('todas');
 
   const [facturas, setFacturas] = useState<Factura[]>([]);
+  const [selectedFacturaId, setSelectedFacturaId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchFacturas = async () => {
@@ -71,7 +76,7 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
         }
 
         // Realizar la petición GET al backend incluyendo el token en los encabezados
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/invoice', {
+        const response = await fetch('http://localhost:3000/api/invoice', {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
@@ -144,14 +149,13 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
   };
 
   const handleViewFactura = (facturaId: string) => {
-    // Implementar la lógica para ver la factura
-    console.log('Ver factura:', facturaId);
+    setSelectedFacturaId(facturaId);
   };
 
   const handleDownloadFactura = async (facturaId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/invoice/${facturaId}/download`, {
+      const response = await fetch(`http://localhost:3000/api/invoice/${facturaId}/pdf`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -180,7 +184,7 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
     if (window.confirm('¿Estás seguro de que deseas eliminar esta factura?')) {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/invoice/${facturaId}`, {
+        const response = await fetch(`http://localhost:3000/api/invoice/${facturaId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -287,23 +291,49 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
   };
 
   const handleExport = () => {
-    if (!isExportMode) {
-      setIsExportMode(true);
+    if (isExportMode && selectedInvoices.length > 0) {
+      handleExportSelectedToCSV();
     } else {
-      const selectedFacturas = facturas.filter(factura => selectedInvoices.includes(factura.id));
-      if (selectedFacturas.length === 0) {
-        alert('No hay facturas seleccionadas para exportar.');
-        return;
-      }
-      console.log('Exportando facturas:', selectedFacturas);
-      setIsExportMode(false);
+      setIsExportMode(!isExportMode);
       setSelectedInvoices([]);
     }
   };
 
-  const toggleSelectFactura = (id: string) => {
-    setSelectedInvoices(prev =>
-      prev.includes(id) ? prev.filter(facturaId => facturaId !== id) : [...prev, id]
+  const handleExportSelectedToCSV = () => {
+    const selectedFacturas = facturas.filter(factura => selectedInvoices.includes(factura.id));
+    const csvContent = [
+      ['Número', 'Monto', 'Estado', 'Tipo', 'Fecha', 'Moneda', 'Cliente', 'Emisor'].join(','),
+      ...selectedFacturas.map(factura => [
+        factura.numero,
+        factura.monto,
+        factura.estado,
+        factura.tipo,
+        factura.fecha,
+        factura.currency,
+        factura.cliente || '',
+        factura.emisor || ''
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `facturas_exportadas_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Desactivar el modo exportación y limpiar las selecciones
+    setIsExportMode(false);
+    setSelectedInvoices([]);
+  };
+
+  const handleToggleInvoiceSelection = (facturaId: string) => {
+    setSelectedInvoices(prev => 
+      prev.includes(facturaId) 
+        ? prev.filter(id => id !== facturaId)
+        : [...prev, facturaId]
     );
   };
 
@@ -331,6 +361,70 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
            matchesFechaHasta && matchesMontoMin && matchesMontoMax;
   });
 
+  const handleCloseViewer = () => {
+    setSelectedFacturaId(null);
+  };
+
+  const FacturasView: React.FC<{ facturaId: string; onClose: () => void }> = ({ facturaId, onClose }) => {
+    const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+    const defaultLayoutPluginInstance = defaultLayoutPlugin();
+
+    useEffect(() => {
+      const fetchPdf = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(`http://localhost:3000/api/invoice/${facturaId}/pdf`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error('Error al cargar la factura');
+          }
+
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          setPdfUrl(url);
+        } catch (error) {
+          console.error('Error al cargar la factura:', error);
+        }
+      };
+
+      fetchPdf();
+      return () => {
+        if (pdfUrl) {
+          window.URL.revokeObjectURL(pdfUrl);
+        }
+      };
+    }, [facturaId]);
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="bg-white p-4 rounded-lg w-4/5 h-4/5">
+          <div className="flex justify-end mb-2">
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-full"
+            >
+              ×
+            </button>
+          </div>
+          <div className="h-full">
+            {pdfUrl && (
+              <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
+                <Viewer
+                  fileUrl={pdfUrl}
+                  plugins={[defaultLayoutPluginInstance]}
+                />
+              </Worker>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -350,9 +444,12 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
             <FileText className="w-4 h-4 mr-2" />
             Escanear Factura
           </Button>
-          <Button variant="create" onClick={handleExport}>
+          <Button
+            variant="create"
+            onClick={handleExport}
+          >
             <Download className="w-4 h-4 mr-2" />
-            {isExportMode ? 'Exportar Seleccionadas' : 'Exportar Facturas'}
+            {isExportMode ? 'Exportar Seleccionadas' : 'Exportar'}
           </Button>
         </div>
         <div className="flex items-center space-x-2">
@@ -420,8 +517,65 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
 
         <div className={`bg-${theme === 'dark' ? 'gray-800' : 'white'} rounded-lg shadow-md overflow-hidden`}>
           <Table
-            headers={getTableColumns().headers}
-            data={filteredFacturas.map(factura => formatTableData(factura, getTableColumns().accessors))}
+            headers={[
+              ...(isExportMode ? ['Seleccionar'] : []),
+              'Número',
+              'Fecha',
+              'Importe',
+              'Estado',
+              'Tipo',
+              'Acciones'
+            ]}
+            data={filteredFacturas.map(factura => {
+              const baseData = {
+                ...(isExportMode ? {
+                  seleccionar: (
+                    <input
+                      type="checkbox"
+                      checked={selectedInvoices.includes(factura.id)}
+                      onChange={() => handleToggleInvoiceSelection(factura.id)}
+                      className="w-4 h-4"
+                    />
+                  )
+                } : {}),
+                numero: factura.numero,
+                fecha: factura.fecha,
+                monto: `${factura.currency === 'USD' ? '$' : '€'}${factura.monto.toLocaleString()}`,
+                estado: factura.estado,
+                tipo: factura.tipo,
+                acciones: (
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="normal"
+                      onClick={() => handleViewFactura(factura.id)}
+                      className="px-2 py-1 text-sm"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Ver
+                    </Button>
+                    <Button
+                      variant="normal"
+                      onClick={() => handleDownloadFactura(factura.id)}
+                      className="px-2 py-1 text-sm"
+                    >
+                      <Download className="w-4 h-4" />
+                      Descargar
+                    </Button>
+                    <Button
+                      variant="danger"
+                      onClick={() => handleDeleteFactura(factura.id)}
+                      className="px-2 py-1 text-sm"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Borrar
+                    </Button>
+                  </div>
+                )
+              };
+              return baseData;
+            })}
             variant={theme === 'dark' ? 'dark' : 'white'}
           />
         </div>
@@ -447,6 +601,12 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
           onClose={() => setIsEscanearFacturaPopupOpen(false)}
           onSubmit={handleEscanearFacturaSubmit}
         />
+        {selectedFacturaId && (
+          <FacturasView
+            facturaId={selectedFacturaId}
+            onClose={handleCloseViewer}
+          />
+        )}
       </div>
     </motion.div>
   );

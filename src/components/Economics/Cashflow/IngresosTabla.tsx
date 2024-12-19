@@ -29,6 +29,7 @@ interface Ingreso {
   estado: string;
   metodoPago: string;
   fecha: string;
+  fechaPagoRealizado: string | null;
   descripcion: string;
 }
 
@@ -54,8 +55,10 @@ const IngresosTabla: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedIngreso, setSelectedIngreso] = useState<Ingreso | null>(null);
   const [planesDePago, setPlanesDePago] = useState<PlanDePago[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const filterRef = useRef<HTMLDivElement>(null);
-  
+
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     fechaInicio: '',
     fechaFin: '',
@@ -78,7 +81,7 @@ const IngresosTabla: React.FC = () => {
       }
 
       console.log('Iniciando petición a la API de ingresos...');
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos', {
+      const response = await fetch('http://localhost:3000/api/ingresos', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -105,6 +108,7 @@ const IngresosTabla: React.FC = () => {
           estado: ingreso.estado,
           metodoPago: ingreso.metodoPago,
           fecha: ingreso.fecha,
+          fechaPagoRealizado: ingreso.fechaPagoRealizado,
           descripcion: ingreso.descripcion
         });
       });
@@ -150,7 +154,7 @@ const IngresosTabla: React.FC = () => {
     const fetchPlanes = async () => {
       try {
         const token = getToken();
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/planes-de-pago', {
+        const response = await fetch('http://localhost:3000/api/planes-de-pago', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!response.ok) {
@@ -222,7 +226,7 @@ const IngresosTabla: React.FC = () => {
   const handleAddSubmit = async (formData: any) => {
     try {
       const token = getToken();
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos', {
+      const response = await fetch('http://localhost:3000/api/ingresos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -264,7 +268,7 @@ const IngresosTabla: React.FC = () => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este ingreso?')) {
       try {
         const token = getToken();
-        const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos/${ingresoId}`, {
+        const response = await fetch(`http://localhost:3000/api/ingresos/${ingresoId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -286,7 +290,7 @@ const IngresosTabla: React.FC = () => {
   const handleConfirm = async (ingresoId: string) => {
     try {
       const token = getToken();
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos/${ingresoId}/estado`, {
+      const response = await fetch(`http://localhost:3000/api/ingresos/${ingresoId}/estado`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -357,6 +361,17 @@ const IngresosTabla: React.FC = () => {
 
     return true;
   });
+
+  const paginatedIngresos = filteredIngresos.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPages = Math.ceil(filteredIngresos.length / itemsPerPage);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
 
   useEffect(() => {
     fetchIngresos();
@@ -574,17 +589,41 @@ const IngresosTabla: React.FC = () => {
         `}</style>
 
         <Table
-          headers={['Fecha', 'Descripción', 'Importe', 'Estado de pago', 'Cliente', 'Plan', 'Método de pago', 'Acciones']}
-          data={filteredIngresos.slice(0, 10).map(ingreso => ({
-            Fecha: new Date(ingreso.fecha).toLocaleDateString(),
+          headers={[
+            'Fecha',
+            'Descripción',
+            'Importe',
+            'Estado de pago',
+            'Cliente',
+            'Plan',
+            'Método de pago',
+            'Fecha de pago',
+            'Acciones'
+          ]}
+          data={paginatedIngresos.map(ingreso => ({
+            Fecha: ingreso.fecha ? new Date(ingreso.fecha).toLocaleDateString() : 'Fecha no disponible',
             Descripción: ingreso.descripcion || 'Sin descripción',
-            Importe: `${ingreso.monto.toLocaleString()} ${ingreso.moneda}`,
-            'Estado de pago': (ingreso.estado || 'pendiente').charAt(0).toUpperCase() + 
-                          (ingreso.estado || 'pendiente').slice(1),
-            Cliente: ingreso.cliente?.nombre || 'Cliente no especificado',
-            Plan: ingreso.planDePago?.nombre || 'Plan no especificado',
-            'Método de pago': (ingreso.metodoPago || 'No especificado').charAt(0).toUpperCase() + 
-                          (ingreso.metodoPago || 'No especificado').slice(1),
+            Importe: `${ingreso.monto?.toLocaleString() || 0} ${ingreso.moneda || 'EUR'}`,
+            'Estado de pago': (
+              <span className={`px-2 py-1 rounded-full text-xs ${
+                ingreso.estado === 'pagado' 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-yellow-100 text-yellow-800'
+              }`}>
+                {ingreso.estado 
+                  ? ingreso.estado.charAt(0).toUpperCase() + ingreso.estado.slice(1)
+                  : 'Pendiente'
+                }
+              </span>
+            ),
+            Cliente: ingreso.cliente?.nombre || 'Sin cliente',
+            Plan: ingreso.planDePago?.nombre || 'Sin plan',
+            'Método de pago': ingreso.metodoPago 
+              ? ingreso.metodoPago.charAt(0).toUpperCase() + ingreso.metodoPago.slice(1)
+              : 'No especificado',
+            'Fecha de pago': ingreso.fechaPagoRealizado 
+              ? new Date(ingreso.fechaPagoRealizado).toLocaleDateString()
+              : 'No pagado aún',
             Acciones: (
               <div className="flex items-center space-x-2">
                 <button
@@ -627,6 +666,28 @@ const IngresosTabla: React.FC = () => {
       {filteredIngresos.length > 10 && (
         <div className="text-center text-sm text-gray-500 mt-2">
           Mostrando 10 de {filteredIngresos.length} ingresos. Desplázate para ver más.
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-4 space-x-2">
+          <Button
+            variant="outline"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            Anterior
+          </Button>
+          <span className="px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-700">
+            Página {currentPage} de {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Siguiente
+          </Button>
         </div>
       )}
 

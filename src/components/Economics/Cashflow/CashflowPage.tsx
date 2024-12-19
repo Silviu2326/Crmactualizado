@@ -47,7 +47,7 @@ const CashflowPage: React.FC = () => {
           throw new Error('Token no encontrado. Por favor, inicia sesión nuevamente.');
         }
 
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos', {
+        const response = await fetch('http://localhost:3000/api/gastos', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -60,10 +60,15 @@ const CashflowPage: React.FC = () => {
           throw new Error(errorData.message || 'Error al obtener los gastos.');
         }
 
-        const data: any[] = await response.json();
-        console.log('Datos crudos de gastos:', data);
+        const responseData = await response.json();
+        const gastos = responseData.data.gastos;
+        console.log('Datos crudos de gastos:', gastos);
         
-        data.forEach((gasto, index) => {
+        if (!Array.isArray(gastos)) {
+          throw new Error('Los datos de gastos no tienen el formato esperado');
+        }
+        
+        gastos.forEach((gasto, index) => {
           console.log(`Gasto ${index + 1}:`, {
             monto: gasto.monto,
             importe: gasto.importe,
@@ -73,7 +78,7 @@ const CashflowPage: React.FC = () => {
           });
         });
         
-        const total = data.reduce((sum, gasto) => {
+        const total = gastos.reduce((sum, gasto) => {
           const valor = gasto.monto || gasto.importe || 0;
           console.log('Sumando gasto:', valor);
           return sum + valor;
@@ -100,7 +105,7 @@ const CashflowPage: React.FC = () => {
           throw new Error('Token no encontrado. Por favor, inicia sesión nuevamente.');
         }
 
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos', {
+        const response = await fetch('http://localhost:3000/api/ingresos', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

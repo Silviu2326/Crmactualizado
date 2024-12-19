@@ -33,9 +33,9 @@ const DocumentosPage: React.FC = () => {
         };
 
         const [licenciasRes, contratosRes, documentosRes] = await Promise.all([
-          axios.get('http://localhost:3000/api/licenses', { headers }),
-          axios.get('http://localhost:3000/api/contracts', { headers }),
-          axios.get('http://localhost:3000/api/otros-documentos', { headers })
+          axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/licenses', { headers }),
+          axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/contracts', { headers }),
+          axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/otros-documentos', { headers })
         ]);
 
         setStats({

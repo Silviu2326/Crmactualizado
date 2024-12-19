@@ -71,7 +71,7 @@ const TablaPlanesServicio: React.FC<Props> = ({ planes, isDarkMode, servicioId }
       }
 
       console.log(`TablaPlanesServicio - Realizando petición para cliente ${clienteId}`);
-      const response = await fetch(`http://localhost:3000/api/clientes/${clienteId}`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes/${clienteId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

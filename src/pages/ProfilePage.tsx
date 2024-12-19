@@ -58,7 +58,7 @@ const ProfilePage: React.FC = () => {
           throw new Error('No se encontró el token de autenticación');
         }
 
-        const response = await axios.get('http://localhost:3000/api/entrenadores/perfil', {
+        const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/entrenadores/perfil', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -80,7 +80,7 @@ const ProfilePage: React.FC = () => {
         console.log('Token para servicios:', token);
         if (!token) return;
 
-        const response = await axios.get('http://localhost:3000/api/servicios/services', {
+        const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -100,7 +100,7 @@ const ProfilePage: React.FC = () => {
         console.log('Token para clientes:', token);
         if (!token) return;
 
-        const response = await axios.get('http://localhost:3000/api/clientes', {
+        const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes', {
           headers: {
             'Authorization': `Bearer ${token}`
           }

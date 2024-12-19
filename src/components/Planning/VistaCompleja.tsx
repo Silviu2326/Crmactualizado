@@ -124,7 +124,7 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
 
       console.log('📦 Complete session data being sent:', sessionData);
 
-      const response = await axios.post('http://localhost:3000/api/plannings/session', sessionData, {
+      const response = await axios.post('https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/session', sessionData, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -225,7 +225,7 @@ const VistaCompleja: React.FC<VistaComplejaProps> = ({
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const url = `http://localhost:3000/api/plannings/session/${sessionId}`;
+      const url = `https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/session/${sessionId}`;
       console.log('URL de eliminación:', url);
 
       const response = await fetch(url, {

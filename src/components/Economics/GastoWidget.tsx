@@ -57,7 +57,7 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({ title, onAddClick }) => {
         throw new Error('Token no encontrado');
       }
 
-      const response = await axios.get('http://localhost:3000/api/gastos', {
+      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos', {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
@@ -190,7 +190,7 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({ title, onAddClick }) => {
         throw new Error('Token no encontrado');
       }
 
-      await axios.delete(`http://localhost:3000/api/gastos/${id}`, {
+      await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -225,7 +225,7 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({ title, onAddClick }) => {
         throw new Error('Token no encontrado');
       }
 
-      await axios.patch(`http://localhost:3000/api/gastos/${editedGasto._id}`, editedGasto, {
+      await axios.patch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos/${editedGasto._id}`, editedGasto, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

@@ -40,7 +40,7 @@ const PopupRM: React.FC<PopupRMProps> = ({ onClose, planningId }) => {
     const fetchExercises = async () => {
       try {
         console.log('Fetching exercises...');
-        const response = await fetch('http://localhost:3000/api/exercises');
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/exercises');
         if (response.ok) {
           const data: ExerciseResponse = await response.json();
           console.log('Exercises fetched successfully:', data);
@@ -60,7 +60,7 @@ const PopupRM: React.FC<PopupRMProps> = ({ onClose, planningId }) => {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No token found');
 
-      const response = await fetch(`http://localhost:3000/api/plannings/${planningId}/rm`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${planningId}/rm`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

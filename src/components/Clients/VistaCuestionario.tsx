@@ -64,7 +64,7 @@ const VistaCuestionario: React.FC<VistaCuestionarioProps> = ({
 
   const fetchClientes = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/api/clientes');
+      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes');
       setClientes(response.data);
     } catch (error) {
       console.error('Error al cargar los clientes:', error);
@@ -73,7 +73,7 @@ const VistaCuestionario: React.FC<VistaCuestionarioProps> = ({
 
   const fetchCuestionarioData = async () => {
     try {
-      const response = await axios.get(`http://localhost:3000/api/cuestionarios/${cuestionarioId}`);
+      const response = await axios.get(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/cuestionarios/${cuestionarioId}`);
       setCuestionarioData(response.data);
     } catch (error) {
       console.error('Error al cargar el cuestionario:', error);
@@ -93,7 +93,7 @@ const VistaCuestionario: React.FC<VistaCuestionarioProps> = ({
     
     setLoading(true);
     try {
-      await axios.post(`http://localhost:3000/api/cuestionarios/${cuestionarioId}/clientes`, {
+      await axios.post(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/cuestionarios/${cuestionarioId}/clientes`, {
         clienteIds: selectedClientes
       });
       // Recargar los datos del cuestionario

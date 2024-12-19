@@ -65,7 +65,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
       }
 
       console.log('ExerciseSelector: Realizando petición a la API de ejercicios');
-      const response = await axios.get('http://localhost:3000/api/exercises', {
+      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/exercises', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -100,7 +100,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         exerciseId
       });
 
-      const url = `http://localhost:3000/api/plannings/${planningId}/weeks/${weekNumber}/days/${selectedDay}/sessions/${sessionId}/exercises`;
+      const url = `https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${planningId}/weeks/${weekNumber}/days/${selectedDay}/sessions/${sessionId}/exercises`;
       
       const response = await axios.post(
         url,

@@ -233,6 +233,12 @@ const ClientesServicioWidget: React.FC = () => {
     </motion.div>
   );
 
+  const monthsSinceStart = (startDate: string) => {
+    const start = new Date(startDate);
+    const now = new Date();
+    return (now.getFullYear() - start.getFullYear()) * 12 + now.getMonth() - start.getMonth();
+  };
+
   return (
     <div
       className={`p-8 ${
@@ -382,7 +388,9 @@ const ClientesServicioWidget: React.FC = () => {
                     const planDePago = planesDePago[planId];
                     if (!planDePago) return null;
 
-                    const clientesActivos = planDePago.clientes?.filter(cliente => cliente.estado === 'Activo').length || 0;
+                    const clientesActivos = servicio.clientes?.filter(cliente => cliente.estado === 'Activo').length || 0;
+
+                    const monthlyIncome = planDePago.precio * clientesActivos * monthsSinceStart(planDePago.fechaCreacion);
 
                     return (
                       <motion.div
@@ -418,8 +426,8 @@ const ClientesServicioWidget: React.FC = () => {
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                             <FinancialMetric
-                              label="Ingresos Totales"
-                              value={`$${planDePago.precio * clientesActivos}`}
+                              label="Ingresos Mensuales"
+                              value={`$${monthlyIncome}`}
                               icon={<DollarSign className={`w-7 h-7 ${theme === 'dark' ? 'text-violet-400' : 'text-violet-500'}`} />}
                               trend="+12%"
                             />

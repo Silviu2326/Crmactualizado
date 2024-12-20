@@ -254,15 +254,15 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
       { i: 'ingresosTotales', x: 1, y: 1, w: 1, h: 1, minW: 1, minH: 1 },
       { i: 'margenGanancia', x: 2, y: 1, w: 1, h: 1, minW: 1, minH: 1 },
       { i: 'clientesNuevos', x: 3, y: 1, w: 1, h: 1, minW: 1, minH: 1 },
-      { i: 'incomeChart', x: 0, y: 2, w: 2, h: 3, minW: 2, minH: 2 },
-      { i: 'recentSales', x: 2, y: 2, w: 2, h: 3, minW: 2, minH: 2 },
-      { i: 'gastoWidget', x: 0, y: 5, w: 2, h: 2, minW: 1, minH: 1 },
+      { i: 'incomeChart', x: 0, y: 2, w: 2, h: 4, minW: 2, minH: 2 },
+      { i: 'recentSales', x: 2, y: 2, w: 2, h: 4, minW: 2, minH: 2 },
+      { i: 'gastoWidget', x: 0, y: 5, w: 2, h: 4, minW: 1, minH: 1 },
       { i: 'alertasWidget', x: 2, y: 5, w: 2, h: 2, minW: 1, minH: 1 },
       { i: 'cuentaBancariaWidget', x: 0, y: 7, w: 2, h: 2, minW: 1, minH: 1 },
       { i: 'cashflowWidget', x: 2, y: 7, w: 2, h: 3, minW: 1, minH: 2 },
-      { i: 'documentosWidget', x: 0, y: 9, w: 2, h: 2, minW: 1, minH: 1 },
-      { i: 'facturasWidget', x: 2, y: 9, w: 2, h: 2, minW: 1, minH: 1 },
-      { i: 'serviciosWidget', x: 0, y: 11, w: 2, h: 2, minW: 1, minH: 1 },
+      { i: 'documentosWidget', x: 0, y: 9, w: 2, h: 4, minW: 1, minH: 1 },
+      { i: 'facturasWidget', x: 2, y: 9, w: 2, h: 3, minW: 1, minH: 1 },
+      { i: 'serviciosWidget', x: 2, y: 11, w: 2, h: 3, minW: 1, minH: 1 },
       { i: 'bonosWidget', x: 2, y: 11, w: 2, h: 2, minW: 1, minH: 1 },
     ];
   }
@@ -442,14 +442,6 @@ const PanelDeControl: React.FC<PanelDeControlProps> = ({
             isEditMode={isEditMode}
             onRemove={() => {}}
             setIsServicioPopupOpen={setIsServicioPopupOpen} 
-          />
-        </div>
-        <div key="bonosWidget" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>
-          <BonosWidget
-           
-            isEditMode={isEditMode}
-            onRemove={() => {}}
-            setIsBonoPopupOpen={setIsBonoPopupOpen} // Pasamos la función aquí
           />
         </div>
         <div key="incomeChart" className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md overflow-hidden`}>

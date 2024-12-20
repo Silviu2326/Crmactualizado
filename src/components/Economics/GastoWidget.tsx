@@ -41,6 +41,14 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({ title, onAddClick }) => {
   const [isAsociacionPopupOpen, setIsAsociacionPopupOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedGasto, setSelectedGasto] = useState<Gasto | null>(null);
+  const [filters, setFilters] = useState({
+    categoria: '',
+    tipo: '',
+    fechaDesde: '',
+    fechaHasta: '',
+    importeMin: '',
+    importeMax: '',
+  });
 
   // Función para obtener el token del localStorage
   const getToken = (): string | null => {
@@ -125,7 +133,7 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({ title, onAddClick }) => {
         clienteStr.includes(searchTermLower)
       );
     });
-  }, [gastos, searchTerm]);
+  }, [gastos, searchTerm, filters]);
 
   // Renderizar la tabla
   const renderTable = () => {
@@ -269,122 +277,88 @@ const GastoWidget: React.FC<GastoWidgetProps> = ({ title, onAddClick }) => {
           />
           <Search className={`absolute right-3 top-2.5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
         </div>
-        <div className="flex gap-2 items-center relative" ref={filterRef}>
-          <AnimatePresence>
-            {isFilterOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className={`absolute right-0 mt-10 p-4 rounded-lg shadow-lg z-50 ${
-                  theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-                } min-w-[300px]`}
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Tipo</label>
-                    <select
-                      name="tipo"
-                      value=""
-                      onChange={() => {}}
-                      className={`w-full p-2 rounded-md ${
-                        theme === 'dark' 
-                          ? 'bg-gray-600 text-white' 
-                          : 'bg-white text-gray-800'
-                      }`}
-                    >
-                      <option value="">Todos</option>
-                      <option value="fijo">Fijo</option>
-                      <option value="variable">Variable</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Categoría</label>
-                    <input
-                      type="text"
-                      name="categoria"
-                      value=""
-                      onChange={() => {}}
-                      placeholder="Filtrar por categoría"
-                      className={`w-full p-2 rounded-md ${
-                        theme === 'dark' 
-                          ? 'bg-gray-600 text-white' 
-                          : 'bg-white text-gray-800'
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Fecha desde</label>
-                    <input
-                      type="date"
-                      name="fechaDesde"
-                      value=""
-                      onChange={() => {}}
-                      className={`w-full p-2 rounded-md ${
-                        theme === 'dark' 
-                          ? 'bg-gray-600 text-white' 
-                          : 'bg-white text-gray-800'
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Fecha hasta</label>
-                    <input
-                      type="date"
-                      name="fechaHasta"
-                      value=""
-                      onChange={() => {}}
-                      className={`w-full p-2 rounded-md ${
-                        theme === 'dark' 
-                          ? 'bg-gray-600 text-white' 
-                          : 'bg-white text-gray-800'
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Importe mínimo</label>
-                    <input
-                      type="number"
-                      name="importeMin"
-                      value=""
-                      onChange={() => {}}
-                      placeholder="0"
-                      className={`w-full p-2 rounded-md ${
-                        theme === 'dark' 
-                          ? 'bg-gray-600 text-white' 
-                          : 'bg-white text-gray-800'
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Importe máximo</label>
-                    <input
-                      type="number"
-                      name="importeMax"
-                      value=""
-                      onChange={() => {}}
-                      placeholder="999999"
-                      className={`w-full p-2 rounded-md ${
-                        theme === 'dark' 
-                          ? 'bg-gray-600 text-white' 
-                          : 'bg-white text-gray-800'
-                      }`}
-                    />
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <div className="relative">
           <Button
             variant="filter"
             onClick={() => setIsFilterOpen(!isFilterOpen)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 mb-4"
           >
             <Filter className="w-4 h-4" />
+            <span>Filtros</span>
             <ChevronDown className={`w-4 h-4 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
           </Button>
+          {isFilterOpen && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+              <div className={`bg-white rounded-lg shadow-lg p-6 w-11/12 max-w-md ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}`} style={{ margin: 'auto' }}>
+                <h2 className="text-xl font-bold mb-4">Filtros</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <select
+                    className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={filters.tipo}
+                    onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}
+                  >
+                    <option value="">Todos los Tipos</option>
+                    <option value="fijo">Fijo</option>
+                    <option value="variable">Variable</option>
+                  </select>
+                  <select
+                    className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={filters.categoria}
+                    onChange={(e) => setFilters({ ...filters, categoria: e.target.value })}
+                  >
+                    <option value="">Todas las Categorías</option>
+                    <option value="categoria1">Categoría 1</option>
+                    <option value="categoria2">Categoría 2</option>
+                  </select>
+                  <input
+                    type="date"
+                    className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={filters.fechaDesde}
+                    onChange={(e) => setFilters({ ...filters, fechaDesde: e.target.value })}
+                  />
+                  <input
+                    type="date"
+                    className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={filters.fechaHasta}
+                    onChange={(e) => setFilters({ ...filters, fechaHasta: e.target.value })}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Importe Mínimo"
+                    className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={filters.importeMin}
+                    onChange={(e) => setFilters({ ...filters, importeMin: e.target.value })}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Importe Máximo"
+                    className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={filters.importeMax}
+                    onChange={(e) => setFilters({ ...filters, importeMax: e.target.value })}
+                  />
+                </div>
+                <div className="flex justify-end gap-4 mt-4">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setFilters({ categoria: '', tipo: '', fechaDesde: '', fechaHasta: '', importeMin: '', importeMax: '' })}
+                  >
+                    Resetear
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => { setIsFilterOpen(false); /* Apply filter logic here */ }}
+                  >
+                    Aplicar
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-        <Button variant="create" onClick={onAddClick}>
+        <Button
+          variant="create"
+          onClick={onAddClick}
+        >
           <Plus className="w-4 h-4 mr-1" />
           Añadir
         </Button>

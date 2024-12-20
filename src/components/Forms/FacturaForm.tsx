@@ -318,69 +318,71 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
           <h2 className="text-xl font-semibold text-gray-800">Información Básica</h2>
         </div>
         
-        <div className="flex flex-wrap gap-6">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Número de Factura
-            </label>
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                name="fecha"
-                value={formData.fecha}
-                onChange={handleChange}
-                pattern="[0-9]{4}"
-                maxLength={4}
-                placeholder="YYYY"
-                className="w-24 px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              />
-              <span className="text-xl font-medium text-gray-700">-</span>
-              <input
-                type="text"
-                name="numeroFactura"
-                value={formData.numeroFactura}
-                onChange={handleChange}
-                pattern="[0-9]{4}"
-                maxLength={4}
-                placeholder="0000"
-                className="w-24 px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              />
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Número de Factura
+              </label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  name="fecha"
+                  value={formData.fecha}
+                  onChange={handleChange}
+                  pattern="[0-9]{4}"
+                  maxLength={4}
+                  placeholder="YYYY"
+                  className="w-24 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-xl font-medium text-gray-700">-</span>
+                <input
+                  type="text"
+                  name="numeroFactura"
+                  value={formData.numeroFactura}
+                  onChange={handleChange}
+                  pattern="[0-9]{4}"
+                  maxLength={4}
+                  placeholder="0000"
+                  className="w-24 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Método de Pago
-            </label>
-            <select
-              name="metodoPago"
-              value={formData.metodoPago}
-              onChange={handleChange}
-              className="w-40 px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-            >
-              <option value="">Seleccionar</option>
-              <option value="efectivo">Efectivo</option>
-              <option value="tarjeta">Tarjeta</option>
-              <option value="transferencia">Transferencia</option>
-            </select>
-          </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Método de Pago
+              </label>
+              <select
+                name="metodoPago"
+                value={formData.metodoPago}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Seleccionar</option>
+                <option value="efectivo">Efectivo</option>
+                <option value="tarjeta">Tarjeta</option>
+                <option value="transferencia">Transferencia</option>
+              </select>
+            </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Moneda
-            </label>
-            <select
-              name="currency"
-              value={formData.currency}
-              onChange={handleChange}
-              className="w-32 px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-            >
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-              <option value="GBP">GBP</option>
-            </select>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Moneda
+              </label>
+              <select
+                name="currency"
+                value={formData.currency}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -402,10 +404,10 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           {formData.servicios.map((servicio, index) => (
             <div key={index} className="relative p-5 bg-gray-50 rounded-lg border border-gray-100">
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     Código
@@ -414,7 +416,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
                     type="text"
                     value={servicio.codigo}
                     onChange={(e) => handleServicioChange(index, 'codigo', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
                 </div>
@@ -426,7 +428,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
                     type="number"
                     value={servicio.iva}
                     onChange={(e) => handleServicioChange(index, 'iva', Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
                 </div>
@@ -438,7 +440,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
                     type="number"
                     value={servicio.cantidad}
                     onChange={(e) => handleServicioChange(index, 'cantidad', Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                     min="1"
                   />
@@ -451,7 +453,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
                     type="number"
                     value={servicio.precioUnitario}
                     onChange={(e) => handleServicioChange(index, 'precioUnitario', Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                     min="0"
                     step="0.01"
@@ -466,7 +468,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
                       type="number"
                       value={servicio.descuento}
                       onChange={(e) => handleServicioChange(index, 'descuento', Number(e.target.value))}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       min="0"
                       max="100"
                     />
@@ -494,45 +496,47 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
           <Building2 className="w-5 h-5 text-blue-600" />
           <h2 className="text-xl font-semibold text-gray-800">Datos de la Empresa</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Nombre de la Empresa
-            </label>
-            <input
-              type="text"
-              name="nombreEmpresa"
-              value={formData.nombreEmpresa}
-              onChange={handleChange}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              NIF de la Empresa
-            </label>
-            <input
-              type="text"
-              name="nifEmpresa"
-              value={formData.nifEmpresa}
-              onChange={handleChange}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Email de la Empresa
-            </label>
-            <input
-              type="email"
-              name="emailEmpresa"
-              value={formData.emailEmpresa}
-              onChange={handleChange}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              required
-            />
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Nombre de la Empresa
+              </label>
+              <input
+                type="text"
+                name="nombreEmpresa"
+                value={formData.nombreEmpresa}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                NIF de la Empresa
+              </label>
+              <input
+                type="text"
+                name="nifEmpresa"
+                value={formData.nifEmpresa}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Email de la Empresa
+              </label>
+              <input
+                type="email"
+                name="emailEmpresa"
+                value={formData.emailEmpresa}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -544,81 +548,83 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
           <h2 className="text-xl font-semibold text-gray-800">Información Adicional</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Tipo de Factura */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Tipo de Factura
-            </label>
-            <select
-              name="tipoFactura"
-              value={formData.tipoFactura}
-              onChange={handleChange}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              required
-            >
-              <option value="">Seleccionar tipo</option>
-              <option value="simple">Factura Simple</option>
-              <option value="completa">Factura Completa</option>
-              <option value="proforma">Factura Proforma</option>
-            </select>
-          </div>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Tipo de Factura */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Tipo de Factura
+              </label>
+              <select
+                name="tipoFactura"
+                value={formData.tipoFactura}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Seleccionar tipo</option>
+                <option value="simple">Factura Simple</option>
+                <option value="completa">Factura Completa</option>
+                <option value="proforma">Factura Proforma</option>
+              </select>
+            </div>
 
-          {/* Cliente */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Cliente
-            </label>
-            <select
-              name="clienteId"
-              value={formData.clienteId}
-              onChange={handleChange}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              required
-            >
-              <option value="">Seleccionar cliente</option>
-              {clientes.map(cliente => (
-                <option key={cliente._id} value={cliente._id}>{cliente.nombre}</option>
-              ))}
-            </select>
-          </div>
+            {/* Cliente */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Cliente
+              </label>
+              <select
+                name="clienteId"
+                value={formData.clienteId}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Seleccionar cliente</option>
+                {clientes.map(cliente => (
+                  <option key={cliente._id} value={cliente._id}>{cliente.nombre}</option>
+                ))}
+              </select>
+            </div>
 
-          {/* Comentario */}
-          <div className="md:col-span-2 space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Comentario
-            </label>
-            <textarea
-              name="comentario"
-              value={formData.comentario}
-              onChange={handleChange}
-              rows={3}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="Añade cualquier nota o comentario relevante..."
-            />
-          </div>
+            {/* Comentario */}
+            <div className="md:col-span-2 space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Comentario
+              </label>
+              <textarea
+                name="comentario"
+                value={formData.comentario}
+                onChange={handleChange}
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Añade cualquier nota o comentario relevante..."
+              />
+            </div>
 
-          {/* Documentos Adicionales */}
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Documentos Adicionales
-            </label>
-            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors">
-              <div className="space-y-2 text-center">
-                <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                <div className="flex text-sm text-gray-600">
-                  <label className="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500">
-                    <span>Subir archivo</span>
-                    <input
-                      type="file"
-                      multiple
-                      onChange={handleFileChange}
-                      className="sr-only"
-                    />
-                  </label>
-                  <p className="pl-1">o arrastrar y soltar</p>
+            {/* Documentos Adicionales */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Documentos Adicionales
+              </label>
+              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors">
+                <div className="space-y-2 text-center">
+                  <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                  <div className="flex text-sm text-gray-600">
+                    <label className="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500">
+                      <span>Subir archivo</span>
+                      <input
+                        type="file"
+                        multiple
+                        onChange={handleFileChange}
+                        className="sr-only"
+                      />
+                    </label>
+                    <p className="pl-1">o arrastrar y soltar</p>
+                  </div>
+                  <p className="text-xs text-gray-500">PDF, PNG, JPG hasta 10MB</p>
                 </div>
-                <p className="text-xs text-gray-500">PDF, PNG, JPG hasta 10MB</p>
               </div>
             </div>
           </div>

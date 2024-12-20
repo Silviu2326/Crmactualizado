@@ -232,10 +232,10 @@ const CashflowPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
-          <div className="p-4">
-            <h3 className="text-2xl font-semibold mb-4 bg-gradient-to-r from-green-400 to-teal-500 text-transparent bg-clip-text">Gráfico de Cashflow</h3>
-            <GraficoCashflow />
-          </div>
+          <div className="p-4 h-[600px]">
+  <h3 className="text-2xl font-semibold mb-4 bg-gradient-to-r from-green-400 to-teal-500 text-transparent bg-clip-text">Gráfico de Cashflow</h3>
+  <GraficoCashflow />
+</div>
         </motion.div>
         <motion.div
           className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg overflow-hidden lg:col-span-2`}

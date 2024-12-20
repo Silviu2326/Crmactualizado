@@ -54,6 +54,8 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
     montoMinimo: '',
     montoMaximo: ''
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Función para obtener el token del localStorage
   const getToken = (): string | null => {
@@ -401,6 +403,15 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
     return categoriaMatch || descripcionMatch;
   });
 
+  const totalPages = Math.ceil(filteredGastos.length / itemsPerPage);
+  const paginatedGastos = filteredGastos.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage > 0 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
   return (
     <div className={`p-6 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl`}>
       <div className="flex items-center justify-between mb-6">
@@ -468,7 +479,7 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
         ) : (
           <Table
             headers={['Fecha', 'Descripción', 'Importe', 'Categoría', 'Tipo', 'Asociado a', 'Acciones']}
-            data={filteredGastos.map(gasto => ({
+            data={paginatedGastos.map(gasto => ({
               'Fecha': new Date(gasto.fecha).toLocaleDateString(),
               'Descripción': gasto.descripcion || '-',
               'Importe': formatImporte(gasto.importe, gasto.moneda),
@@ -503,6 +514,27 @@ const GastoWidget: React.FC<GastoWidgetProps> = () => {
             }))}
             variant={theme === 'dark' ? 'dark' : 'white'}
           />
+        )}
+        {totalPages > 1 && (
+          <div className="flex justify-center mt-4 space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              Anterior
+            </Button>
+            <span className={`px-4 py-2 rounded-md ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-800'}`}>
+              Página {currentPage} de {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Siguiente
+            </Button>
+          </div>
         )}
       </div>
 

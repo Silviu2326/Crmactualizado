@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { X } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
+import ReactDOM from 'react-dom';
 
 interface AddLicenciaModalProps {
   isOpen: boolean;
@@ -81,11 +82,16 @@ const AddLicenciaModal: React.FC<AddLicenciaModalProps> = ({ isOpen, onClose, on
 
   if (!isOpen) return null;
 
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className={`relative w-full max-w-md p-6 rounded-lg shadow-lg ${
-        theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'
-      }`}>
+      <div
+        className={`${
+          theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'
+        } p-8 rounded-lg shadow-lg relative w-[800px] max-h-[90vh] overflow-y-auto`}
+        style={{
+          backgroundColor: theme === 'dark' ? 'rgb(31, 41, 55)' : '#ffffff'
+        }}
+      >
         <button
           onClick={onClose}
           className={`absolute top-4 right-4 p-1 rounded-full hover:bg-opacity-80 ${
@@ -203,7 +209,8 @@ const AddLicenciaModal: React.FC<AddLicenciaModalProps> = ({ isOpen, onClose, on
           </button>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

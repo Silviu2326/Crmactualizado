@@ -37,13 +37,13 @@ const PopupReutilizable: React.FC<PopupReutilizableProps> = ({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div 
-        className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity duration-300 animate-fadeIn"
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity duration-300"
         onClick={onClose}
       />
       
       <div className="flex min-h-full items-center justify-center p-4">
         <div 
-          className="relative w-full max-w-2xl transform rounded-2xl bg-white shadow-2xl transition-all duration-500 animate-slideUp"
+          className="relative w-full max-w-4xl transform rounded-2xl bg-white shadow-2xl"
           onClick={e => e.stopPropagation()}
         >
           <div className="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 py-4 rounded-t-2xl">

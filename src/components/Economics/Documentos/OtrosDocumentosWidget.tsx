@@ -218,7 +218,7 @@ const OtrosDocumentosWidget: React.FC = () => {
         <div className="overflow-x-auto">
           <div className="min-w-full">
             <Table
-              headers={['Nombre', 'Tipo', 'Fecha de Creación', 'Notas', 'Acciones']}
+              headers={['Nombre', 'Tipo', 'Fecha de Creación', 'Fecha de Fin', 'Notas', 'Acciones']}
               data={filteredDocumentos.map(doc => ({
                 Nombre: (
                   <div className="flex items-center" title={doc.nombre}>
@@ -240,6 +240,12 @@ const OtrosDocumentosWidget: React.FC = () => {
                   <div className="flex items-center">
                     <Calendar className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}`} />
                     {formatDate(doc.fechaCreacion)}
+                  </div>
+                ),
+                'Fecha de Fin': (
+                  <div className="flex items-center">
+                    <Calendar className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}`} />
+                    {doc.fechaFinalizacion ? formatDate(doc.fechaFinalizacion) : 'No tiene'}
                   </div>
                 ),
                 Notas: doc.notas ? (

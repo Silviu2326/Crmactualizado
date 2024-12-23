@@ -1,7 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, DollarSign } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import Button from '../../Common/Button';
+
+interface Cliente {
+  _id: string;
+  nombre: string;
+}
+
+interface Servicio {
+  _id: string;
+  nombre: string;
+}
 
 interface NuevoGasto {
   importe: number;
@@ -11,6 +21,8 @@ interface NuevoGasto {
   categoria: string;
   tipo: 'fijo' | 'variable';
   estado: string;
+  clientId?: string;
+  serviceId?: string;
 }
 
 interface NuevoGastoPopupProps {
@@ -22,6 +34,9 @@ const NuevoGastoPopup: React.FC<NuevoGastoPopupProps> = ({ onClose, onSubmit }) 
   const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tipoAsociacion, setTipoAsociacion] = useState<'cliente' | 'servicio' | ''>('');
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [servicios, setServicios] = useState<Servicio[]>([]);
 
   const [formData, setFormData] = useState<NuevoGasto>({
     importe: 0,
@@ -32,6 +47,45 @@ const NuevoGastoPopup: React.FC<NuevoGastoPopupProps> = ({ onClose, onSubmit }) 
     tipo: 'variable',
     estado: 'pendiente'
   });
+
+  useEffect(() => {
+    if (tipoAsociacion) {
+      fetchData();
+    }
+  }, [tipoAsociacion]);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('token');
+      if (tipoAsociacion === 'cliente') {
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        if (!response.ok) throw new Error('Error al cargar los clientes');
+        const data = await response.json();
+        setClientes(data);
+      } else if (tipoAsociacion === 'servicio') {
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        if (!response.ok) throw new Error('Error al cargar los servicios');
+        const data = await response.json();
+        setServicios(data);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar los datos');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -203,6 +257,70 @@ const NuevoGastoPopup: React.FC<NuevoGastoPopupProps> = ({ onClose, onSubmit }) 
                 <option value="cancelado">Cancelado</option>
               </select>
             </div>
+
+            {/* Asociación */}
+            <div>
+              <label htmlFor="tipoAsociacion" className="block text-sm font-medium text-gray-700 mb-1">
+                Tipo de Asociación
+              </label>
+              <select
+                id="tipoAsociacion"
+                name="tipoAsociacion"
+                value={tipoAsociacion}
+                onChange={(e) => setTipoAsociacion(e.target.value as 'cliente' | 'servicio' | '')}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              >
+                <option value="">Sin asociación</option>
+                <option value="cliente">Cliente</option>
+                <option value="servicio">Servicio</option>
+              </select>
+            </div>
+
+            {tipoAsociacion === 'cliente' && (
+              <div>
+                <label htmlFor="clientId" className="block text-sm font-medium text-gray-700 mb-1">
+                  Cliente
+                </label>
+                <select
+                  id="clientId"
+                  name="clientId"
+                  value={formData.clientId || ''}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  required
+                >
+                  <option value="">Seleccione un cliente</option>
+                  {clientes.map((cliente) => (
+                    <option key={cliente._id} value={cliente._id}>
+                      {cliente.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {tipoAsociacion === 'servicio' && (
+              <div>
+                <label htmlFor="serviceId" className="block text-sm font-medium text-gray-700 mb-1">
+                  Servicio
+                </label>
+                <select
+                  id="serviceId"
+                  name="serviceId"
+                  value={formData.serviceId || ''}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  required
+                >
+                  <option value="">Seleccione un servicio</option>
+                  {servicios.map((servicio) => (
+                    <option key={servicio._id} value={servicio._id}>
+                      {servicio.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Descripción */}
             <div>

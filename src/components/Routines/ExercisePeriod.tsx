@@ -86,13 +86,11 @@ export function ExercisePeriod({ period, onSave }: ExercisePeriodProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedVariant, setSelectedVariant] = useState<'rojo' | 'verde' | 'amarillo'>('rojo');
+  const [selectedVariant, setSelectedVariant] = useState<'verde'>('verde');
   const [currentDay, setCurrentDay] = useState<Day>({
     dayNumber: 1,
     variants: [
-      { color: 'rojo', exercises: [] },
-      { color: 'verde', exercises: [] },
-      { color: 'amarillo', exercises: [] }
+      { color: 'verde', exercises: [] }
     ]
   });
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
@@ -110,7 +108,7 @@ export function ExercisePeriod({ period, onSave }: ExercisePeriodProps) {
     const startDay = start % 7 === 0 ? 7 : start % 7;
     const endWeek = Math.ceil(end / 7);
     const endDay = end % 7 === 0 ? 7 : end % 7;
-    return `Semana ${startWeek} (día ${startDay}) - Semana ${endWeek} (día ${endDay})`;
+    return `Semana ${startWeek} (día ${startDay}) - Semana ${endWeek} (día ${endDay})`
   };
 
   useEffect(() => {
@@ -168,7 +166,7 @@ export function ExercisePeriod({ period, onSave }: ExercisePeriodProps) {
   const handleAddExercise = (exercise: Exercise) => {
     setSelectedExercise(exercise);
     setCurrentSets([{ campo1: 0, campo2: 0, campo3: 0 }]);
-    
+
     // Cargar configuración existente si existe
     const existingExercise = getCurrentExercise(exercise._id);
     if (existingExercise) {
@@ -181,7 +179,7 @@ export function ExercisePeriod({ period, onSave }: ExercisePeriodProps) {
         campo3: 'rest'
       });
     }
-    
+
     setShowSetModal(true);
   };
 
@@ -191,6 +189,9 @@ export function ExercisePeriod({ period, onSave }: ExercisePeriodProps) {
   };
 
   const getFieldLabel = (field: string, type: string) => {
+    if (period.start === 1 && type === 'weight') {
+      return 'RM*';
+    }
     return fieldOptions[field as keyof typeof fieldOptions]
       .find(option => option.value === type)?.label || type;
   };
@@ -205,7 +206,7 @@ export function ExercisePeriod({ period, onSave }: ExercisePeriodProps) {
   const getExerciseSets = (exerciseId: string) => {
     const variant = currentDay.variants.find(v => v.color === selectedVariant);
     if (!variant) return null;
-    
+
     const exerciseData = variant.exercises.find(e => e.exercise === exerciseId);
     return exerciseData?.sets || null;
   };
@@ -252,6 +253,9 @@ export function ExercisePeriod({ period, onSave }: ExercisePeriodProps) {
   };
 
   const getUnitLabel = (type: string): string => {
+    if (period.start === 1 && type === 'weight') {
+      return '%';
+    }
     switch (type) {
       case 'reps':
         return 'reps';
@@ -286,7 +290,7 @@ export function ExercisePeriod({ period, onSave }: ExercisePeriodProps) {
 
   const filteredExercises = exercises.filter(exercise =>
     exercise.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    exercise.grupoMuscular.some(grupo => 
+    exercise.grupoMuscular.some(grupo =>
       grupo.toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
@@ -323,23 +327,6 @@ export function ExercisePeriod({ period, onSave }: ExercisePeriodProps) {
         </div>
       </div>
 
-      <div className="mb-6 flex gap-3">
-        {['rojo', 'verde', 'amarillo'].map((color) => (
-          <button
-            key={color}
-            onClick={() => setSelectedVariant(color as 'rojo' | 'verde' | 'amarillo')}
-            className={clsx(
-              "px-6 py-3 rounded-lg text-white font-medium transition-all duration-200 transform hover:scale-105",
-              selectedVariant === color 
-                ? `${getVariantColor(color)} shadow-lg` 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            )}
-          >
-            Variante {color.charAt(0).toUpperCase() + color.slice(1)}
-          </button>
-        ))}
-      </div>
-      
       <div className="relative mb-6">
         <input
           type="text"
@@ -353,7 +340,7 @@ export function ExercisePeriod({ period, onSave }: ExercisePeriodProps) {
 
       <div className="space-y-4">
         {filteredExercises.map((exercise) => (
-          <div 
+          <div
             key={exercise._id}
             className="border-2 border-gray-100 rounded-lg overflow-hidden transition-all duration-200 hover:border-gray-200 hover:shadow-md"
           >
@@ -396,7 +383,7 @@ export function ExercisePeriod({ period, onSave }: ExercisePeriodProps) {
                 )}
               </div>
             </div>
-            
+
             {expandedExercises[exercise._id] && getExerciseSets(exercise._id) && (
               <div className={clsx(
                 'overflow-hidden transition-all duration-300',
@@ -461,7 +448,7 @@ export function ExercisePeriod({ period, onSave }: ExercisePeriodProps) {
                 Personaliza los campos y valores para cada serie del ejercicio
               </p>
             </div>
-            
+
             <div className="p-6 space-y-6">
               {/* Configuración de campos */}
               <div className="rounded-xl border border-gray-200 overflow-hidden">
@@ -512,9 +499,20 @@ export function ExercisePeriod({ period, onSave }: ExercisePeriodProps) {
                             <input
                               type="number"
                               value={set[field]}
-                              onChange={(e) => handleSetChange(index, field, parseInt(e.target.value))}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                if (period.start === 1 && currentConfig[field] === 'weight') {
+                                  // Para RM, limitar entre 1 y 100
+                                  if (value >= 1 && value <= 100) {
+                                    handleSetChange(index, field, value);
+                                  }
+                                } else {
+                                  handleSetChange(index, field, value);
+                                }
+                              }}
+                              min={period.start === 1 && currentConfig[field] === 'weight' ? "1" : "0"}
+                              max={period.start === 1 && currentConfig[field] === 'weight' ? "100" : undefined}
                               className="w-full p-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
-                              min="0"
                             />
                           </div>
                         ))}

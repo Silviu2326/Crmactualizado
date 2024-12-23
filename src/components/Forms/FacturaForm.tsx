@@ -1,61 +1,66 @@
 import React, { useState, useEffect } from 'react'; 
 import { PlusCircle, Upload, Trash2, Receipt, Building2, FileText, Users } from 'lucide-react';
 import jwt_decode from 'jwt-decode';
-
-interface Servicio {
-  codigo: string;
-  iva: number;
-  cantidad: number;
-  precioUnitario: number;
-  descuento: number;
-}
-
-interface FormData {
-  numeroFactura: string;
-  fecha: string;
-  metodoPago: string;
-  servicios: Servicio[];
-  tipoFactura: string;
-  nombreEmpresa: string;
-  nifEmpresa: string;
-  emailEmpresa: string;
-  comentario: string;
-  clienteId: string;
-  currency: string;
-}
-
-interface FacturaFormProps {
-  onSubmit: (data: any) => void;
-}
-
-// Definir la interfaz Cliente con las propiedades correctas
-interface Cliente {
-  _id: string;
-  nombre: string;
-  email: string;
-  // otros campos si los necesitas
-}
-
-interface TokenPayload {
-  id: string;
-  rol: string;
-  iat: number;
-  exp: number;
-}
+import { FormData, Servicio, Direccion, Cliente, TokenPayload, FacturaFormProps } from './FacturaTypes';
+import Seccion1Facturas from './Seccion1Facturas';
+import Seccion2Servicios from './Seccion2Servicios';
+import SeccionDestinatario from './SeccionDestinatario';
+import SeccionEmpresa from './SeccionEmpresa';
+import SeccionClientes from './SeccionClientes';
 
 const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
   const [formData, setFormData] = useState<FormData>({
+    // Datos del Emisor
+    nombreEmisor: '',
+    direccionEmisor: '',
+    nifEmisor: '',
+    
+    // Información Básica
     numeroFactura: '',
     fecha: '',
+    fechaVencimiento: '',
     metodoPago: '',
-    servicios: [{ codigo: '', iva: 21, cantidad: 1, precioUnitario: 0, descuento: 0 }],
-    tipoFactura: '',
-    nombreEmpresa: '',
-    nifEmpresa: '',
-    emailEmpresa: '',
-    comentario: '',
-    clienteId: '',
-    currency: 'USD',
+    facturaSimplificada: false,
+
+    // Datos del Destinatario
+    tipoPersona: 'fisica',
+    tipoDestinatario: 'fisica',
+    nombre: '',
+    apellidos: '',
+    telefono: '',
+    email: '',
+    direccion: {
+      calle: '',
+      numero: '',
+      ciudad: '',
+      codigoPostal: '',
+      provincia: '',
+      pais: ''
+    },
+    nif: '',
+
+    // Servicios
+    servicios: [{ 
+      codigo: '', 
+      nombre: '', 
+      iva: 21, 
+      exentoIva: false, 
+      cantidad: 1, 
+      precioUnitario: 0, 
+      descuento: 0, 
+      total: 0 
+    }],
+
+    // Totales
+    baseImponible: 0,
+    totalIva: 0,
+    importeTotal: 0,
+
+    // Información Adicional
+    comentarios: '',
+    condiciones: '',
+    proteccionDatos: false,
+    currency: 'EUR'
   });
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -132,6 +137,27 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
     fetchClientes();
   }, []);
 
+  const calcularTotales = (servicios: Servicio[]) => {
+    let baseImponible = 0;
+    let totalIva = 0;
+
+    servicios.forEach(servicio => {
+      const subtotal = (servicio.precioUnitario * servicio.cantidad) * (1 - servicio.descuento / 100);
+      baseImponible += subtotal;
+      if (!servicio.exentoIva) {
+        totalIva += subtotal * (servicio.iva / 100);
+      }
+      servicio.total = subtotal + (servicio.exentoIva ? 0 : subtotal * (servicio.iva / 100));
+    });
+
+    setFormData(prev => ({
+      ...prev,
+      baseImponible,
+      totalIva,
+      importeTotal: baseImponible + totalIva
+    }));
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     console.log(`Campo modificado: ${name}, Nuevo valor: ${value}`);
@@ -155,7 +181,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
     console.log('Nuevo estado del formulario:', formData);
   };
 
-  const handleServicioChange = (index: number, field: keyof Servicio, value: string | number) => {
+  const handleServicioChange = (index: number, field: keyof Servicio, value: any) => {
     const newServicios = [...formData.servicios];
     newServicios[index] = {
       ...newServicios[index],
@@ -165,12 +191,32 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
       ...prev,
       servicios: newServicios
     }));
+    calcularTotales(newServicios);
+  };
+
+  const handleDireccionChange = (field: keyof Direccion, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      direccion: {
+        ...prev.direccion,
+        [field]: value
+      }
+    }));
   };
 
   const addServicio = () => {
     setFormData(prev => ({
       ...prev,
-      servicios: [...prev.servicios, { codigo: '', iva: 21, cantidad: 1, precioUnitario: 0, descuento: 0 }]
+      servicios: [...prev.servicios, { 
+        codigo: '', 
+        nombre: '', 
+        iva: 21, 
+        exentoIva: false, 
+        cantidad: 1, 
+        precioUnitario: 0, 
+        descuento: 0, 
+        total: 0 
+      }]
     }));
   };
 
@@ -247,17 +293,57 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
       console.log('Estado del formulario antes de reiniciar:', formData);
       
       setFormData({
+        // Datos del Emisor
+        nombreEmisor: '',
+        direccionEmisor: '',
+        nifEmisor: '',
+        
+        // Información Básica
         numeroFactura: '0001',
         fecha: new Date().getFullYear().toString(),
+        fechaVencimiento: '',
         metodoPago: '',
-        servicios: [{ codigo: '', iva: 21, cantidad: 1, precioUnitario: 0, descuento: 0 }],
-        tipoFactura: '',
-        nombreEmpresa: '',
-        nifEmpresa: '',
-        emailEmpresa: '',
-        comentario: '',
-        clienteId: '',
-        currency: 'USD',
+        facturaSimplificada: false,
+
+        // Datos del Destinatario
+        tipoPersona: 'fisica',
+        tipoDestinatario: 'fisica',
+        nombre: '',
+        apellidos: '',
+        telefono: '',
+        email: '',
+        direccion: {
+          calle: '',
+          numero: '',
+          ciudad: '',
+          codigoPostal: '',
+          provincia: '',
+          pais: ''
+        },
+        nif: '',
+
+        // Servicios
+        servicios: [{ 
+          codigo: '', 
+          nombre: '', 
+          iva: 21, 
+          exentoIva: false, 
+          cantidad: 1, 
+          precioUnitario: 0, 
+          descuento: 0, 
+          total: 0 
+        }],
+
+        // Totales
+        baseImponible: 0,
+        totalIva: 0,
+        importeTotal: 0,
+
+        // Información Adicional
+        comentarios: '',
+        condiciones: '',
+        proteccionDatos: false,
+        currency: 'EUR'
       });
       setSelectedFiles([]);
       onSubmit(data);
@@ -277,27 +363,95 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
 
     // Datos de prueba
     const datosPrueba: FormData = {
-      numeroFactura: '0001',  // Solo el número, se combinará con el año al enviar
+      // Datos del Emisor
+      nombreEmisor: 'Empresa de Prueba S.A.',
+      direccionEmisor: 'Calle de la Prueba, 123',
+      nifEmisor: 'A12345678',
+      
+      // Información Básica
+      numeroFactura: '0001',  
       fecha: fechaActual,
+      fechaVencimiento: '',
       metodoPago: 'tarjeta',
+      facturaSimplificada: false,
+
+      // Datos del Destinatario
+      tipoPersona: 'fisica',
+      tipoDestinatario: 'fisica',
+      nombre: 'Juan',
+      apellidos: 'Pérez',
+      telefono: '123456789',
+      email: 'juan.perez@example.com',
+      direccion: {
+        calle: 'Calle de la Prueba, 123',
+        numero: '123',
+        ciudad: 'Madrid',
+        codigoPostal: '28001',
+        provincia: 'Madrid',
+        pais: 'España'
+      },
+      nif: '12345678A',
+
+      // Servicios
       servicios: [
-        { codigo: 'SVC001', iva: 21, cantidad: 2, precioUnitario: 150.00, descuento: 10 },
-        { codigo: 'SVC002', iva: 21, cantidad: 1, precioUnitario: 300.00, descuento: 0 }
+        { 
+          codigo: 'SVC001', 
+          nombre: 'Servicio de Prueba 1', 
+          iva: 21, 
+          exentoIva: false, 
+          cantidad: 2, 
+          precioUnitario: 150.00, 
+          descuento: 10, 
+          total: 270 
+        },
+        { 
+          codigo: 'SVC002', 
+          nombre: 'Servicio de Prueba 2', 
+          iva: 21, 
+          exentoIva: false, 
+          cantidad: 1, 
+          precioUnitario: 300.00, 
+          descuento: 0, 
+          total: 300 
+        }
       ],
-      tipoFactura: 'completa',
-      nombreEmpresa: 'Empresa de Prueba S.A.',
-      nifEmpresa: 'A12345678',
-      emailEmpresa: 'contacto@empresa.com',
-      comentario: 'Esta es una factura de prueba.',
-      clienteId: clienteSeleccionado,
-      currency: 'USD',
+
+      // Totales
+      baseImponible: 450,
+      totalIva: 94.5,
+      importeTotal: 544.5,
+
+      // Información Adicional
+      comentarios: 'Esta es una factura de prueba.',
+      condiciones: 'Condiciones de la factura de prueba.',
+      proteccionDatos: true,
+      currency: 'EUR'
     };
 
     setFormData(datosPrueba);
   };
 
+  const handleClienteSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedClienteId = e.target.value;
+    const selectedCliente = clientes.find(c => c._id === selectedClienteId);
+    
+    if (selectedCliente) {
+      setFormData(prev => ({
+        ...prev,
+        nombre: selectedCliente.nombre,
+        email: selectedCliente.email || ''
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        nombre: '',
+        email: ''
+      }));
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* Botón para generar factura de prueba */}
       <div className="flex justify-end">
         <button
@@ -309,233 +463,38 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
         </button>
       </div>
 
-      {/* Sección 1: Información Básica */}
-      <div className="bg-white p-6 rounded-lg shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <h2 className="text-xl font-semibold text-gray-800">Información Básica</h2>
-        </div>
-        
-        <div className="flex flex-wrap gap-6">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Número de Factura
-            </label>
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                name="fecha"
-                value={formData.fecha}
-                onChange={handleChange}
-                pattern="[0-9]{4}"
-                maxLength={4}
-                placeholder="YYYY"
-                className="w-24 px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              />
-              <span className="text-xl font-medium text-gray-700">-</span>
-              <input
-                type="text"
-                name="numeroFactura"
-                value={formData.numeroFactura}
-                onChange={handleChange}
-                pattern="[0-9]{4}"
-                maxLength={4}
-                placeholder="0000"
-                className="w-24 px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Método de Pago
-            </label>
-            <select
-              name="metodoPago"
-              value={formData.metodoPago}
-              onChange={handleChange}
-              className="w-40 px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-            >
-              <option value="">Seleccionar</option>
-              <option value="efectivo">Efectivo</option>
-              <option value="tarjeta">Tarjeta</option>
-              <option value="transferencia">Transferencia</option>
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Moneda
-            </label>
-            <select
-              name="currency"
-              value={formData.currency}
-              onChange={handleChange}
-              className="w-32 px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-            >
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-              <option value="GBP">GBP</option>
-            </select>
-          </div>
-        </div>
-      </div>
+      <Seccion1Facturas
+        formData={formData}
+        handleChange={handleChange}
+        setFormData={setFormData}
+      />
 
       {/* Sección 2: Servicios */}
-      <div className="bg-white p-6 rounded-lg shadow-sm">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-600" />
-            <h2 className="text-xl font-semibold text-gray-800">Servicios</h2>
-          </div>
-          <button
-            type="button"
-            onClick={addServicio}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-          >
-            <PlusCircle size={18} />
-            Añadir Servicio
-          </button>
-        </div>
+      <Seccion2Servicios
+        servicios={formData.servicios}
+        handleServicioChange={handleServicioChange}
+        addServicio={addServicio}
+        removeServicio={removeServicio}
+      />
 
-        <div className="space-y-4">
-          {formData.servicios.map((servicio, index) => (
-            <div key={index} className="relative p-5 bg-gray-50 rounded-lg border border-gray-100">
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Código
-                  </label>
-                  <input
-                    type="text"
-                    value={servicio.codigo}
-                    onChange={(e) => handleServicioChange(index, 'codigo', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    IVA (%)
-                  </label>
-                  <input
-                    type="number"
-                    value={servicio.iva}
-                    onChange={(e) => handleServicioChange(index, 'iva', Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Cantidad
-                  </label>
-                  <input
-                    type="number"
-                    value={servicio.cantidad}
-                    onChange={(e) => handleServicioChange(index, 'cantidad', Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    required
-                    min="1"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Precio Unitario
-                  </label>
-                  <input
-                    type="number"
-                    value={servicio.precioUnitario}
-                    onChange={(e) => handleServicioChange(index, 'precioUnitario', Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    required
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Descuento (%)
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={servicio.descuento}
-                      onChange={(e) => handleServicioChange(index, 'descuento', Number(e.target.value))}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      min="0"
-                      max="100"
-                    />
-                    {index > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => removeServicio(index)}
-                        className="absolute -right-4 top-1/2 -translate-y-1/2 p-1 text-red-500 hover:text-red-700"
-                        title="Eliminar servicio"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Sección: Datos del Destinatario */}
+      {!formData.facturaSimplificada && (
+        <SeccionClientes
+          formData={formData}
+          clientes={clientes}
+          handleChange={handleChange}
+          handleDireccionChange={handleDireccionChange}
+          handleClienteSelect={handleClienteSelect}
+          handleFileChange={handleFileChange}
+          setFormData={setFormData}
+        />
+      )}
 
       {/* Sección 3: Datos de la Empresa */}
-      <div className="bg-white p-6 rounded-lg shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <Building2 className="w-5 h-5 text-blue-600" />
-          <h2 className="text-xl font-semibold text-gray-800">Datos de la Empresa</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Nombre de la Empresa
-            </label>
-            <input
-              type="text"
-              name="nombreEmpresa"
-              value={formData.nombreEmpresa}
-              onChange={handleChange}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              NIF de la Empresa
-            </label>
-            <input
-              type="text"
-              name="nifEmpresa"
-              value={formData.nifEmpresa}
-              onChange={handleChange}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Email de la Empresa
-            </label>
-            <input
-              type="email"
-              name="emailEmpresa"
-              value={formData.emailEmpresa}
-              onChange={handleChange}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              required
-            />
-          </div>
-        </div>
-      </div>
+      <SeccionEmpresa
+        formData={formData}
+        handleChange={handleChange}
+      />
 
       {/* Sección 4: Información Adicional */}
       <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -545,52 +504,14 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Tipo de Factura */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Tipo de Factura
-            </label>
-            <select
-              name="tipoFactura"
-              value={formData.tipoFactura}
-              onChange={handleChange}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              required
-            >
-              <option value="">Seleccionar tipo</option>
-              <option value="simple">Factura Simple</option>
-              <option value="completa">Factura Completa</option>
-              <option value="proforma">Factura Proforma</option>
-            </select>
-          </div>
-
-          {/* Cliente */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Cliente
-            </label>
-            <select
-              name="clienteId"
-              value={formData.clienteId}
-              onChange={handleChange}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              required
-            >
-              <option value="">Seleccionar cliente</option>
-              {clientes.map(cliente => (
-                <option key={cliente._id} value={cliente._id}>{cliente.nombre}</option>
-              ))}
-            </select>
-          </div>
-
           {/* Comentario */}
           <div className="md:col-span-2 space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               Comentario
             </label>
             <textarea
-              name="comentario"
-              value={formData.comentario}
+              name="comentarios"
+              value={formData.comentarios}
               onChange={handleChange}
               rows={3}
               className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -622,6 +543,67 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+
+      {/* Totales */}
+      <div className="mt-6 space-y-4">
+        <div className="flex justify-between items-center">
+          <span className="text-sm font-medium text-gray-700">Base Imponible:</span>
+          <span className="text-lg font-semibold">{formData.baseImponible.toFixed(2)} €</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-sm font-medium text-gray-700">Total IVA:</span>
+          <span className="text-lg font-semibold">{formData.totalIva.toFixed(2)} €</span>
+        </div>
+        <div className="flex justify-between items-center text-blue-600">
+          <span className="text-sm font-medium">Importe Total:</span>
+          <span className="text-xl font-bold">{formData.importeTotal.toFixed(2)} €</span>
+        </div>
+      </div>
+
+      {/* Información Adicional */}
+      <div className="mt-6 space-y-4">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Condiciones
+          </label>
+          <textarea
+            name="condiciones"
+            value={formData.condiciones}
+            onChange={handleChange}
+            rows={3}
+            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            placeholder="Condiciones de pago y otras observaciones..."
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Fecha de Vencimiento
+          </label>
+          <input
+            type="date"
+            name="fechaVencimiento"
+            value={formData.fechaVencimiento}
+            onChange={handleChange}
+            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          />
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            name="proteccionDatos"
+            checked={formData.proteccionDatos}
+            onChange={(e) => setFormData(prev => ({ ...prev, proteccionDatos: e.target.checked }))}
+            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            required
+          />
+          <label className="text-sm text-gray-700">
+            He leído y acepto la política de protección de datos
+          </label>
         </div>
       </div>
 

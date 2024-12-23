@@ -11,6 +11,7 @@ import { Viewer, Worker } from '@react-pdf-viewer/core';
 import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
+import FacturasPopup2 from '../../modals/FacturasPopup2';
 
 interface FacturasPageProps {
   isFacturaPopupOpen: boolean;
@@ -59,6 +60,7 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
     montoMax: '',
   });
   const [activeTab, setActiveTab] = useState<TabType>('todas');
+  const [isFacturasPopup2Open, setIsFacturasPopup2Open] = useState(false);
 
   const [facturas, setFacturas] = useState<Factura[]>([]);
   const [selectedFacturaId, setSelectedFacturaId] = useState<string | null>(null);
@@ -440,6 +442,10 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
             <Plus className="w-4 h-4 mr-2" />
             Nueva Factura
           </Button>
+          <Button variant="create" onClick={() => setIsFacturasPopup2Open(true)}>
+            <FileText className="w-4 h-4 mr-2" />
+            Nueva Factura (Versión 2)
+          </Button>
           <Button variant="create" onClick={() => setIsEscanearFacturaPopupOpen(true)}>
             <FileText className="w-4 h-4 mr-2" />
             Escanear Factura
@@ -594,6 +600,11 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
         <FacturaPopup
           isOpen={isFacturaPopupOpen}
           onClose={() => setIsFacturaPopupOpen(false)}
+          onSubmit={handleFacturaSubmit}
+        />
+        <FacturasPopup2
+          isOpen={isFacturasPopup2Open}
+          onClose={() => setIsFacturasPopup2Open(false)}
           onSubmit={handleFacturaSubmit}
         />
         <EscanearFacturaPopup

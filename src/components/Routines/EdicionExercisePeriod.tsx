@@ -92,7 +92,7 @@ export function EdicionExercisePeriod({ periods, onSave, onClose }: EdicionExerc
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedVariant, setSelectedVariant] = useState<'rojo' | 'verde' | 'amarillo'>('rojo');
+  const [selectedVariant, setSelectedVariant] = useState<'verde'>('verde');
   const [currentPeriods, setCurrentPeriods] = useState<Period[]>(periods);
   const [selectedPeriodIndex, setSelectedPeriodIndex] = useState<number>(0);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
@@ -283,26 +283,7 @@ export function EdicionExercisePeriod({ periods, onSave, onClose }: EdicionExerc
           </div>
 
           <div className="mb-4">
-            <div className="flex space-x-4 mb-4">
-              {['rojo', 'verde', 'amarillo'].map((color) => (
-                <button
-                  key={color}
-                  onClick={() => setSelectedVariant(color as 'rojo' | 'verde' | 'amarillo')}
-                  className={clsx(
-                    'px-4 py-2 rounded-md font-medium',
-                    {
-                      'bg-red-500 text-white': color === 'rojo' && selectedVariant === 'rojo',
-                      'bg-green-500 text-white': color === 'verde' && selectedVariant === 'verde',
-                      'bg-yellow-500 text-white': color === 'amarillo' && selectedVariant === 'amarillo',
-                      'bg-gray-100': selectedVariant !== color
-                    }
-                  )}
-                >
-                  Variante {color}
-                </button>
-              ))}
-            </div>
-
+            {/* Removed variant selection buttons since we only use green variant */}
             <div className="relative mb-4">
               <input
                 type="text"

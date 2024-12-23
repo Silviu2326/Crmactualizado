@@ -8,19 +8,12 @@ import { motion } from 'framer-motion';
 import AddDocumentoModal from './AddDocumentoModal';
 import EditDocumentoModal from './EditDocumentoModal';
 
-interface Trainer {
-  _id: string;
-  nombre: string;
-  email: string;
-}
-
 interface OtroDocumento {
   _id: string;
   nombre: string;
   tipo: string;
   fechaCreacion: string;
   fechaFinalizacion?: string;
-  trainer?: Trainer;
   notas?: string;
   createdAt: string;
   updatedAt: string;
@@ -225,7 +218,7 @@ const OtrosDocumentosWidget: React.FC = () => {
         <div className="overflow-x-auto">
           <div className="min-w-full">
             <Table
-              headers={['Nombre', 'Tipo', 'Fecha de Creación', 'Trainer', 'Notas', 'Acciones']}
+              headers={['Nombre', 'Tipo', 'Fecha de Creación', 'Notas', 'Acciones']}
               data={filteredDocumentos.map(doc => ({
                 Nombre: (
                   <div className="flex items-center" title={doc.nombre}>
@@ -248,13 +241,6 @@ const OtrosDocumentosWidget: React.FC = () => {
                     <Calendar className={`w-4 h-4 mr-2 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}`} />
                     {formatDate(doc.fechaCreacion)}
                   </div>
-                ),
-                Trainer: doc.trainer ? (
-                  <div className="text-sm">
-                    {doc.trainer.nombre}
-                  </div>
-                ) : (
-                  <span className="text-gray-400">-</span>
                 ),
                 Notas: doc.notas ? (
                   <div className="max-w-xs truncate">

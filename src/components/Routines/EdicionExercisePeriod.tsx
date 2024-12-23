@@ -103,6 +103,7 @@ export function EdicionExercisePeriod({ periods, onSave, onClose }: EdicionExerc
     campo2: 'weight',
     campo3: 'rest'
   });
+  const [expandedExercises, setExpandedExercises] = useState<string[]>([]);
 
   console.log('EdicionExercisePeriod - Estado inicial:', {
     currentPeriods,
@@ -156,6 +157,13 @@ export function EdicionExercisePeriod({ periods, onSave, onClose }: EdicionExerc
 
   const handleSetChange = (index: number, field: string, value: number) => {
     const newSets = [...currentSets];
+    
+    // For campo2 (weight field), restrict value between 1 and 100
+    if (field === 'campo2' && currentConfig[field] === 'weight') {
+      if (value < 1) value = 1;
+      if (value > 100) value = 100;
+    }
+    
     newSets[index] = { ...newSets[index], [field]: value };
     setCurrentSets(newSets);
   };
@@ -232,13 +240,25 @@ export function EdicionExercisePeriod({ periods, onSave, onClose }: EdicionExerc
     onClose();
   };
 
-  const getFieldLabel = (field: string, type: string) => {
-    return fieldOptions[field as keyof typeof fieldOptions]
-      .find(option => option.value === type)?.label || type;
+  const toggleExerciseExpand = (exerciseId: string) => {
+    setExpandedExercises(prev => {
+      if (prev.includes(exerciseId)) {
+        return prev.filter(id => id !== exerciseId);
+      } else {
+        return [...prev, exerciseId];
+      }
+    });
   };
 
-  const toggleExerciseExpand = (exerciseId: string) => {
-    // No implementado
+  const getFieldLabel = (field: string, type: string) => {
+    if (field === 'campo2' && type === 'weight') {
+      if (selectedPeriodIndex === 0) {
+        return 'RM*';
+      }
+      return 'Peso del periodo anterior';
+    }
+    return fieldOptions[field as keyof typeof fieldOptions]
+      .find(option => option.value === type)?.label || type;
   };
 
   const filteredExercises = exercises.filter(exercise =>
@@ -252,27 +272,27 @@ export function EdicionExercisePeriod({ periods, onSave, onClose }: EdicionExerc
   if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-[80%] max-w-4xl relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl p-8 w-[90%] max-w-5xl relative max-h-[90vh] overflow-y-auto shadow-2xl">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+          className="absolute top-6 right-6 text-gray-500 hover:text-gray-700 transition-colors duration-200"
         >
           <X size={24} />
         </button>
 
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold mb-4">Editar Periodos</h2>
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold mb-6 text-gray-800">Editar Periodos</h2>
           
           {/* Selector de periodo */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
               Seleccionar Periodo
             </label>
             <select
               value={selectedPeriodIndex}
               onChange={(e) => setSelectedPeriodIndex(Number(e.target.value))}
-              className="w-full p-2 border rounded"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             >
               {currentPeriods.map((period, index) => (
                 <option key={index} value={index}>
@@ -282,71 +302,76 @@ export function EdicionExercisePeriod({ periods, onSave, onClose }: EdicionExerc
             </select>
           </div>
 
-          <div className="mb-4">
-            {/* Removed variant selection buttons since we only use green variant */}
-            <div className="relative mb-4">
+          <div className="mb-6">
+            <div className="relative mb-6">
               <input
                 type="text"
                 placeholder="Buscar ejercicios..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border rounded-md pl-10"
+                className="w-full px-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               />
-              <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-4">
               {filteredExercises.map((exercise) => {
-                const isExpanded = false; // No implementado
+                const isExpanded = expandedExercises.includes(exercise._id);
                 const existingExercise = getCurrentExercise(exercise._id);
 
                 return (
                   <div
                     key={exercise._id}
-                    className="border rounded-md overflow-hidden"
+                    className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-200"
                   >
                     <div
-                      className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50"
-                      onClick={() => toggleExerciseExpand(exercise._id)}
+                      className={clsx(
+                        "flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50 transition-colors duration-200",
+                        existingExercise && "cursor-pointer",
+                        !existingExercise && "cursor-default"
+                      )}
+                      onClick={() => existingExercise && toggleExerciseExpand(exercise._id)}
                     >
                       <div>
-                        <h3 className="font-medium">{exercise.nombre}</h3>
-                        <p className="text-sm text-gray-500">
+                        <h3 className="text-lg font-semibold text-gray-800">{exercise.nombre}</h3>
+                        <p className="text-sm text-gray-600 mt-1">
                           {exercise.grupoMuscular.join(', ')}
                         </p>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-4">
                         {existingExercise && (
-                          <span className="text-sm text-green-500">
-                            Configurado
-                          </span>
+                          <>
+                            <span className="px-3 py-1 text-sm font-medium text-green-600 bg-green-100 rounded-full">
+                              Configurado
+                            </span>
+                            {isExpanded ? (
+                              <ChevronUp className="w-5 h-5 text-gray-500" />
+                            ) : (
+                              <ChevronDown className="w-5 h-5 text-gray-500" />
+                            )}
+                          </>
                         )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleAddExercise(exercise);
                           }}
-                          className="p-1 hover:bg-gray-100 rounded"
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Edit2 className="w-5 h-5" />
                         </button>
-                        {isExpanded ? (
-                          <ChevronUp className="w-5 h-5" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5" />
-                        )}
                       </div>
                     </div>
 
                     {isExpanded && existingExercise && (
-                      <div className="p-4 bg-gray-50 border-t">
-                        <h4 className="font-medium mb-2">Configuración actual:</h4>
-                        <div className="space-y-2">
+                      <div className="p-5 bg-gray-50 border-t border-gray-200">
+                        <h4 className="font-semibold text-gray-800 mb-3">Configuración actual:</h4>
+                        <div className="space-y-3">
                           {existingExercise.sets.map((set, index) => (
-                            <div key={index} className="flex space-x-4">
-                              <span>{getFieldLabel('campo1', existingExercise.config.campo1)}: {set.campo1}</span>
-                              <span>{getFieldLabel('campo2', existingExercise.config.campo2)}: {set.campo2}</span>
-                              <span>{getFieldLabel('campo3', existingExercise.config.campo3)}: {set.campo3}</span>
+                            <div key={index} className="flex flex-wrap gap-4 p-3 bg-white rounded-lg shadow-sm">
+                              <span className="text-gray-700">{getFieldLabel('campo1', existingExercise.config.campo1)}: <span className="font-medium">{set.campo1}</span></span>
+                              <span className="text-gray-700">{getFieldLabel('campo2', existingExercise.config.campo2)}: <span className="font-medium">{set.campo2}</span></span>
+                              <span className="text-gray-700">{getFieldLabel('campo3', existingExercise.config.campo3)}: <span className="font-medium">{set.campo3}</span></span>
                             </div>
                           ))}
                         </div>
@@ -360,23 +385,23 @@ export function EdicionExercisePeriod({ periods, onSave, onClose }: EdicionExerc
         </div>
 
         {showSetModal && selectedExercise && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6">
-              <h3 className="text-lg font-medium mb-4">
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-8">
+              <h3 className="text-2xl font-bold mb-6 text-gray-800">
                 Configurar {selectedExercise.nombre}
               </h3>
 
-              <div className="space-y-4 mb-6">
-                <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-6">
+                <div className="grid grid-cols-3 gap-6">
                   {Object.entries(fieldOptions).map(([field, options]) => (
                     <div key={field}>
-                      <label className="block text-sm font-medium mb-1">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Campo {field.slice(-1)}
                       </label>
                       <select
                         value={currentConfig[field as keyof typeof currentConfig]}
                         onChange={(e) => handleConfigChange(field, e.target.value)}
-                        className="w-full border rounded-md p-2"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                       >
                         {options.map((option) => (
                           <option key={option.value} value={option.value}>
@@ -389,62 +414,65 @@ export function EdicionExercisePeriod({ periods, onSave, onClose }: EdicionExerc
                 </div>
 
                 {currentSets.map((set, index) => (
-                  <div key={index} className="flex items-center space-x-4">
-                    <div className="grid grid-cols-3 gap-4 flex-1">
+                  <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
+                    <div className="grid grid-cols-3 gap-6 flex-1">
                       {Object.entries(currentConfig).map(([field, type]) => (
                         <div key={field}>
-                          <label className="block text-sm font-medium mb-1">
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
                             {getFieldLabel(field, type)}
                           </label>
                           <input
                             type="number"
                             value={set[field as keyof Set]}
                             onChange={(e) => handleSetChange(index, field, Number(e.target.value))}
-                            className="w-full border rounded-md p-2"
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                            min={field === 'campo2' && type === 'weight' ? 1 : undefined}
+                            max={field === 'campo2' && type === 'weight' ? 100 : undefined}
                           />
                         </div>
                       ))}
                     </div>
                     <button
                       onClick={() => handleRemoveSet(index)}
-                      className="p-2 hover:bg-red-100 rounded-full"
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 self-end"
                     >
-                      <Minus className="w-5 h-5 text-red-500" />
+                      <Minus className="w-5 h-5" />
                     </button>
                   </div>
                 ))}
 
-                <button
-                  onClick={handleAddSet}
-                  className="flex items-center space-x-2 text-blue-500 hover:text-blue-600"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span>Añadir serie</span>
-                </button>
-              </div>
-
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={() => setShowSetModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleSaveExercise}
-                  className="px-4 py-2 bg-blue-500 text-white hover:bg-blue-600 rounded-md"
-                >
-                  Guardar
-                </button>
+                <div className="flex justify-between mt-8">
+                  <button
+                    onClick={handleAddSet}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center space-x-2"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span>Agregar Set</span>
+                  </button>
+                  <div className="space-x-4">
+                    <button
+                      onClick={() => setShowSetModal(false)}
+                      className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleSaveExercise}
+                      className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
+                    >
+                      Guardar
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-end mt-8">
           <button
             onClick={handleSavePeriods}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
           >
             Guardar Cambios
           </button>

@@ -12,6 +12,7 @@ import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import FacturasPopup2 from '../../modals/FacturasPopup2';
+import JSZip from 'jszip';
 
 interface FacturasPageProps {
   isFacturaPopupOpen: boolean;
@@ -49,6 +50,7 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [isExportMode, setIsExportMode] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'CSV' | 'PDF'>('CSV');
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterValues>({
@@ -294,41 +296,91 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
 
   const handleExport = () => {
     if (isExportMode && selectedInvoices.length > 0) {
-      handleExportSelectedToCSV();
+      handleExportSelected();
     } else {
       setIsExportMode(!isExportMode);
       setSelectedInvoices([]);
     }
   };
 
-  const handleExportSelectedToCSV = () => {
-    const selectedFacturas = facturas.filter(factura => selectedInvoices.includes(factura.id));
-    const csvContent = [
-      ['Número', 'Monto', 'Estado', 'Tipo', 'Fecha', 'Moneda', 'Cliente', 'Emisor'].join(','),
-      ...selectedFacturas.map(factura => [
+  const handleExportSelected = async () => {
+    if (selectedInvoices.length === 0) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (exportFormat === 'PDF') {
+        // Crear un nuevo objeto ZIP
+        const zip = new JSZip();
+        
+        // Descargar todos los PDFs y añadirlos al ZIP
+        for (const facturaId of selectedInvoices) {
+          const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/invoice/${facturaId}/pdf`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`Error al descargar la factura ${facturaId}`);
+          }
+
+          const pdfBlob = await response.blob();
+          const factura = facturas.find(f => f.id === facturaId);
+          const fileName = `factura-${factura?.numero || facturaId}.pdf`;
+          zip.file(fileName, pdfBlob);
+        }
+        
+        // Generar y descargar el archivo ZIP
+        const zipBlob = await zip.generateAsync({type: 'blob'});
+        const url = window.URL.createObjectURL(zipBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `facturas_${new Date().toISOString().split('T')[0]}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(link);
+      } else {
+        // Lógica para exportar a CSV
+        const selectedFacturas = facturas.filter(factura => 
+          selectedInvoices.includes(factura.id)
+        );
+        
+        const csvContent = generateCSV(selectedFacturas);
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `facturas_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(link);
+      }
+      
+      setIsExportMode(false);
+      setSelectedInvoices([]);
+    } catch (error) {
+      console.error('Error al exportar las facturas:', error);
+    }
+  };
+
+  const generateCSV = (selectedFacturas: Factura[]): string => {
+    const headers = ['Número', 'Fecha', 'Importe', 'Estado', 'Tipo', 'Cliente', 'Emisor'].join(',');
+    const rows = selectedFacturas.map(factura => {
+      return [
         factura.numero,
-        factura.monto,
+        factura.fecha,
+        `${factura.currency === 'USD' ? '$' : '€'}${factura.monto}`,
         factura.estado,
         factura.tipo,
-        factura.fecha,
-        factura.currency,
         factura.cliente || '',
         factura.emisor || ''
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `facturas_exportadas_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      ].join(',');
+    });
     
-    // Desactivar el modo exportación y limpiar las selecciones
-    setIsExportMode(false);
-    setSelectedInvoices([]);
+    return [headers, ...rows].join('\n');
   };
 
   const handleToggleInvoiceSelection = (facturaId: string) => {
@@ -450,13 +502,53 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
             <FileText className="w-4 h-4 mr-2" />
             Escanear Factura
           </Button>
-          <Button
-            variant="create"
-            onClick={handleExport}
-          >
-            <Download className="w-4 h-4 mr-2" />
-            {isExportMode ? 'Exportar Seleccionadas' : 'Exportar'}
-          </Button>
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="create"
+              onClick={() => {
+                if (isExportMode && selectedInvoices.length > 0) {
+                  handleExportSelected();
+                } else {
+                  setIsExportMode(!isExportMode);
+                  setSelectedInvoices([]);
+                }
+              }}
+              className="flex items-center space-x-2"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              <span>{isExportMode ? `Exportar ${selectedInvoices.length} seleccionadas` : 'Exportar'}</span>
+              {isExportMode && (
+                <div className="flex items-center ml-4 bg-white/10 rounded-full p-1">
+                  <button
+                    className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                      exportFormat === 'CSV' 
+                        ? 'bg-white text-blue-600' 
+                        : 'text-white hover:bg-white/20'
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExportFormat('CSV');
+                    }}
+                  >
+                    CSV
+                  </button>
+                  <button
+                    className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                      exportFormat === 'PDF' 
+                        ? 'bg-white text-blue-600' 
+                        : 'text-white hover:bg-white/20'
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExportFormat('PDF');
+                    }}
+                  >
+                    PDF
+                  </button>
+                </div>
+              )}
+            </Button>
+          </div>
         </div>
         <div className="flex items-center space-x-2">
           <div className="relative">

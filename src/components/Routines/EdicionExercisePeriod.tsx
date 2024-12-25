@@ -472,8 +472,7 @@ export function EdicionExercisePeriod({ periods, onSave, onClose }: EdicionExerc
         <div className="flex justify-end mt-8">
           <button
             onClick={handleSavePeriods}
-            className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
-          >
+            className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"          >
             Guardar Cambios
           </button>
         </div>

@@ -496,55 +496,7 @@ const FacturaForm: React.FC<FacturaFormProps> = ({ onSubmit }) => {
         handleChange={handleChange}
       />
 
-      {/* Sección 4: Información Adicional */}
-      <div className="bg-white p-6 rounded-lg shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <Users className="w-5 h-5 text-blue-600" />
-          <h2 className="text-xl font-semibold text-gray-800">Información Adicional</h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Comentario */}
-          <div className="md:col-span-2 space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Comentario
-            </label>
-            <textarea
-              name="comentarios"
-              value={formData.comentarios}
-              onChange={handleChange}
-              rows={3}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="Añade cualquier nota o comentario relevante..."
-            />
-          </div>
-
-          {/* Documentos Adicionales */}
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Documentos Adicionales
-            </label>
-            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors">
-              <div className="space-y-2 text-center">
-                <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                <div className="flex text-sm text-gray-600">
-                  <label className="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500">
-                    <span>Subir archivo</span>
-                    <input
-                      type="file"
-                      multiple
-                      onChange={handleFileChange}
-                      className="sr-only"
-                    />
-                  </label>
-                  <p className="pl-1">o arrastrar y soltar</p>
-                </div>
-                <p className="text-xs text-gray-500">PDF, PNG, JPG hasta 10MB</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+     
 
 
       {/* Totales */}

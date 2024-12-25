@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { motion } from 'framer-motion';
-import { Users, Layout } from 'lucide-react';
+import { Users, Layout, Plus } from 'lucide-react';
 import { VistaClientes } from './VistaClientes';
 import { VistaCompleja } from './VistaCompleja';
 import PlantillaPageCalendario from './PlantillaPageCalendario';
+import PopupDeEsqueletoPlantilla from '../../modals/PopupDeEsqueletoPlantilla';
+import Button from '../../Common/Button';
 
 type Vista = 'clientes' | 'compleja';
 
@@ -107,6 +109,7 @@ const PlantillaPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [vistaActual, setVistaActual] = useState<Vista>('clientes');
   const [selectedWeek, setSelectedWeek] = useState(1);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
 
   useEffect(() => {
     const fetchPlantilla = async () => {
@@ -191,9 +194,21 @@ const PlantillaPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6"
         >
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {plantilla?.nombre}
-          </h1>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                {plantilla?.nombre}
+              </h1>
+              <Button
+                variant="create"
+                onClick={() => setIsPopupOpen(true)}
+                className="flex items-center space-x-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Crear Plantilla</span>
+              </Button>
+            </div>
+          </div>
           <p className="text-gray-600 dark:text-gray-300 mb-4">
             {plantilla?.descripcion}
           </p>
@@ -307,6 +322,46 @@ const PlantillaPage: React.FC = () => {
             )}
           </motion.div>
         )}
+        {/* Popup de Esqueleto Plantilla */}
+        <PopupDeEsqueletoPlantilla
+          isOpen={isPopupOpen}
+          onClose={() => setIsPopupOpen(false)}
+          onSubmit={async (formData) => {
+            try {
+              const token = localStorage.getItem('token');
+              const plantillaData = {
+                ...formData,
+                totalWeeks: 4,
+                plan: Array(4).fill().map((_, weekIndex) => ({
+                  weekNumber: weekIndex + 1,
+                  days: Array(7).fill().map((_, dayIndex) => ({
+                    dayNumber: dayIndex + 1,
+                    sessions: [],
+                  })),
+                })),
+              };
+
+              const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/templates', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify(plantillaData),
+              });
+
+              if (!response.ok) {
+                throw new Error('Error al crear la plantilla');
+              }
+
+              // Recargar las plantillas después de crear una nueva
+              // fetchTemplates();
+              setIsPopupOpen(false);
+            } catch (error) {
+              console.error('Error:', error);
+            }
+          }}
+        />
       </div>
     </div>
   );

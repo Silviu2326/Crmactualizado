@@ -101,6 +101,7 @@ const SeccionClientes: React.FC<SeccionClientesProps> = ({
                   required
                 />
               </div>
+
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
                   Apellidos
@@ -140,6 +141,21 @@ const SeccionClientes: React.FC<SeccionClientesProps> = ({
                   required
                 />
               </div>
+              {formData.tipoPersona === 'juridica' && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    NIF
+                  </label>
+                  <input
+                    type="text"
+                    name="nif"
+                    value={formData.nif}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    required
+                  />
+                </div>
+              )}
             </div>
 
             {/* Sección de Dirección del Cliente */}

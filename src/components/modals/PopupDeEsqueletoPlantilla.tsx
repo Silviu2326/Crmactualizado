@@ -195,10 +195,20 @@ const PopupDeEsqueletoPlantilla: React.FC<PopupDeEsqueletoPlantillaProps> = ({
     } else {
       const start = Math.min(selectionStart, weekNumber);
       const end = Math.max(selectionStart, weekNumber);
-      setSelectedWeeks(prev => [...prev, { start, end, name: `Período ${prev.length + 1}`, exercises: [] }]);
+      handleAddPeriod({ start, end, name: `Período ${selectedWeeks.length + 1}` });
       setSelectionStart(null);
       setHoveredWeek(null);
     }
+  };
+
+  const handleAddPeriod = (weekRange: WeekRange) => {
+    const newPeriod: Period = {
+      ...weekRange,
+      exercises: [],
+      name: `Periodo ${selectedWeeks.length + 1}`
+    };
+    setSelectedWeeks([...selectedWeeks, newPeriod]);
+    setSelectionStart(null);
   };
 
   const getPreviewRange = () => {

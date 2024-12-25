@@ -40,6 +40,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid'; // Importar para generar IDs únicos
 import PlanningTutorial from '../components/Tutorial/PlanningTutorial';
 import PopupRM from '../components/Planning/PopupRM';
+import PopupDeEsqueletoPlanning from '../components/modals/PopupDeEsqueletoPlanning'; // Importar el componente de popup para crear esqueleto
 
 const EditPlanningPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -68,6 +69,7 @@ const EditPlanningPage: React.FC = () => {
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [isCommandAssisterOpen, setIsCommandAssisterOpen] = useState(false);
   const [isRMModalOpen, setIsRMModalOpen] = useState(false);
+  const [isSkeletonModalOpen, setIsSkeletonModalOpen] = useState(false); // Estado para el modal de crear esqueleto
 
   const isHomeRoute = location.pathname === '/';
 
@@ -362,6 +364,30 @@ const EditPlanningPage: React.FC = () => {
     },
   ];
 
+  const handleSubmitEsqueleto = async (formData: any, shouldClose?: boolean) => {
+    try {
+      // Aquí tu lógica de submit actual
+      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/planning/esqueleto', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al guardar el esqueleto');
+      }
+
+      // Solo cerramos el popup si shouldClose es true
+      if (shouldClose) {
+        setIsSkeletonModalOpen(false);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className={`p-6 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
@@ -477,6 +503,16 @@ const EditPlanningPage: React.FC = () => {
                   <Save className="w-5 h-5 mr-2" />
                   Guardar Cambios
                 </Button>
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={() => setIsSkeletonModalOpen(true)}
+                    variant="primary"
+                    className="flex items-center"
+                  >
+                    <Dumbbell className="w-4 h-4 mr-2" />
+                    Crear Esqueleto
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -581,6 +617,15 @@ const EditPlanningPage: React.FC = () => {
           />
         )}
       </AnimatePresence>
+      {isSkeletonModalOpen && (
+        <PopupDeEsqueletoPlanning
+          isOpen={isSkeletonModalOpen}
+          onClose={() => setIsSkeletonModalOpen(false)}
+          numberOfWeeks={planning?.semanas || 52}
+          plan={planning?.plan || []}
+          onSubmit={(formData) => handleSubmitEsqueleto(formData, true)}
+        />
+      )}
     </div>
   );
 };

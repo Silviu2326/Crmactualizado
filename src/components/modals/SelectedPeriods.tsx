@@ -1,22 +1,23 @@
 import React from 'react';
-
-interface WeekRange {
-  start: number;
-  end: number;
-  name: string;
-}
+import { Period } from '../../types/planning';
 
 interface SelectedPeriodsProps {
-  selectedWeeks: WeekRange[];
-  onRemovePeriod: (index: number) => void;
-  onUpdatePeriodName: (index: number, name: string) => void;
+  period: Period;
+  onPeriodChange: (updatedPeriod: Period) => void;
+  onDelete: () => void;
+  onAddExercise: () => void;
 }
 
-export const SelectedPeriods: React.FC<SelectedPeriodsProps> = ({ 
-  selectedWeeks, 
-  onRemovePeriod,
-  onUpdatePeriodName 
+export const SelectedPeriods: React.FC<SelectedPeriodsProps> = ({
+  period,
+  onPeriodChange,
+  onDelete,
+  onAddExercise
 }) => {
+  if (!period) {
+    return null;
+  }
+
   const formatDateRange = (start: number, end: number) => {
     const startWeek = Math.ceil(start / 7);
     const startDay = start % 7 === 0 ? 7 : start % 7;
@@ -28,35 +29,45 @@ export const SelectedPeriods: React.FC<SelectedPeriodsProps> = ({
 
   return (
     <div className="mt-4 bg-blue-50 p-4 rounded-lg">
-      <h3 className="text-sm font-medium text-gray-700 mb-2">
-        Períodos seleccionados:
-      </h3>
-      <div className="space-y-2">
-        {selectedWeeks.map((range, index) => (
-          <div 
-            key={index}
-            className="flex flex-col bg-white p-2 rounded"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <input
-                type="text"
-                value={range.name}
-                onChange={(e) => onUpdatePeriodName(index, e.target.value)}
-                placeholder="Nombre del período"
-                className="text-sm text-gray-700 border rounded px-2 py-1 flex-grow mr-2"
-              />
-              <button 
-                className="text-gray-400 hover:text-gray-600"
-                onClick={() => onRemovePeriod(index)}
-              >
-                ×
-              </button>
-            </div>
-            <span className="text-sm text-gray-500">
-              {formatDateRange(range.start, range.end)}
-            </span>
+      <div className="flex flex-col bg-white p-2 rounded">
+        <div className="flex items-center justify-between mb-2">
+          <input
+            type="text"
+            value={period.name || ''}
+            onChange={(e) => onPeriodChange({ ...period, name: e.target.value })}
+            placeholder="Nombre del período"
+            className="text-sm text-gray-700 border rounded px-2 py-1 flex-grow mr-2"
+          />
+          <div className="flex gap-2">
+            <button
+              className="text-blue-500 hover:text-blue-700 px-2 py-1 rounded"
+              onClick={onAddExercise}
+            >
+              + Ejercicio
+            </button>
+            <button 
+              className="text-red-400 hover:text-red-600 px-2 py-1 rounded"
+              onClick={onDelete}
+            >
+              Eliminar
+            </button>
           </div>
-        ))}
+        </div>
+        <div className="text-sm text-gray-600">
+          {formatDateRange(period.start, period.end)}
+        </div>
+        {period.exercises && period.exercises.length > 0 && (
+          <div className="mt-2">
+            <h4 className="text-sm font-medium text-gray-700">Ejercicios:</h4>
+            <ul className="mt-1 space-y-1">
+              {period.exercises.map((exercise, index) => (
+                <li key={exercise._id || index} className="text-sm text-gray-600">
+                  {exercise.nombre}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );

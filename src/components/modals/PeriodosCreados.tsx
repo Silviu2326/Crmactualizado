@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Period } from '../../types/planning';
 import { ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
 import EditExercisePopup from './EditExercisePopup';
+import VariantesEjerciciosPeriodos from './VariantesEjerciciosPeriodos';
 
 interface Set {
   reps: number;
@@ -35,6 +36,10 @@ const PeriodosCreados: React.FC<PeriodosCreadosProps> = ({
   const [editingExercise, setEditingExercise] = useState<{
     exercise: ExerciseDetails;
     periodIndex: number;
+  } | null>(null);
+  const [showingVariants, setShowingVariants] = useState<{
+    exerciseId: string;
+    exerciseName: string;
   } | null>(null);
 
   const toggleExercise = (exerciseId: string) => {
@@ -71,14 +76,17 @@ const PeriodosCreados: React.FC<PeriodosCreadosProps> = ({
     if (!day?.sessions || day.sessions.length === 0) return [];
 
     const exercises = day.sessions.flatMap(session => 
-      session.exercises.map(exercise => ({
-        nombre: exercise.exercise.nombre,
-        sets: exercise.sets || [],
-        _id: exercise._id,
-        exerciseId: exercise.exercise._id,
-        rm: exercise.rm,
-        relativeWeight: exercise.relativeWeight
-      }))
+      (session.exercises || []).map(exercise => {
+        if (!exercise?.exercise) return null;
+        return {
+          nombre: exercise.exercise.nombre || '',
+          sets: exercise.sets || [],
+          _id: exercise._id || '',
+          exerciseId: exercise.exercise._id || '',
+          rm: exercise.rm,
+          relativeWeight: exercise.relativeWeight
+        };
+      }).filter(Boolean)
     );
 
     return exercises;
@@ -185,12 +193,23 @@ const PeriodosCreados: React.FC<PeriodosCreadosProps> = ({
                               </span>
                             )}
                           </div>
-                          <button
-                            onClick={() => handleEditExercise(exercise, index)}
-                            className="p-1 hover:bg-blue-100 rounded text-blue-600"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleEditExercise(exercise, index)}
+                              className="p-1 hover:bg-blue-100 rounded text-blue-600"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setShowingVariants({ 
+                                exerciseId: exercise.exerciseId,
+                                exerciseName: exercise.nombre 
+                              })}
+                              className="p-1 hover:bg-purple-100 rounded text-purple-600"
+                            >
+                              Variants
+                            </button>
+                          </div>
                         </div>
                         
                         {expandedExercises[exercise.exerciseId] && exercise.sets && (
@@ -220,14 +239,19 @@ const PeriodosCreados: React.FC<PeriodosCreadosProps> = ({
 
       {editingExercise && (
         <EditExercisePopup
-          isOpen={!!editingExercise}
+          exercise={editingExercise.exercise}
           onClose={() => setEditingExercise(null)}
-          exerciseName={editingExercise.exercise.nombre}
-          periodIndex={editingExercise.periodIndex}
-          rm={editingExercise.exercise.rm}
-          relativeWeight={editingExercise.exercise.relativeWeight}
           onRMChange={handleRMChange}
           onRelativeWeightChange={handleRelativeWeightChange}
+        />
+      )}
+      
+      {showingVariants && (
+        <VariantesEjerciciosPeriodos
+          isOpen={true}
+          onClose={() => setShowingVariants(null)}
+          exerciseId={showingVariants.exerciseId}
+          exerciseName={showingVariants.exerciseName}
         />
       )}
     </div>

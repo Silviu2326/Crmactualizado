@@ -4,6 +4,7 @@ import { Search, X, Plus, Filter, Dumbbell, Target, Clock } from 'lucide-react';
 import Button from '../Common/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
+import VariantesEjerciciosPeriodos from '../modals/VariantesEjerciciosPeriodos';
 
 interface Exercise {
   _id: string;
@@ -23,6 +24,10 @@ interface ExerciseWithSets extends Exercise {
     weight: number;
     rest: number;
   }[];
+  variant?: {
+    type: string;
+    percentage?: number;
+  };
 }
 
 interface ExerciseSelectorProps {
@@ -51,6 +56,8 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showVariantModal, setShowVariantModal] = useState(false);
+  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
 
   useEffect(() => {
     console.log('ExerciseSelector: Iniciando fetchExercises');
@@ -125,39 +132,24 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     }
   };
 
-  const handleSelectExercise = async (exercise: Exercise) => {
-    try {
-      console.log('ExerciseSelector: Ejercicio seleccionado:', exercise);
-      
-      // Hacer la petición al backend para añadir el ejercicio
-      const response = await addExerciseToSession(exercise._id);
-      
-      // Extraer la información de los sets y renderConfig de la respuesta
-      const { sets } = response.data.data;
-      
-      // Crear el ejercicio con los sets de la API
-      const exerciseWithSets: ExerciseWithSets = {
-        ...exercise,
-        sets: sets.map(set => ({
-          id: set._id,
-          // Usar solo los campos especificados en renderConfig
-          ...Object.fromEntries(
-            Object.entries(set)
-              .filter(([key]) => 
-                set.renderConfig[`campo1`] === key ||
-                set.renderConfig[`campo2`] === key ||
-                set.renderConfig[`campo3`] === key
-              )
-          )
-        }))
-      };
+  const handleExerciseClick = (exercise: Exercise) => {
+    setSelectedExercise(exercise);
+    setShowVariantModal(true);
+  };
 
-      console.log('ExerciseSelector: Ejercicio con sets:', exerciseWithSets);
+  const handleVariantSelect = (type: string, percentage?: number) => {
+    if (selectedExercise) {
+      const exerciseWithSets: ExerciseWithSets = {
+        ...selectedExercise,
+        sets: [],
+        variant: {
+          type,
+          percentage
+        }
+      };
       onSelectExercise(exerciseWithSets);
+      setShowVariantModal(false);
       onClose();
-    } catch (error) {
-      console.error('Error al agregar el ejercicio:', error);
-      setError('Error al agregar el ejercicio a la sesión');
     }
   };
 
@@ -260,7 +252,7 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
           </div>
 
           {/* Lista de ejercicios */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
             {loading ? (
               <div className="col-span-2 text-center py-8">Cargando ejercicios...</div>
             ) : error ? (
@@ -269,15 +261,10 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
               <div className="col-span-2 text-center py-8">No se encontraron ejercicios</div>
             ) : (
               filteredExercises.map((exercise) => (
-                <motion.div
+                <div
                   key={exercise._id}
-                  whileHover={{ scale: 1.02 }}
-                  className={`p-4 rounded-lg cursor-pointer ${
-                    theme === 'dark'
-                      ? 'bg-gray-700 hover:bg-gray-600'
-                      : 'bg-gray-50 hover:bg-gray-100'
-                  } transition-all shadow-md`}
-                  onClick={() => handleSelectExercise(exercise)}
+                  className="border dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => handleExerciseClick(exercise)}
                 >
                   <div className="flex items-start gap-4">
                     {exercise.imgUrl && (
@@ -304,12 +291,23 @@ const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                       </div>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               ))
             )}
           </div>
         </div>
       </motion.div>
+
+      {/* Modal de Variantes */}
+      {showVariantModal && selectedExercise && (
+        <VariantesEjerciciosPeriodos
+          isOpen={showVariantModal}
+          onClose={() => setShowVariantModal(false)}
+          exerciseName={selectedExercise.nombre}
+          exerciseId={selectedExercise._id}
+          onSelectVariant={handleVariantSelect}
+        />
+      )}
     </div>
   );
 };

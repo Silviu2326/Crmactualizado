@@ -40,7 +40,7 @@ const IncomeWidget: React.FC = () => {
       }
 
       // Mock API call
-      const response = await fetch(`http://localhost:3000/api/ingresos/${id}`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -68,7 +68,7 @@ const IncomeWidget: React.FC = () => {
           throw new Error('No se encontró el token de autenticación');
         }
 
-        const response = await fetch('http://localhost:3000/api/ingresos', {
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

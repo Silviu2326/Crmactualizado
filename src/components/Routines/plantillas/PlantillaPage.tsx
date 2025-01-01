@@ -119,7 +119,7 @@ const PlantillaPage: React.FC = () => {
           throw new Error('No se encontró el token de autenticación');
         }
 
-        const response = await fetch(`http://localhost:3000/api/planningtemplate/templates/${id}`, {
+        const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/planningtemplate/templates/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -291,7 +291,7 @@ const PlantillaPage: React.FC = () => {
                         throw new Error('No se encontró el token de autenticación');
                       }
 
-                      const response = await fetch(`http://localhost:3000/api/planningtemplate/templates/${id}`, {
+                      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/planningtemplate/templates/${id}`, {
                         headers: {
                           Authorization: `Bearer ${token}`,
                         },
@@ -341,7 +341,7 @@ const PlantillaPage: React.FC = () => {
                 })),
               };
 
-              const response = await fetch('http://localhost:3000/api/templates', {
+              const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/templates', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',

@@ -77,7 +77,7 @@ const ClientesServicioWidget: React.FC = () => {
   const fetchPlanDePago = async (planId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:3000/api/servicios/paymentplans/${planId}`, {
+      const response = await axios.get(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/paymentplans/${planId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -93,7 +93,7 @@ const ClientesServicioWidget: React.FC = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:3000/api/servicios/services', {
+      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

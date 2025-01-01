@@ -80,7 +80,7 @@ const PlantillaPageCalendario: React.FC<PlantillaPageCalendarioProps> = ({
       const token = localStorage.getItem('token');
       if (!token || !plantilla?._id) return;
 
-      const response = await fetch(`http://localhost:3000/api/planningtemplate/templates/${plantilla._id}/week`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/planningtemplate/templates/${plantilla._id}/week`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

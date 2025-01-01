@@ -75,7 +75,7 @@ const EditBonoModal: React.FC<EditBonoModalProps> = ({ isOpen, onClose, onBonoUp
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `http://localhost:3000/api/bonos/${bono._id}`,
+        `https://fitoffice2-f70b52bef77e.herokuapp.com/api/bonos/${bono._id}`,
         formData,
         {
           headers: {

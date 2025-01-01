@@ -37,7 +37,7 @@ const AddContratoModal: React.FC<AddContratoModalProps> = ({ isOpen, onClose, on
         try {
           const token = localStorage.getItem('token');
           const response = await axios.get(
-            'http://localhost:3000/api/clientes',
+            'https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes',
             {
               headers: {
                 Authorization: `Bearer ${token}`
@@ -86,7 +86,7 @@ const AddContratoModal: React.FC<AddContratoModalProps> = ({ isOpen, onClose, on
       };
 
       const response = await axios.post(
-        'http://localhost:3000/api/contracts',
+        'https://fitoffice2-f70b52bef77e.herokuapp.com/api/contracts',
         dataToSend,
         {
           headers: {

@@ -244,7 +244,7 @@ const PopupDeEsqueletoPlanning: React.FC<PopupDeEsqueletoPlanningProps> = ({
     });
 
     try {
-      const response = await fetch(`http://localhost:3000/api/plannings/${planningId}/periodo`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${planningId}/periodo`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -311,7 +311,7 @@ const PopupDeEsqueletoPlanning: React.FC<PopupDeEsqueletoPlanningProps> = ({
 
       console.log('📦 Periodos formateados:', periodosFormateados);
 
-      const response = await fetch(`http://localhost:3000/api/plannings/${planningId}/esqueleto`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${planningId}/esqueleto`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -346,7 +346,7 @@ const PopupDeEsqueletoPlanning: React.FC<PopupDeEsqueletoPlanningProps> = ({
     const fetchExercises = async () => {
       setLoading(true);
       try {
-        const response = await fetch('http://localhost:3000/api/exercises');
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/exercises');
         const data = await response.json();
         setExercises(data.data);
       } catch (error) {

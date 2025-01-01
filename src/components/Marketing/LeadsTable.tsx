@@ -42,7 +42,7 @@ export function LeadsTable() {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await axios.get('http://localhost:3000/api/leads', {
+      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/leads', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -76,7 +76,7 @@ export function LeadsTable() {
       console.log('Datos enviados en la petición POST:', leadData);
 
       const response = await axios.post(
-        'http://localhost:3000/api/leads',
+        'https://fitoffice2-f70b52bef77e.herokuapp.com/api/leads',
         leadData,
         {
           headers: {

@@ -38,7 +38,7 @@ const EditarClasePopup: React.FC<EditarClasePopupProps> = ({ onClose, onEdit, cl
     const fetchClaseData = async () => {
       try {
         const response = await axios.get<ClaseGrupal>(
-          `http://localhost:3000/api/servicios/services/${claseId}`,
+          `https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services/${claseId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -74,7 +74,7 @@ const EditarClasePopup: React.FC<EditarClasePopupProps> = ({ onClose, onEdit, cl
       };
 
       const response = await axios.put(
-        `http://localhost:3000/api/servicios/services/${claseId}`,
+        `https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services/${claseId}`,
         payload,
         {
           headers: {

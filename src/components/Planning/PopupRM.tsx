@@ -81,7 +81,7 @@ const PopupRM: React.FC<PopupRMProps> = ({ isOpen = true, onClose, planningId })
         };
 
         // Obtener ejercicios
-        const exercisesResponse = await fetch('http://localhost:3000/api/exercises', {
+        const exercisesResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/exercises', {
           headers
         });
         if (!exercisesResponse.ok) {
@@ -93,7 +93,7 @@ const PopupRM: React.FC<PopupRMProps> = ({ isOpen = true, onClose, planningId })
 
         // Obtener clientes
         console.log('Haciendo fetch a clientes...');
-        const clientesResponse = await fetch('http://localhost:3000/api/clientes', {
+        const clientesResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes', {
           headers
         });
         console.log('Respuesta clientes status:', clientesResponse.status);
@@ -138,7 +138,7 @@ const PopupRM: React.FC<PopupRMProps> = ({ isOpen = true, onClose, planningId })
         'Authorization': `Bearer ${token}`
       };
 
-      const response = await fetch(`http://localhost:3000/api/rms`, {
+      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/rms`, {
         method: 'POST',
         headers,
         body: JSON.stringify(newRM),

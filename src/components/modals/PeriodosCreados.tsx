@@ -243,7 +243,7 @@ const PeriodosCreados: React.FC<PeriodosCreadosProps> = ({
 
   const fetchExercises = async () => {
     try {
-      const response = await axios.get(`http://localhost:3000/api/plannings/${planningId}/weeks/${weekNumber}/days/${selectedDay}/sessions/${sessionId}`);
+      const response = await axios.get(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${planningId}/weeks/${weekNumber}/days/${selectedDay}/sessions/${sessionId}`);
       console.log('Response from API:', response.data);
       
       // Extraer los ejercicios de la respuesta

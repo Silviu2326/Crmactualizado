@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api';
 
 // Tipos
 interface EmailPayload {

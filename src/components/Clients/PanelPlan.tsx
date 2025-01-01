@@ -64,7 +64,7 @@ const PanelPlan: React.FC<PlanPlanProps> = ({ clienteId, planningDetails }) => {
     const fetchExercises = async () => {
       try {
         console.log('Fetching exercises...');
-        const response = await fetch('http://localhost:3000/api/exercises');
+        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/exercises');
         if (response.ok) {
           const data: ExerciseResponse = await response.json();
           console.log('Exercises fetched successfully:', data);
@@ -83,7 +83,7 @@ const PanelPlan: React.FC<PlanPlanProps> = ({ clienteId, planningDetails }) => {
       try {
         console.log('Fetching RMs...');
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:3000/api/rms`, {
+        const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/rms`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

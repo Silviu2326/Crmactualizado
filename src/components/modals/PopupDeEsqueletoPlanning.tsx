@@ -133,7 +133,8 @@ interface PopupDeEsqueletoPlanningProps {
   onClose: () => void;
   onSubmit: (formData: any, shouldClose?: boolean) => void;
   numberOfWeeks: number;
-  plan?: any[];
+  planningId: string;
+  existingPeriods?: Period[]; 
 }
 
 const PopupDeEsqueletoPlanning: React.FC<PopupDeEsqueletoPlanningProps> = ({
@@ -141,7 +142,8 @@ const PopupDeEsqueletoPlanning: React.FC<PopupDeEsqueletoPlanningProps> = ({
   onClose,
   onSubmit,
   numberOfWeeks,
-  plan = [],
+  planningId,
+  existingPeriods
 }) => {
   const [formData, setFormData] = useState({});
   const [selectedWeeks, setSelectedWeeks] = useState<Period[]>([]);
@@ -159,10 +161,192 @@ const PopupDeEsqueletoPlanning: React.FC<PopupDeEsqueletoPlanningProps> = ({
   const [etapa, setEtapa] = useState<'seleccion' | 'revision'>('seleccion');
 
   useEffect(() => {
+    if (existingPeriods && existingPeriods.length > 0) {
+      setSelectedWeeks(existingPeriods);
+      setPeriodosGuardados(existingPeriods);
+      setMostrarPeriodosCreados(true);
+      setEtapa('revision');
+    }
+  }, [existingPeriods]);
+
+  const createVariante = async (periodIndex: number, ejercicioId: string) => {
+    if (!planningId) return;
+    try {
+      const response = await fetch(`/api/planning/${planningId}/variante`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tipo1: "porcentaje",
+          numeroVariantePrimeraSerie: 80,
+          tipo2: "Kg",
+          numeroVariantePosteriorSerie: 5
+        })
+      });
+      if (!response.ok) throw new Error('Error creating variante');
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error creating variante:', error);
+    }
+  };
+
+  const createEjercicioEsqueleto = async (nombre: string, series: number, ejercicios: any[]) => {
+    if (!planningId) return;
+    try {
+      const response = await fetch(`/api/planning/${planningId}/ejercicio-esqueleto`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nombre,
+          series,
+          ejercicios
+        })
+      });
+      if (!response.ok) throw new Error('Error creating ejercicio esqueleto');
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error creating ejercicio esqueleto:', error);
+    }
+  };
+
+  const createPeriodo = async (period: Period) => {
+    if (!planningId) {
+      console.error('❌ No hay planningId disponible');
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('❌ No se encontró el token de autenticación');
+      return;
+    }
+    
+    // Calculate week and day numbers
+    const startWeek = Math.ceil(period.start / 7);
+    const startDay = period.start % 7 === 0 ? 7 : period.start % 7;
+    const endWeek = Math.ceil(period.end / 7);
+    const endDay = period.end % 7 === 0 ? 7 : period.end % 7;
+
+    console.log('📝 Creando periodo con datos:', {
+      planningId,
+      period,
+      calculatedData: {
+        inicioSemana: startWeek,
+        finSemana: endWeek,
+        inicioDia: startDay,
+        finDia: endDay
+      }
+    });
+
+    try {
+      const response = await fetch(`http://localhost:3000/api/plannings/${planningId}/periodo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          inicioSemana: startWeek,
+          finSemana: endWeek,
+          inicioDia: startDay,
+          finDia: endDay,
+          ejercicios: period.exercises.map(exercise => ({
+            nombre: exercise.nombre,
+            grupoMuscular: exercise.grupoMuscular,
+            descripcion: exercise.descripcion,
+            equipo: exercise.equipo
+          }))
+        })
+      });
+
+      const responseData = await response.clone().json();
+      console.log('🔄 Respuesta del servidor:', responseData);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error del servidor:', errorText);
+        throw new Error('Error creating periodo');
+      }
+      
+      const data = await response.json();
+      console.log('✅ Periodo creado exitosamente:', data);
+      return data;
+    } catch (error) {
+      console.error('💥 Error al crear periodo:', error);
+      throw error;
+    }
+  };
+
+  const handleSaveEsqueleto = async () => {
+    console.log('🚀 Iniciando guardado del esqueleto con periodos:', selectedWeeks);
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('❌ No se encontró el token de autenticación');
+        return;
+      }
+
+      // Transformar los periodos al formato requerido
+      const periodosFormateados = selectedWeeks.map(period => {
+        const startWeek = Math.ceil(period.start / 7);
+        const startDay = period.start % 7 === 0 ? 7 : period.start % 7;
+        const endWeek = Math.ceil(period.end / 7);
+        const endDay = period.end % 7 === 0 ? 7 : period.end % 7;
+
+        return {
+          nombre: period.name,
+          inicioSemana: startWeek,
+          finSemana: endWeek,
+          inicioDia: startDay,
+          finDia: endDay,
+          ejercicios: []
+        };
+      });
+
+      console.log('📦 Periodos formateados:', periodosFormateados);
+
+      const response = await fetch(`http://localhost:3000/api/plannings/${planningId}/esqueleto`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(periodosFormateados)
+      });
+
+      const responseData = await response.json();
+      console.log('✅ Respuesta del servidor:', responseData);
+
+      if (!response.ok) {
+        console.error('❌ Error del servidor:', responseData);
+        throw new Error('Error al crear el esqueleto');
+      }
+
+      console.log('🎉 Esqueleto creado exitosamente');
+      setPeriodosGuardados(selectedWeeks);
+      setMostrarPeriodosCreados(true);
+      onSubmit({ 
+        planning: responseData, 
+        message: 'Esqueleto creado exitosamente' 
+      }, false);
+      setEtapa('revision');
+      
+    } catch (error) {
+      console.error('💥 Error en handleSaveEsqueleto:', error);
+    }
+  };
+
+  useEffect(() => {
     const fetchExercises = async () => {
       setLoading(true);
       try {
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/exercises');
+        const response = await fetch('http://localhost:3000/api/exercises');
         const data = await response.json();
         setExercises(data.data);
       } catch (error) {
@@ -256,7 +440,7 @@ const PopupDeEsqueletoPlanning: React.FC<PopupDeEsqueletoPlanningProps> = ({
                   setSelectionStart={setSelectionStart}
                   hoveredWeek={hoveredWeek}
                   setHoveredWeek={setHoveredWeek}
-                  plan={plan}
+                  plan={[]}
                 />
               )}
             </div>
@@ -287,12 +471,7 @@ const PopupDeEsqueletoPlanning: React.FC<PopupDeEsqueletoPlanningProps> = ({
                 Cancelar
               </Button>
               <Button 
-                onClick={() => {
-                  setPeriodosGuardados(selectedWeeks);
-                  setMostrarPeriodosCreados(true);
-                  onSubmit(selectedWeeks, false); // Pasamos false para que no cierre el popup
-                  setEtapa('revision');
-                }} 
+                onClick={handleSaveEsqueleto} 
                 variant="primary"
                 disabled={selectedWeeks.length === 0}
               >
@@ -304,7 +483,7 @@ const PopupDeEsqueletoPlanning: React.FC<PopupDeEsqueletoPlanningProps> = ({
           <>
             <PeriodosCreados 
               periodos={periodosGuardados}
-              planificacion={plan}
+              planificacion={[]}
             />
             
             <div className="mt-6 flex justify-end space-x-4">

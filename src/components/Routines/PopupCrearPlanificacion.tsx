@@ -43,7 +43,7 @@ const PopupCrearPlanificacion: React.FC<PopupCrearPlanificacionProps> = ({
           throw new Error('No se encontró el token de autenticación');
         }
 
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes', {
+        const response = await fetch('http://localhost:3000/api/clientes', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -80,7 +80,7 @@ const PopupCrearPlanificacion: React.FC<PopupCrearPlanificacionProps> = ({
         throw new Error('No se encontró el token de autenticación');
       }
 
-      let endpoint = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings';
+      let endpoint = 'http://localhost:3000/api/plannings';
       let requestBody: any = {
         nombre,
         descripcion,
@@ -94,7 +94,7 @@ const PopupCrearPlanificacion: React.FC<PopupCrearPlanificacionProps> = ({
         requestBody.clienteId = clienteId || null;
       } else {
         // Si es una plantilla, usar el endpoint específico para plantillas
-        endpoint = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api/planningtemplate/templates';
+        endpoint = 'http://localhost:3000/api/planningtemplate/templates';
       }
 
       const response = await fetch(endpoint, {
@@ -106,12 +106,31 @@ const PopupCrearPlanificacion: React.FC<PopupCrearPlanificacionProps> = ({
         body: JSON.stringify(requestBody),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al crear la planificación');
+        throw new Error('Error al crear la planificación');
       }
 
-      const data = await response.json();
+      console.log('✅ Planificación creada exitosamente:', data);
+
+      // Inicializar el esqueleto
+      console.log('🎯 Iniciando inicialización del esqueleto para planningId:', data._id);
+      const esqueletoResponse = await fetch(`http://localhost:3000/api/plannings/${data._id}/initialize-esqueleto`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const esqueletoData = await esqueletoResponse.json();
+      console.log('✨ Esqueleto inicializado:', esqueletoData);
+
+      if (!esqueletoResponse.ok) {
+        console.error('❌ Error al inicializar el esqueleto:', esqueletoData);
+        throw new Error('Error al inicializar el esqueleto');
+      }
 
       if (onPlanningCreated) {
         onPlanningCreated();
@@ -133,7 +152,7 @@ const PopupCrearPlanificacion: React.FC<PopupCrearPlanificacionProps> = ({
           theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'
         } p-8 rounded-lg shadow-lg relative w-[800px] max-h-[90vh] overflow-y-auto`}
         style={{
-          backgroundColor: theme === 'dark' ? 'rgb(31, 41, 55)' : '#ffffff'
+          backgroundColor: theme === 'dark' ? 'rgb(31, 41, 55)' : '#ffffff',
         }}
       >
         <button

@@ -1,7 +1,8 @@
 // src/components/ClassList/ClassList.tsx
 
 import React, { useState, useEffect } from 'react';  
-import { Search, X, Plus, Filter, Download, Users, Calendar, Clock, Target, Edit, Trash } from 'lucide-react';
+import { Search, X, Plus, Filter, Download, Users, Calendar, Clock, Target, Edit, Trash, 
+  Snowflake, Gift, TreeDeciduous, Star, Bell } from 'lucide-react';
 import Button from '../Common/Button';
 import Table from '../Common/Table';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -55,11 +56,64 @@ const ClassList: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [showSnow, setShowSnow] = useState(true);
   const [filters, setFilters] = useState({
     capacity: 'all',
     sessions: 'all',
     trainer: 'all'
   });
+
+  // Estilos navideños
+  const christmasStyles = {
+    container: `p-6 relative ${
+      theme === 'dark'
+        ? 'bg-gradient-to-b from-gray-900 via-green-900/10 to-gray-900 text-white'
+        : 'bg-gradient-to-b from-red-50 via-green-50/30 to-red-50 text-gray-800'
+    }`,
+    title: 'text-3xl font-bold mb-2 flex items-center gap-3',
+    titleGradient: theme === 'dark'
+      ? 'bg-gradient-to-r from-red-400 via-green-400 to-red-400'
+      : 'bg-gradient-to-r from-red-600 via-green-600 to-red-600',
+    snowflake: 'absolute animate-fall pointer-events-none',
+    statsCard: `${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-4 rounded-lg shadow-lg 
+      transform transition-all duration-300 hover:scale-105 hover:shadow-xl`,
+  };
+
+  // Generar copos de nieve
+  const snowflakes = showSnow ? Array.from({ length: 30 }).map((_, i) => ({
+    style: {
+      position: 'absolute',
+      left: `${Math.random() * 100}%`,
+      top: `-20px`,
+      animationDuration: `${Math.random() * 3 + 2}s`,
+      animationDelay: `${Math.random() * 2}s`,
+      opacity: Math.random() * 0.5 + 0.5
+    }
+  })) : [];
+
+  useEffect(() => {
+    const styles = `
+      @keyframes fall {
+        0% {
+          transform: translateY(-10vh) rotate(0deg);
+        }
+        100% {
+          transform: translateY(100vh) rotate(360deg);
+        }
+      }
+      
+      .animate-fall {
+        animation: fall linear infinite;
+      }
+    `;
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = styles;
+    document.head.appendChild(styleSheet);
+
+    return () => {
+      document.head.removeChild(styleSheet);
+    };
+  }, []);
 
   // Obtener el token del localStorage
   const token = localStorage.getItem('token');
@@ -69,7 +123,7 @@ const ClassList: React.FC = () => {
       try {
         setLoading(true);
         const response = await axios.get<ClaseGrupal[]>(
-          'https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services/tipo/ClaseGrupal',
+          'http://localhost:3000/api/servicios/services/tipo/ClaseGrupal',
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -105,7 +159,7 @@ const ClassList: React.FC = () => {
     try {
       setLoading(true);
       const response = await axios.get<ClaseGrupal[]>(
-        'https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services/tipo/ClaseGrupal',
+        'http://localhost:3000/api/servicios/services/tipo/ClaseGrupal',
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -152,28 +206,28 @@ const ClassList: React.FC = () => {
 
   const statsCards = [
     {
-      icon: Users,
-      title: "Clientes Activos",
+      icon: Gift,
+      title: "Clases Activas",
       value: "156",
-      color: "bg-blue-500"
+      color: "bg-red-500"
     },
     {
-      icon: Calendar,
+      icon: Bell,
       title: "Clases Semanales",
       value: "24",
-      color: "bg-purple-500"
-    },
-    {
-      icon: Clock,
-      title: "Horas Impartidas",
-      value: "96h",
       color: "bg-green-500"
     },
     {
-      icon: Target,
+      icon: Star,
+      title: "Horas Impartidas",
+      value: "96h",
+      color: "bg-yellow-500"
+    },
+    {
+      icon: TreeDeciduous,
       title: "Ocupación Media",
       value: "85%",
-      color: "bg-amber-500"
+      color: "bg-green-600"
     }
   ];
 
@@ -254,7 +308,7 @@ const ClassList: React.FC = () => {
     if (!confirmDelete) return;
 
     try {
-      await axios.delete(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services/${id}`, {
+      await axios.delete(`http://localhost:3000/api/servicios/services/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -268,18 +322,40 @@ const ClassList: React.FC = () => {
   };
 
   return (
-    <div className={`p-6 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
+    <div className={christmasStyles.container}>
+      {showSnow && snowflakes.map((snowflake, i) => (
+        <div key={i} className={christmasStyles.snowflake} style={snowflake.style}>
+          <Snowflake size={16} className={`${theme === 'dark' ? 'text-gray-300' : 'text-red-200'}`} />
+        </div>
+      ))}
+
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent mb-2">
-          Lista de Clases Grupales
+        <h2 className={christmasStyles.title}>
+          <TreeDeciduous className="w-8 h-8 text-green-500" />
+          <span className={`${christmasStyles.titleGradient} bg-clip-text text-transparent`}>
+            Lista de Clases Grupales
+          </span>
+          <Gift className="w-8 h-8 text-red-500" />
         </h2>
-        <p className="text-gray-500 dark:text-gray-400">
-          Administra y organiza las clases grupales de tu negocio
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-gray-500 dark:text-gray-400">
+            🎄 Administra y organiza las clases grupales de tu negocio en esta temporada festiva 🎅
+          </p>
+          <button
+            onClick={() => setShowSnow(!showSnow)}
+            className={`p-2 rounded-full ${
+              theme === 'dark'
+                ? 'bg-gray-700 text-green-400 hover:bg-gray-600'
+                : 'bg-white text-red-500 hover:bg-red-50'
+            } transition-colors duration-200`}
+          >
+            <Snowflake size={20} />
+          </button>
+        </div>
       </motion.div>
 
       <motion.div 
@@ -293,7 +369,7 @@ const ClassList: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className={`${theme === 'dark' ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg shadow-lg`}
+            className={christmasStyles.statsCard}
           >
             <div className="flex items-center space-x-4">
               <div className={`${card.color} p-3 rounded-lg`}>
@@ -315,11 +391,11 @@ const ClassList: React.FC = () => {
       >
         <div className="flex space-x-2">
           <Button variant="create" onClick={() => setIsModalOpen(true)}>
-            <Plus className="w-5 h-5 mr-2" />
-            Crear Clase
+            <Gift className="w-5 h-5 mr-2" />
+            Nueva Clase
           </Button>
           <Button variant="normal">
-            <Download className="w-5 h-5 mr-2" />
+            <TreeDeciduous className="w-5 h-5 mr-2" />
             Exportar
           </Button>
         </div>

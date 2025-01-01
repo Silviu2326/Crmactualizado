@@ -18,6 +18,9 @@ import {
   Layout,
   MailPlus,
   FileText,
+  Snowflake,
+  Gift,
+  Star
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -45,34 +48,43 @@ const Sidebar: React.FC = () => {
 
   return (
     <nav
-      className={`${
-        theme === 'dark' 
-          ? 'bg-gray-900 text-gray-300' 
-          : 'bg-white text-gray-800'
-      } ${
+      className={`bg-[#E61D2B] text-white ${
         isExpanded ? 'w-72' : 'w-20'
-      } min-h-screen p-6 transition-all duration-300 ease-in-out relative shadow-xl border-r ${
-        theme === 'dark' ? 'border-gray-800' : 'border-gray-100'
-      }`}
+      } min-h-screen p-6 transition-all duration-300 ease-in-out relative shadow-xl border-r border-white/10 overflow-hidden`}
     >
-      <div className="flex justify-between items-center mb-10">
+      {/* Copos de nieve animados */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(10)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute text-white/10 animate-fall"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `-20px`,
+              animation: `fall ${Math.random() * 3 + 2}s linear infinite`,
+              animationDelay: `${Math.random() * 3}s`
+            }}
+          >
+            <Snowflake size={16} />
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-between items-center mb-10 relative">
         {isExpanded && (
           <div className="flex items-center space-x-3">
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-300"></div>
-              <div className={`relative p-2 rounded-lg ${
-                theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-              }`}>
-                <Dumbbell className={`w-6 h-6 ${
-                  theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                } transform group-hover:rotate-12 transition-transform duration-300`} />
+              <div className="absolute -inset-1 bg-white/20 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-300"></div>
+              <div className="relative p-2 rounded-lg bg-white/10 backdrop-blur-sm">
+                <Star className="w-6 h-6 text-white transform group-hover:rotate-12 transition-transform duration-300" />
               </div>
             </div>
             <div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
                 FitOffice
+                <Gift className="w-5 h-5 text-white animate-bounce" />
               </h2>
-              <span className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+              <span className="text-xs text-white/70">
                 Gestión Profesional
               </span>
             </div>
@@ -80,13 +92,9 @@ const Sidebar: React.FC = () => {
         )}
         <button
           onClick={toggleTheme}
-          className={`p-2 rounded-xl ${
-            theme === 'dark'
-              ? 'bg-gray-800 text-yellow-400 hover:bg-gray-700'
-              : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-          } transition-all duration-300 hover:scale-110`}
+          className="p-2 rounded-xl bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-300"
         >
-          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          {theme === 'dark' ? <Sun size={20} className="text-white" /> : <Moon size={20} className="text-white" />}
         </button>
       </div>
 
@@ -95,35 +103,24 @@ const Sidebar: React.FC = () => {
           <Link
             key={item.to}
             to={item.to}
-            className={`flex items-center space-x-3 p-3 rounded-xl transition-all duration-300 group ${
+            className={`flex items-center space-x-3 p-3 rounded-xl transition-all duration-300 group relative ${
               isActive(item.to)
-                ? theme === 'dark'
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/20'
-                  : 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/20'
-                : theme === 'dark'
-                ? 'hover:bg-gray-800'
-                : 'hover:bg-gray-100'
-            } ${!isExpanded && 'justify-center'}`}
+                ? 'bg-white text-[#E61D2B] font-medium shadow-lg'
+                : 'hover:bg-white/10 text-white'
+            }`}
           >
-            <div className={`relative ${isActive(item.to) ? 'transform scale-110' : ''}`}>
-              <item.icon className={`w-5 h-5 ${
-                isActive(item.to) 
-                  ? 'text-white' 
-                  : theme === 'dark' 
-                    ? 'text-gray-400 group-hover:text-gray-200' 
-                    : 'text-gray-600 group-hover:text-gray-900'
-              } transition-all duration-300`} />
-            </div>
+            <item.icon className={`w-6 h-6 ${
+              isActive(item.to)
+                ? 'text-[#E61D2B]'
+                : 'text-white group-hover:scale-110 transition-transform duration-300'
+            }`} />
             {isExpanded && (
-              <span className={`font-medium ${
-                isActive(item.to)
-                  ? 'text-white'
-                  : theme === 'dark'
-                  ? 'text-gray-300 group-hover:text-white'
-                  : 'text-gray-700 group-hover:text-gray-900'
-              } transition-colors duration-300`}>
+              <span className="transition-colors duration-300">
                 {item.label}
               </span>
+            )}
+            {isActive(item.to) && (
+              <Snowflake className="absolute right-2 w-4 h-4 text-[#E61D2B] animate-spin" />
             )}
           </Link>
         ))}
@@ -131,37 +128,26 @@ const Sidebar: React.FC = () => {
 
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`absolute -right-4 top-1/2 p-2.5 rounded-full ${
-          theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'
-        } shadow-lg hover:scale-110 transition-all duration-300 border ${
-          theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-        }`}
+        className="absolute bottom-6 -right-4 p-2 rounded-full bg-white text-[#E61D2B] shadow-lg hover:scale-110 transition-transform duration-300"
       >
-        {isExpanded ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+        {isExpanded ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
       </button>
-
-      {/* Footer del Sidebar */}
-      <div className={`absolute bottom-6 left-0 right-0 px-6 ${!isExpanded && 'hidden'}`}>
-        <div className={`p-4 rounded-xl ${
-          theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100'
-        } transition-all duration-300`}>
-          <div className="flex items-center space-x-3">
-            <div className={`p-2 rounded-lg ${
-              theme === 'dark' ? 'bg-gray-700' : 'bg-white'
-            }`}>
-              <Layout className={`w-5 h-5 ${
-                theme === 'dark' ? 'text-blue-400' : 'text-blue-500'
-              }`} />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-medium">Layout Compacto</h3>
-              <p className="text-xs text-gray-500">Optimiza tu espacio</p>
-            </div>
-          </div>
-        </div>
-      </div>
     </nav>
   );
 };
 
 export default Sidebar;
+
+<style jsx>{`
+  @keyframes fall {
+    0% {
+      transform: translateY(-20px) rotate(0deg);
+    }
+    100% {
+      transform: translateY(100vh) rotate(360deg);
+    }
+  }
+  .animate-fall {
+    animation: fall linear infinite;
+  }
+`}</style>

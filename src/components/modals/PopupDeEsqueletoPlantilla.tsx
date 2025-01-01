@@ -154,7 +154,7 @@ const PopupDeEsqueletoPlantilla: React.FC<PopupDeEsqueletoPlantillaProps> = ({
     const fetchExercises = async () => {
       setLoading(true);
       try {
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/exercises');
+        const response = await fetch('http://localhost:3000/api/exercises');
         const data = await response.json();
         setExercises(data.data);
       } catch (error) {

@@ -68,7 +68,6 @@ const PlanningList: React.FC = () => {
   const [selectMode, setSelectMode] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isFilesModalOpen, setIsFilesModalOpen] = useState(false);
-  const [isFormulasModalOpen, setIsFormulasModalOpen] = useState(false);
   const [isEsqueletoModalOpen, setIsEsqueletoModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('todos');
@@ -218,14 +217,14 @@ const PlanningList: React.FC = () => {
 
       // Realizar ambas peticiones en paralelo
       const [planningsResponse, templatesResponse] = await Promise.all([
-        fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/schemas', {
+        fetch('http://localhost:3000/api/plannings/schemas', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
         }),
-        fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/planningtemplate/templates', {
+        fetch('http://localhost:3000/api/planningtemplate/templates', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -327,7 +326,7 @@ const PlanningList: React.FC = () => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/esqueleto/${esqueletoId}`, {
+      const response = await fetch(`http://localhost:3000/api/esqueleto/${esqueletoId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -451,6 +450,84 @@ const PlanningList: React.FC = () => {
     setIsFilesModalOpen(true);
   };
 
+  const [openRowId, setOpenRowId] = useState<string | null>(null);
+
+  // Función para manejar la eliminación de una planificación
+  const handleDeletePlanning = async (id: string) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar esta planificación?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const response = await fetch(`http://localhost:3000/api/plannings/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.mensaje || 'Error al eliminar la planificación');
+      }
+
+      // Actualizar la lista de planificaciones
+      fetchPlannings();
+    } catch (error) {
+      console.error('Error al eliminar la planificación:', error);
+    }
+  };
+
+  // Función para manejar la visualización de detalles
+  const handleViewDetails = (id: string) => {
+    navigate(`/planning-details/${id}`);
+  };
+
+  // Función para manejar la descarga
+  const handleDownload = async (id: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const response = await fetch(`http://localhost:3000/api/plannings/${id}/download`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.mensaje || 'Error al descargar la planificación');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `planificacion-${id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error al descargar la planificación:', error);
+    }
+  };
+
+  // Función para manejar el toggle de detalles
+  const handleToggleDetails = (id: string) => {
+    setOpenRowId(openRowId === id ? null : id);
+  };
+
   const filteredPlannings = planningData
     .filter((item) => {
       const searchString = searchTerm.toLowerCase();
@@ -530,10 +607,6 @@ const PlanningList: React.FC = () => {
             <FileText className="w-5 h-5 mr-2" />
             Ver Archivos
           </Button>
-          <Button variant="normal" onClick={() => setIsEsqueletoModalOpen(true)}>
-            <Plus className="w-5 h-5 mr-2" />
-            Crear Fórmula
-          </Button>
           {!selectMode ? (
             <Button variant="normal" onClick={handleExportClick}>
               <Download className="w-5 h-5 mr-2" />
@@ -587,7 +660,7 @@ const PlanningList: React.FC = () => {
           <Button 
             variant="filter" 
             onClick={() => setIsFilterModalOpen(true)}
-            className={`relative flex items-center px-4 py-2 rounded-lg ${
+            className={`relative flex items-center px-4 py-2 rounded-lg transition-colors ${
               theme === 'dark' 
                 ? 'bg-gray-700 hover:bg-gray-600 text-white' 
                 : 'bg-white hover:bg-gray-50 text-gray-700'
@@ -801,9 +874,8 @@ const PlanningList: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`${
-            theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-          } rounded-lg shadow-lg overflow-hidden`}
+          transition={{ duration: 0.3 }}
+          className="mt-6"
         >
           <Table
             headers={[
@@ -814,15 +886,13 @@ const PlanningList: React.FC = () => {
               'Fecha de Inicio',
               'Meta',
               'Tipo',
-              'Clientes',
               'Estado',
-              'Completado',
-              'Esqueleto',
-              'Acciones',
-              'Esqueleto',
+              'Progreso',
+              'Acciones'
             ]}
-            data={filteredPlannings
-              .map((item) => ({
+            data={filteredPlannings.map((item) => {
+              // Extraer solo los datos necesarios para las columnas visibles
+              const visibleData = {
                 ...(selectMode ? {
                   checkbox: (
                     <input
@@ -839,130 +909,35 @@ const PlanningList: React.FC = () => {
                 fechaInicio: new Date(item.fechaInicio).toLocaleDateString(),
                 meta: item.meta,
                 tipo: renderCell('tipo', item.tipo, item),
-                clientes: item.cliente?.nombre || 'Sin cliente',
                 estado: renderCell('estado', item.estado, item),
-                completado: renderCell('completado', item.completado, item),
-                esqueleto: renderCell('esqueleto', item.esqueleto, item),
-                acciones: (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleOpenFiles(item._id)}
-                    >
-                      <FileText className="h-4 w-4" />
-                    </Button>
-                    <button
-              onClick={() => {
-                if (item.tipo === 'Plantilla') {
-                  navigate(`/plantilla/${item._id}`);
-                } else {
-                  navigate(`/edit-planning/${item._id}`);
-                }
-              }}
-              className="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
-              title="Editar planificación"
-            >
-              <Edit className="w-5 h-5" />
-            </button>
-                    <button
-                      onClick={() => {
-                        setSelectedItemId(item._id);
-                        setIsEsqueletoModalOpen(true);
-                      }}
-                      className="p-2 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
-                      title={item.esqueleto ? "Modificar Esqueleto" : "Asignar Esqueleto"}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}
-                      >
-                        <path d="M12 3v18" />
-                        <path d="M8 4.75a8 8 0 0 0 8 0" />
-                        <path d="m7 3 1.5 1.5M17 3l-1.5 1.5" />
-                        <path d="M8 8.75a8 8 0 0 0 8 0" />
-                        <path d="m7 7 1.5 1.5M17 7l-1.5 1.5" />
-                        <path d="M8 12.75a8 8 0 0 0 8 0" />
-                        <path d="m7 11 1.5 1.5M17 11l-1.5 1.5" />
-                        <path d="M8 16.75a8 8 0 0 0 8 0" />
-                        <path d="m7 15 1.5 1.5M17 15l-1.5 1.5" />
-                      </svg>
-                    </button>
-                  </div>
-                ),
-                esqueleto: (
-                  <button
-                    onClick={() => {
-                      setSelectedItemId(item._id);
-                      setIsEsqueletoModalOpen(true);
-                    }}
-                    className="p-2 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
-                    title={item.esqueleto ? "Modificar Esqueleto" : "Asignar Esqueleto"}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}
-                    >
-                      <path d="M12 3v18" />
-                      <path d="M8 4.75a8 8 0 0 0 8 0" />
-                      <path d="m7 3 1.5 1.5M17 3l-1.5 1.5" />
-                      <path d="M8 8.75a8 8 0 0 0 8 0" />
-                      <path d="m7 7 1.5 1.5M17 7l-1.5 1.5" />
-                      <path d="M8 12.75a8 8 0 0 0 8 0" />
-                      <path d="m7 11 1.5 1.5M17 11l-1.5 1.5" />
-                      <path d="M8 16.75a8 8 0 0 0 8 0" />
-                      <path d="m7 15 1.5 1.5M17 15l-1.5 1.5" />
-                    </svg>
-                  </button>
-                ),
-              }))}
-            variant={theme === 'dark' ? 'dark' : 'white'}
+                progreso: renderCell('completado', item.completado, item),
+                acciones: null
+              };
+
+              // Agregar datos necesarios para el contenido expandido
+              return {
+                ...visibleData,
+                _id: item._id,
+                trainer: item.trainer,
+                cliente: item.cliente,
+                updatedAt: item.updatedAt,
+                semanasCompletadas: item.semanasCompletadas || 0,
+                ejerciciosTotales: item.ejerciciosTotales || 0,
+                semanas: item.semanas
+              };
+            })}
+            variant="white"
+            onEdit={(id) => navigate(`/edit-planning/${id}`)}
+            onDelete={handleDeletePlanning}
+            onViewDetails={handleViewDetails}
+            onDownload={handleDownload}
+            onToggleDetails={handleToggleDetails}
+            openRowId={openRowId}
           />
         </motion.div>
       )}
 
-      {/* Modal para Crear Fórmula */}
-      <AnimatePresence>
-        {isFormulasModalOpen && (
-          <motion.div
-            key="modal-crear-formula"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
-          >
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg relative">
-              <button
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                onClick={() => setIsFormulasModalOpen(false)}
-              >
-                <X className="w-5 h-5" />
-              </button>
-              {/* Aquí iría el contenido para crear fórmula */}
-              <h3 className="text-2xl font-bold mb-4">Crear Fórmula</h3>
-              {/* Formularios y otros componentes */}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Modal para Crear Planificación */}
+      {/* Modal de Crear Planificación */}
       <AnimatePresence>
         {isCreateModalOpen && (
           <motion.div

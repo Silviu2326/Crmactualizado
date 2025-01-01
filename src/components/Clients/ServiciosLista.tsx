@@ -6,6 +6,7 @@ import TablaClasesGrupales from './TablaClasesGrupales';
 import TablaAsesoriaSubscripcion from './TablaAsesoriaSubscripcion';
 import TablaCitas from './TablaCitas';
 import { useTheme } from '../../contexts/ThemeContext';
+import { CelebrationOutlined, AcUnit, CardGiftcard, LocalActivity } from '@mui/icons-material';
 
 // Importar los popups
 import NuevoClaseGrupalPopup from './NuevoClaseGrupalPopup';
@@ -13,30 +14,68 @@ import NuevaAsesoriaPopup from './NuevaAsesoriaPopup';
 import NuevaSuscripcionPopup from './NuevaSuscripcionPopup';
 import NuevoPackCitasPopup from './NuevoPackCitasPopup';
 
+// Estilos navideños
+const christmasStyles = {
+  container: {
+    position: 'relative' as const,
+    minHeight: '100vh',
+    background: 'linear-gradient(135deg, rgba(255,245,245,0.9) 0%, rgba(242,255,242,0.9) 100%)',
+  },
+  darkContainer: {
+    background: 'linear-gradient(135deg, rgba(40,0,0,0.95) 0%, rgba(0,40,0,0.95) 100%)',
+  },
+  categoryCard: (isActive: boolean, isDarkMode: boolean) => ({
+    background: isActive
+      ? isDarkMode
+        ? 'linear-gradient(45deg, #2c0303, #032c03)'
+        : 'linear-gradient(45deg, #ffe6e6, #e6ffe6)'
+      : 'transparent',
+    border: `2px solid ${isActive ? '#ff0000' : isDarkMode ? '#ffffff20' : '#00000020'}`,
+    borderRadius: '12px',
+    padding: '15px',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+    },
+  }),
+  snowflake: {
+    position: 'fixed' as const,
+    color: '#ffffff',
+    textShadow: '0 0 5px #ffffff',
+    animation: 'fall linear infinite',
+    zIndex: 1,
+  },
+};
+
 const categoriasServicios = [
   {
     id: 'suscripciones',
-    titulo: 'Suscripción',
+    titulo: '🎁 Suscripción',
     tipo: 'Suscripción',
-    icono: <Ticket />,
+    icono: <CardGiftcard style={{ color: '#ff4444' }} />,
   },
   {
     id: 'asesorias',
-    titulo: 'Asesoría Individual',
+    titulo: '🎄 Asesoría Individual',
     tipo: 'Asesoría Individual',
-    icono: <UserCircle />,
+    icono: <CelebrationOutlined style={{ color: '#44ff44' }} />,
   },
   {
     id: 'clases-grupales',
-    titulo: 'Clase Grupal',
-    tipo: 'ClaseGrupal', // Sin espacio para coincidir con la URL
-    icono: <Users />,
+    titulo: '⛄ Clase Grupal',
+    tipo: 'ClaseGrupal',
+    icono: <Users style={{ color: '#4444ff' }} />,
   },
   {
     id: 'citas',
-    titulo: 'Pack de Citas',
+    titulo: '🔔 Pack de Citas',
     tipo: 'Pack de Citas',
-    icono: <Calendar />,
+    icono: <LocalActivity style={{ color: '#ffaa44' }} />,
   },
 ];
 
@@ -52,6 +91,8 @@ const ServiciosLista = () => {
   const [isNuevaAsesoriaOpen, setIsNuevaAsesoriaOpen] = useState(false);
   const [isNuevaSuscripcionOpen, setIsNuevaSuscripcionOpen] = useState(false);
   const [isNuevoPackCitasOpen, setIsNuevoPackCitasOpen] = useState(false);
+
+  const [showSnow, setShowSnow] = useState(true);
 
   const getActionButtonText = () => {
     switch (categoriaActiva) {
@@ -100,7 +141,7 @@ const ServiciosLista = () => {
       }
 
       const encodedTipo = encodeURIComponent(tipo);
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios/services/tipo/${encodedTipo}`, {
+      const response = await fetch(`http://localhost:3000/api/servicios/services/tipo/${encodedTipo}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -205,50 +246,68 @@ const ServiciosLista = () => {
 
   const categoriaSeleccionada = categoriasServicios.find(c => c.id === categoriaActiva);
 
-  return (
+  // Componente Copo de Nieve
+  const Snowflake = ({ style }: { style: React.CSSProperties }) => (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className={`min-h-screen transition-colors duration-300 ${
-        isDarkMode
-          ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900'
-          : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-violet-50'
-      } py-12 px-4 sm:px-6 lg:px-8`}
+      initial={{ y: -20, x: Math.random() * window.innerWidth }}
+      animate={{ y: window.innerHeight + 20 }}
+      transition={{
+        duration: Math.random() * 3 + 2,
+        repeat: Infinity,
+        ease: "linear"
+      }}
+      style={{
+        ...christmasStyles.snowflake,
+        ...style,
+      }}
     >
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-12">
-          <motion.div
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="text-center"
-          >
-            <h1
-              className={`text-5xl font-bold ${
-                isDarkMode ? 'text-white' : 'text-gradient'
-              }`}
-            >
-              Gestión de Servicios
-            </h1>
-          </motion.div>
+      ❄
+    </motion.div>
+  );
 
-          <div className="flex items-center space-x-4">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleActionButtonClick} // Usar la nueva función
-              className={`px-6 py-3 rounded-xl flex items-center space-x-2 font-medium shadow-lg transition-all duration-300 ${
-                isDarkMode
-                  ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/30'
-                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-500/30'
-              }`}
+  // Generar copos de nieve
+  const snowflakes = showSnow ? Array.from({ length: 30 }).map((_, i) => (
+    <Snowflake
+      key={i}
+      style={{
+        left: `${Math.random() * 100}%`,
+        animationDuration: `${Math.random() * 3 + 2}s`,
+        fontSize: `${Math.random() * 15 + 10}px`,
+        opacity: Math.random() * 0.7 + 0.3,
+      }}
+    />
+  )) : null;
+
+  return (
+    <div style={{
+      ...christmasStyles.container,
+      ...(isDarkMode && christmasStyles.darkContainer)
+    }}>
+      {snowflakes}
+      <div style={{ position: 'relative', zIndex: 2 }}>
+        <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ 
+            color: isDarkMode ? '#ffffff' : '#333333',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            <AcUnit style={{ color: '#44aaff' }} />
+            Servicios Disponibles
+            <button
+              onClick={() => setShowSnow(!showSnow)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '20px'
+              }}
             >
-              <Plus className="w-5 h-5" />
-              <span>{getActionButtonText()}</span>
-            </motion.button>
-          </div>
+              {showSnow ? '❄️' : '☀️'}
+            </button>
+          </h2>
         </div>
-
         <div className="flex flex-wrap gap-4 justify-center mb-12">
           {categoriasServicios.map((categoria, index) => (
             <motion.button
@@ -257,40 +316,33 @@ const ServiciosLista = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
               onClick={() => setCategoriaActiva(categoria.id)}
-              className={`flex items-center space-x-3 px-8 py-4 rounded-2xl transition-all duration-300 transform hover:scale-105 
-                ${
-                  categoriaActiva === categoria.id
-                    ? isDarkMode
-                      ? 'bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 text-white shadow-lg shadow-purple-500/20'
-                      : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-200/50'
-                    : isDarkMode
-                    ? 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 shadow-lg hover:shadow-xl'
-                    : 'glass hover:bg-white/90 text-gray-700 shadow-lg hover:shadow-xl'
-                }`}
-              whileHover={{ y: -4 }}
-              whileTap={{ scale: 0.98 }}
+              style={christmasStyles.categoryCard(categoriaActiva === categoria.id, isDarkMode)}
             >
               <span
-                className={`${
-                  categoriaActiva === categoria.id
-                    ? 'text-white'
+                style={{
+                  color: categoriaActiva === categoria.id
+                    ? '#ffffff'
                     : isDarkMode
-                    ? 'text-purple-400'
-                    : 'text-indigo-600'
-                }`}
+                    ? '#ffffff80'
+                    : '#00000080'
+                }}
               >
                 {categoria.icono}
               </span>
-              <span className="font-medium text-lg">{categoria.titulo}</span>
+              <span style={{ fontWeight: 'bold' }}>{categoria.titulo}</span>
             </motion.button>
           ))}
         </div>
 
         <motion.div
           layout
-          className={`${
-            isDarkMode ? 'bg-gray-800/50 shadow-xl' : 'glass'
-          } rounded-3xl shadow-xl overflow-hidden`}
+          style={{
+            ...christmasStyles.container,
+            ...(isDarkMode && christmasStyles.darkContainer),
+            padding: '20px',
+            borderRadius: '20px',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+          }}
         >
           <AnimatePresence mode="wait">
             <motion.div
@@ -299,7 +351,7 @@ const ServiciosLista = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className={isDarkMode ? 'text-gray-200' : ''}
+              style={{ padding: '20px' }}
             >
               {renderTabla()}
             </motion.div>
@@ -339,7 +391,7 @@ const ServiciosLista = () => {
           />
         </>
       )}
-    </motion.div>
+    </div>
   );
 };
 

@@ -11,23 +11,25 @@ import {
   TrendingDown,
   AlertTriangle,
   Calendar,
+  Snowflake,
+  Gift,
+  Star,
+  TreePine,
+  Bell
 } from 'lucide-react';
 import Table from '../components/Common/Table';
 import IncomeChart from '../components/Economics/IncomeChart';
 import CashFlowChart from '../components/Economics/CashFlowChart';
 import MetricCard from '../components/Dashboard/MetricCard';
-import { useTheme } from '../contexts/ThemeContext';
 import Tooltip from '../components/Common/Tooltip';
 import Dropdown from '../components/Common/Dropdown';
 import GenerateStoryModal from '../components/modals/GenerateStoryModal';
 import GeneratePostModal from '../components/modals/GeneratePostModal';
 import CreateGroupClassModal from '../components/modals/CreateGroupClassModal';
 
-const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api'; // Asegúrate de que coincida con tu backend
+const API_URL = 'http://localhost:3000/api'; // Asegúrate de que coincida con tu backend
 
 const DashboardPage: React.FC = () => {
-  const { theme } = useTheme();
-
   // Estados para manejar términos de búsqueda
   const [searchTerm, setSearchTerm] = useState('');
   const [classSearchTerm, setClassSearchTerm] = useState('');
@@ -70,7 +72,7 @@ const DashboardPage: React.FC = () => {
         // Función para obtener las alertas
         const fetchAlerts = async () => {
           try {
-            const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/economic-alerts', {
+            const response = await fetch('http://localhost:3000/api/economic-alerts', {
               headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
@@ -113,12 +115,12 @@ const DashboardPage: React.FC = () => {
         await fetchClientes();
 
         // Fetch ingresos
-        const ingresosResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/ingresos', { headers });
+        const ingresosResponse = await fetch('http://localhost:3000/api/ingresos', { headers });
         const ingresosData = await ingresosResponse.json();
         setIngresos(ingresosData);
 
         // Fetch gastos
-        const gastosResponse = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos', { headers });
+        const gastosResponse = await fetch('http://localhost:3000/api/gastos', { headers });
         const gastosData = await gastosResponse.json();
         setGastos(gastosData);
 
@@ -209,232 +211,192 @@ const DashboardPage: React.FC = () => {
   }));
 
   return (
-    <div className={`p-6 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
-      {/* Encabezado del Dashboard */}
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">
-          Dashboard
-        </h1>
-        <div className="flex space-x-4">
-          {/* Botón para abrir el modal de Generar Historia */}
-          <Tooltip content="Generar Historia">
-            <button
-              onClick={() => {
-                console.log('🟢 Abrir modal para generar historia');
-                setIsGenerateStoryModalOpen(true);
-              }}
-              className={`p-2 rounded-full ${theme === 'dark' ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'} transition-colors duration-200`}
-            >
-              <PenTool className="w-6 h-6" />
-            </button>
-          </Tooltip>
-
-          {/* Botón para abrir el modal de Generar Publicación */}
-          <Tooltip content="Generar Publicación">
-            <button
-              onClick={() => {
-                console.log('🟢 Abrir modal para generar publicación');
-                setIsGeneratePostModalOpen(true);
-              }}
-              className={`p-2 rounded-full ${theme === 'dark' ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'} transition-colors duration-200`}
-            >
-              <FileText className="w-6 h-6" />
-            </button>
-          </Tooltip>
-        </div>
+    <div className="p-6 relative bg-white dark:bg-gray-900">
+      {/* Decoración navideña */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <style>
+          {`
+            @keyframes snowfall {
+              0% { transform: translateY(-10px) rotate(0deg); }
+              100% { transform: translateY(100vh) rotate(360deg); }
+            }
+            @keyframes twinkle {
+              0%, 100% { opacity: 0.3; transform: scale(1); }
+              50% { opacity: 0.8; transform: scale(1.2); }
+            }
+            .animate-snow {
+              animation: snowfall linear infinite;
+            }
+            .animate-twinkle {
+              animation: twinkle ease-in-out infinite;
+            }
+          `}
+        </style>
+        {/* Copos de nieve animados */}
+        {[...Array(15)].map((_, i) => (
+          <div
+            key={`snow-${i}`}
+            className="absolute text-[#E61D2B]/10 animate-snow"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `-20px`,
+              animation: `snowfall ${Math.random() * 3 + 2}s linear infinite`,
+              animationDelay: `${Math.random() * 3}s`
+            }}
+          >
+            <Snowflake size={20} />
+          </div>
+        ))}
+        {/* Estrellas brillantes */}
+        {[...Array(8)].map((_, i) => (
+          <div
+            key={`star-${i}`}
+            className="absolute text-yellow-300/30 animate-twinkle"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 30}%`,
+              animation: `twinkle ${Math.random() * 2 + 1}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 2}s`
+            }}
+          >
+            <Star size={16} />
+          </div>
+        ))}
       </div>
 
-      {/* Indicador de carga */}
-      {loading && (
-        <div className="mb-8">
-          <p className="text-center text-gray-500">Cargando datos...</p>
+      {/* Contenido del Dashboard */}
+      <div className="space-y-6 relative z-10">
+        {/* Título con decoración navideña */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+              Dashboard
+              <span className="ml-2 text-[#E61D2B]">
+                <TreePine className="inline-block w-6 h-6 animate-bounce" />
+              </span>
+            </h1>
+            <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+              ¡Felices Fiestas!
+              <Bell className="w-4 h-4 text-[#E61D2B] animate-bounce" />
+            </span>
+          </div>
+          <div className="flex gap-2">
+            {/* Botones existentes con estilo navideño */}
+            <button
+              onClick={() => setIsGenerateStoryModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-[#E61D2B] text-white rounded-lg hover:bg-[#E61D2B]/90 transition-colors"
+            >
+              <PenTool className="w-4 h-4" />
+              <span>Generar Historia</span>
+              <Gift className="w-4 h-4 animate-bounce" />
+            </button>
+            <button
+              onClick={() => setIsGeneratePostModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-[#E61D2B] text-white rounded-lg hover:bg-[#E61D2B]/90 transition-colors"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Generar Publicación</span>
+              <Gift className="w-4 h-4 animate-bounce" />
+            </button>
+          </div>
         </div>
-      )}
 
-      {/* Mensaje de error */}
-      {error && (
-        <div className="mb-8">
-          <p className="text-center text-red-500">{error}</p>
+        {/* Tarjetas de métricas */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <MetricCard
+            title="Total Clientes"
+            value={clientesData.length.toString()}
+            icon={<Book className="w-6 h-6 text-[#E61D2B]" />}
+            trend={10}
+            trendIcon={<TrendingUp className="w-4 h-4" />}
+            className="relative overflow-hidden bg-white dark:bg-gray-800"
+            headerDecorator={
+              <div className="absolute top-2 right-2">
+                <Star className="w-4 h-4 text-yellow-300 animate-pulse" />
+              </div>
+            }
+          />
+          <MetricCard
+            title="Ingresos Mensuales"
+            value="$25,000"
+            icon={<TrendingUp className="w-6 h-6 text-[#E61D2B]" />}
+            trend={15}
+            trendIcon={<TrendingUp className="w-4 h-4" />}
+            className="relative overflow-hidden bg-white dark:bg-gray-800"
+            headerDecorator={
+              <div className="absolute top-2 right-2">
+                <Gift className="w-4 h-4 text-[#E61D2B] animate-bounce" />
+              </div>
+            }
+          />
+          <MetricCard
+            title="Alertas Pendientes"
+            value={alerts.length.toString()}
+            icon={<AlertTriangle className="w-6 h-6 text-[#E61D2B]" />}
+            trend={-5}
+            trendIcon={<TrendingDown className="w-4 h-4" />}
+            className="relative overflow-hidden bg-white dark:bg-gray-800"
+            headerDecorator={
+              <div className="absolute top-2 right-2">
+                <Snowflake className="w-4 h-4 text-[#E61D2B]/30 animate-spin" />
+              </div>
+            }
+          />
+          <MetricCard
+            title="Próximas Actividades"
+            value="8"
+            icon={<Calendar className="w-6 h-6 text-[#E61D2B]" />}
+            trend={2}
+            trendIcon={<TrendingUp className="w-4 h-4" />}
+            className="relative overflow-hidden bg-white dark:bg-gray-800"
+            headerDecorator={
+              <div className="absolute top-2 right-2">
+                <Bell className="w-4 h-4 text-[#E61D2B] animate-bounce" />
+              </div>
+            }
+          />
         </div>
-      )}
 
-      {/* Contenido principal del Dashboard */}
-      {!loading && !error && (
-        <>
-          {/* Tarjetas de métricas */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <MetricCard
-              title="Alertas"
-              value={alerts.length.toString()}
-              description={`${alerts.length === 1 ? 'Alerta pendiente' : 'Alertas pendientes'} de revisión`}
-              icon="AlertTriangle"
-            />
-            <MetricCard
-              title="Próximas Actividades"
-              value="8"
-              description="Actividades programadas esta semana"
-              icon="Calendar"
-              trend={1.8}
-            />
-            <MetricCard
-              title="Próximos Eventos"
-              value="12"
-              description="Eventos especiales este mes"
-              icon="Calendar"
-              trend={3.2}
-            />
-          </div>
-
-          {/* Gráficos de Ingresos y Cash Flow */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Gráfico de Ingresos */}
-            <div className={`p-6 rounded-lg shadow-md ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold flex items-center">
-                  <TrendingUp className="w-5 h-5 mr-2" />
-                  Ingresos
-                </h2>
-              </div>
-              {/* Componente del gráfico de ingresos */}
-              <IncomeChart viewType={viewType} currentDate={currentDate} />
+        {/* Gráficos */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-2 border-[#E61D2B]/20 relative overflow-hidden">
+            <div className="absolute top-2 right-2">
+              <Snowflake className="w-5 h-5 text-[#E61D2B]/30 animate-spin" />
             </div>
-
-            {/* Gráfico de Cash Flow */}
-            <div className={`p-6 rounded-lg shadow-md ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold flex items-center">
-                  <TrendingDown className="w-5 h-5 mr-2" />
-                  Cash Flow
-                </h2>
-                <div className="flex items-center space-x-2">
-                  {/* Selector de tipo de vista */}
-                  <select
-                    value={viewType}
-                    onChange={(e) => setViewType(e.target.value as 'daily' | 'monthly' | 'annual')}
-                    className={`px-3 py-1 rounded ${
-                      theme === 'dark'
-                        ? 'bg-gray-700 text-white border-gray-600'
-                        : 'bg-white text-gray-800 border-gray-300'
-                    }`}
-                  >
-                    <option value="daily">Diario</option>
-                    <option value="monthly">Mensual</option>
-                    <option value="annual">Anual</option>
-                  </select>
-                  {/* Botón para navegar a la fecha anterior */}
-                  <button
-                    onClick={handlePrevious}
-                    className={`px-2 py-1 rounded ${theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}`}
-                  >
-                    Anterior
-                  </button>
-                  {/* Rango de fechas formateado */}
-                  <span className="font-medium">{formatDateRange()}</span>
-                  {/* Botón para navegar a la fecha siguiente */}
-                  <button
-                    onClick={handleNext}
-                    className={`px-2 py-1 rounded ${theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}`}
-                  >
-                    Siguiente
-                  </button>
-                </div>
-              </div>
-              {/* Componente del gráfico de Cash Flow */}
-              <CashFlowChart 
-                viewType={viewType} 
-                currentDate={currentDate} 
-                ingresos={ingresos}
-                gastos={gastos}
-              />
-            </div>
-          </div>
-
-          {/* Tabla de Clientes Recientes */}
-          <div className={`p-6 rounded-lg shadow-md ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} mb-8`}>
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <Send className="w-5 h-5 mr-2" />
-              Clientes Recientes
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              Ingresos
+              <Star className="w-4 h-4 text-yellow-300" />
             </h2>
-            <div className="flex mb-4">
-              {/* Campo de búsqueda para clientes */}
-              <div className={`flex-1 relative ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre o email..."
-                  className={`w-full p-2 pl-10 pr-4 rounded-lg border ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'} focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  value={searchTerm}
-                  onChange={(e) => {
-                    console.log(`🔍 Cambió el término de búsqueda de clientes a: ${e.target.value}`);
-                    setSearchTerm(e.target.value);
-                  }}
-                />
-                {/* Icono de búsqueda */}
-                <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
-              </div>
-              {/* Botón para filtrar clientes */}
-              <button
-                onClick={() => {
-                  console.log('🟢 Filtrando clientes con el término:', searchTerm);
-                  // Aquí podrías agregar lógica adicional si es necesario
-                }}
-                className={`ml-2 px-4 py-2 rounded-lg ${theme === 'dark' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white transition-colors duration-200`}
-              >
-                Filtrar
-              </button>
-            </div>
-            {/* Componente de tabla para mostrar clientes filtrados */}
-            <Table
-              headers={['Nombre', 'Email', 'Última Clase', 'Estado']}
-              data={filteredClientData}
-            />
+            <IncomeChart data={ingresos} />
           </div>
-
-          {/* Tabla de Próximas Clases (comentada) */}
-          {/*
-          <div className={`p-6 rounded-lg shadow-md ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <Book className="w-5 h-5 mr-2" />
-              Próximas Clases
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-2 border-[#E61D2B]/20 relative overflow-hidden">
+            <div className="absolute top-2 right-2">
+              <Gift className="w-5 h-5 text-[#E61D2B] animate-bounce" />
+            </div>
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              Cash Flow
+              <TrendingUp className="w-4 h-4 text-[#E61D2B]" />
             </h2>
-            <div className="flex mb-4">
-              {/* Campo de búsqueda para clases */}
-              {/*
-              <div className={`flex-1 relative ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                <input
-                  type="text"
-                  placeholder="Buscar por clase o instructor..."
-                  className={`w-full p-2 pl-10 pr-4 rounded-lg border ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'} focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  value={classSearchTerm}
-                  onChange={(e) => {
-                    console.log(`🔍 Cambió el término de búsqueda de clases a: ${e.target.value}`);
-                    setClassSearchTerm(e.target.value);
-                  }}
-                />
-                <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
-              </div>
-              */}
-              {/* Botón para abrir el modal de Agregar Clase */}
-              {/*
-              <button
-                onClick={() => {
-                  console.log('🟢 Abrir modal para agregar una nueva clase grupal');
-                  setIsCreateGroupClassModalOpen(true);
-                }}
-                className={`ml-2 px-4 py-2 rounded-lg ${theme === 'dark' ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'} text-white transition-colors duration-200`}
-              >
-                Agregar Clase
-              </button>
-            </div>
-            {/* Componente de tabla para mostrar clases filtradas */}
-            {/*
-            <Table
-              headers={['Clase', 'Instructor', 'Fecha', 'Hora', 'Capacidad']}
-              data={filteredClassData}
-            />
+            <CashFlowChart viewType={viewType} currentDate={currentDate} ingresos={ingresos} gastos={gastos} />
           </div>
-          */}
-        </>
-      )}
+        </div>
+
+        {/* Tablas */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-2 border-[#E61D2B]/20 relative">
+          <div className="absolute top-2 right-2 flex gap-2">
+            <Star className="w-4 h-4 text-yellow-300 animate-pulse" />
+            <Snowflake className="w-4 h-4 text-[#E61D2B]/30 animate-spin" />
+          </div>
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            Clientes Recientes
+            <Book className="w-4 h-4 text-[#E61D2B]" />
+          </h2>
+          <Table
+            headers={['Nombre', 'Email', 'Última Clase', 'Estado']}
+            data={filteredClientData}
+          />
+        </div>
+      </div>
 
       {/* Modales */}
       <GenerateStoryModal

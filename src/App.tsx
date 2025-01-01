@@ -31,6 +31,8 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useTheme } from './contexts/ThemeContext';
 import Reportesweb from './pages/Reportesweb';
+import AIPostCreator from './pages/AIPostCreator';
+import AIStoryCreator from './pages/AIStoryCreator';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -220,6 +222,22 @@ function AppContent() {
                 element={
                   <PrivateRoute>
                     <PageEdicionDieta />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/ai-post-creator"
+                element={
+                  <PrivateRoute>
+                    <AIPostCreator />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/ai-story-creator"
+                element={
+                  <PrivateRoute>
+                    <AIStoryCreator />
                   </PrivateRoute>
                 }
               />

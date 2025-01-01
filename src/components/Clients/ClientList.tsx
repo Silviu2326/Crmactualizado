@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Snowflake, Gift } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import PanelCliente from './PanelCliente';
@@ -44,15 +44,16 @@ interface Cliente {
   __v: number;
 }
 
-const API_URL = 'https://fitoffice2-f70b52bef77e.herokuapp.com/api';
+const API_URL = 'http://localhost:3000/api';
 
 const ClientList: React.FC = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
-  const [openPanels, setOpenPanels] = useState<string[]>([]); // Nuevo estado para paneles abiertos
+  const [openPanels, setOpenPanels] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'simple'>('table');
+  const [showSnow, setShowSnow] = useState(true);
   const [filters, setFilters] = useState<Filters>({
     estado: '',
     tag: '',
@@ -63,9 +64,28 @@ const ClientList: React.FC = () => {
   const [clientesData, setClientesData] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Estado para controlar la visualización del formulario de creación
   const [showCreateClient, setShowCreateClient] = useState<boolean>(false);
+
+  // Estilos navideños
+  const christmasStyles = {
+    container: `${theme === 'dark' ? 'bg-gray-900' : 'bg-red-50'} min-h-screen p-4 relative`,
+    header: `${theme === 'dark' ? 'text-green-400' : 'text-red-600'} text-2xl font-bold mb-4 flex items-center`,
+    snowflake: 'text-white absolute animate-fall',
+  };
+
+  // Componente Copo de Nieve
+  const SnowflakeComponent = ({ style }: { style: React.CSSProperties }) => (
+    <div className={christmasStyles.snowflake} style={style}>
+      <Snowflake size={16} className={`${theme === 'dark' ? 'text-gray-300' : 'text-red-200'}`} />
+    </div>
+  );
+
+  // Generar copos de nieve
+  const snowflakes = showSnow ? Array.from({ length: 20 }).map((_, i) => ({
+    left: `${Math.random() * 100}%`,
+    animationDuration: `${Math.random() * 3 + 2}s`,
+    animationDelay: `${Math.random() * 2}s`,
+  })) : [];
 
   useEffect(() => {
     console.log(' Iniciando la carga de clientes...');
@@ -186,7 +206,12 @@ const ClientList: React.FC = () => {
   const renderCell = (key: string, value: any, client: Cliente) => {
     switch (key) {
       case 'nombre':
-        return `${client.nombre} ${client.apellido}`;
+        return (
+          <div className="flex items-center">
+            {value === 'Activo' && <Gift size={16} className="mr-2 text-green-500" />}
+            {`${client.nombre} ${client.apellido}`}
+          </div>
+        );
       case 'email':
         return value;
       case 'telefono':
@@ -195,10 +220,11 @@ const ClientList: React.FC = () => {
         return (
           <span className={`px-2 py-1 rounded-full text-xs ${
             value === 'Activo' ? 'bg-green-500 text-white' :
-            value === 'Pendiente' ? 'bg-yellow-500 text-white' :
-            'bg-red-500 text-white'
-          }`}>
-            {value || 'Sin estado'}
+            value === 'Pendiente' ? 'bg-red-500 text-white' :
+            'bg-gray-500 text-white'
+          } flex items-center justify-center`}>
+            {value === 'Activo' && <Snowflake size={12} className="mr-1" />}
+            {value}
           </span>
         );
       case 'tag':
@@ -224,6 +250,7 @@ const ClientList: React.FC = () => {
             {client.alertas.length}
           </div>
         ) : '-';
+
       case 'fechaRegistro':
         return formatDate(value);
       default:
@@ -245,13 +272,15 @@ const ClientList: React.FC = () => {
   ];
 
   return (
-    <div
-      className={`relative p-6 ${
-        theme === 'dark'
-          ? 'bg-gradient-to-br from-gray-800 to-gray-900'
-          : 'bg-gradient-to-br from-gray-50 to-gray-100'
-      } rounded-xl shadow-sm transition-colors duration-300`}
-    >
+    <div className={christmasStyles.container}>
+      {showSnow && snowflakes.map((style, i) => (
+        <SnowflakeComponent key={i} style={style} />
+      ))}
+      
+      <div className={christmasStyles.header}>
+        <Gift className="mr-2" /> Lista de Clientes
+      </div>
+
       <ClientListHeader
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -297,9 +326,7 @@ const ClientList: React.FC = () => {
               theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
             } rounded-lg shadow-sm`}>
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className={`${
-                  theme === 'dark' ? 'bg-gray-800' : 'bg-gray-50'
-                }`}>
+                <thead className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-50'}`}>
                   <tr>
                     <th scope="col" className="relative px-6 py-3">
                       <input
@@ -416,5 +443,25 @@ const ClientList: React.FC = () => {
     </div>
   );
 };
+
+// Añadir estilos globales para la animación de caída de nieve
+const styles = `
+  @keyframes fall {
+    0% {
+      transform: translateY(-10vh) rotate(0deg);
+    }
+    100% {
+      transform: translateY(100vh) rotate(360deg);
+    }
+  }
+  
+  .animate-fall {
+    animation: fall linear infinite;
+  }
+`;
+
+const styleSheet = document.createElement("style");
+styleSheet.innerText = styles;
+document.head.appendChild(styleSheet);
 
 export default ClientList;

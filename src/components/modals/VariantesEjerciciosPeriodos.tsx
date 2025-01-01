@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 interface Variant {
   name: string;
   description: string;
-  type: 'mantenimiento' | 'intensidad' | 'volumen';
+  type: 'mantenimiento' | 'intensidad' | 'volumen' | 'peso_fijo_series';
 }
 
 interface VariantesEjerciciosPeriodosProps {
@@ -12,7 +12,7 @@ interface VariantesEjerciciosPeriodosProps {
   onClose: () => void;
   exerciseName: string;
   exerciseId: string;
-  onSelectVariant?: (type: string, percentage?: number) => void;
+  onSelectVariant: (type: string, percentage?: number, initialWeight?: number, remainingWeight?: number, incrementType?: 'porcentaje' | 'peso_fijo' | null, incrementValue?: number) => void;
 }
 
 const VariantesEjerciciosPeriodos: React.FC<VariantesEjerciciosPeriodosProps> = ({
@@ -24,6 +24,10 @@ const VariantesEjerciciosPeriodos: React.FC<VariantesEjerciciosPeriodosProps> = 
 }) => {
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [percentage, setPercentage] = useState<number>(5);
+  const [initialWeight, setInitialWeight] = useState<number>(0);
+  const [remainingWeight, setRemainingWeight] = useState<number>(0);
+  const [incrementType, setIncrementType] = useState<'porcentaje' | 'peso_fijo' | null>(null);
+  const [incrementValue, setIncrementValue] = useState<number>(0);
   
   const variants: Variant[] = [
     { 
@@ -41,6 +45,11 @@ const VariantesEjerciciosPeriodos: React.FC<VariantesEjerciciosPeriodosProps> = 
       description: 'Menos peso, más repeticiones - Enfoque en resistencia y volumen',
       type: 'volumen'
     },
+    {
+      name: 'Peso Fijo por Series',
+      description: 'Primera serie con un peso específico y el resto con otro peso, con opción de incremento',
+      type: 'peso_fijo_series'
+    }
   ];
 
   const handleVariantSelect = (variant: Variant) => {
@@ -48,10 +57,31 @@ const VariantesEjerciciosPeriodos: React.FC<VariantesEjerciciosPeriodosProps> = 
   };
 
   const handleConfirm = () => {
-    if (selectedVariant && onSelectVariant) {
-      onSelectVariant(selectedVariant, percentage);
+    if (selectedVariant) {
+      console.log('VariantesEjerciciosPeriodos - Datos a enviar:', {
+        selectedVariant,
+        percentage,
+        initialWeight,
+        remainingWeight,
+        incrementType,
+        incrementValue
+      });
+      
+      if (selectedVariant === 'peso_fijo_series') {
+        onSelectVariant(
+          selectedVariant,
+          undefined,
+          initialWeight,
+          remainingWeight,
+          incrementType,
+          incrementValue
+        );
+      } else {
+        console.log('Llamando a onSelectVariant con:', selectedVariant, percentage);
+        onSelectVariant(selectedVariant, percentage);
+      }
+      onClose();
     }
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -96,6 +126,99 @@ const VariantesEjerciciosPeriodos: React.FC<VariantesEjerciciosPeriodosProps> = 
                       max="100"
                     />
                     <span className="ml-2">%</span>
+                  </div>
+                </div>
+              )}
+              
+              {selectedVariant === variant.type && variant.type === 'peso_fijo_series' && (
+                <div className="mt-3 space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Peso para la primera serie (kg)
+                    </label>
+                    <input
+                      type="number"
+                      value={initialWeight}
+                      onChange={(e) => setInitialWeight(Number(e.target.value))}
+                      className="mt-1 block w-24 rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm"
+                      min="0"
+                      step="0.5"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Peso para el resto de series (kg)
+                    </label>
+                    <input
+                      type="number"
+                      value={remainingWeight}
+                      onChange={(e) => setRemainingWeight(Number(e.target.value))}
+                      className="mt-1 block w-24 rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm"
+                      min="0"
+                      step="0.5"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Tipo de incremento para series restantes
+                    </label>
+                    <div className="mt-1 space-x-4">
+                      <label className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          className="form-radio text-purple-600"
+                          name="incrementType"
+                          checked={incrementType === 'porcentaje'}
+                          onChange={() => {
+                            setIncrementType('porcentaje');
+                            setIncrementValue(0);
+                          }}
+                        />
+                        <span className="ml-2">Porcentaje</span>
+                      </label>
+                      <label className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          className="form-radio text-purple-600"
+                          name="incrementType"
+                          checked={incrementType === 'peso_fijo'}
+                          onChange={() => {
+                            setIncrementType('peso_fijo');
+                            setIncrementValue(0);
+                          }}
+                        />
+                        <span className="ml-2">Peso Fijo (kg)</span>
+                      </label>
+                      <label className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          className="form-radio text-purple-600"
+                          name="incrementType"
+                          checked={incrementType === null}
+                          onChange={() => {
+                            setIncrementType(null);
+                            setIncrementValue(0);
+                          }}
+                        />
+                        <span className="ml-2">Sin incremento</span>
+                      </label>
+                    </div>
+                    
+                    {incrementType && (
+                      <div className="mt-2 flex items-center">
+                        <input
+                          type="number"
+                          value={incrementValue}
+                          onChange={(e) => setIncrementValue(Number(e.target.value))}
+                          className="block w-24 rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm"
+                          min="0"
+                          step={incrementType === 'porcentaje' ? '1' : '0.5'}
+                        />
+                        <span className="ml-2">{incrementType === 'porcentaje' ? '%' : 'kg'}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

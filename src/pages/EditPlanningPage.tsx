@@ -93,7 +93,7 @@ const EditPlanningPage: React.FC = () => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${id}`, {
+      const response = await fetch(`http://localhost:3000/api/plannings/${id}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -192,7 +192,7 @@ const EditPlanningPage: React.FC = () => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${updatedPlanning._id}`, {
+      const response = await fetch(`http://localhost:3000/api/plannings/${updatedPlanning._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -264,7 +264,7 @@ const EditPlanningPage: React.FC = () => {
         throw new Error('No se encontró el token de autenticación');
       }
   
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/plannings/${planning._id}`, {
+      const response = await fetch(`http://localhost:3000/api/plannings/${planning._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -366,25 +366,20 @@ const EditPlanningPage: React.FC = () => {
 
   const handleSubmitEsqueleto = async (formData: any, shouldClose?: boolean) => {
     try {
-      // Aquí tu lógica de submit actual
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/planning/esqueleto', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      if (formData.planning) {
+        // Actualizar el planning con la respuesta del servidor
+        setPlanning(formData.planning);
+        
+        // Solo cerramos el popup si shouldClose es true
+        if (shouldClose) {
+          setIsSkeletonModalOpen(false);
+        }
 
-      if (!response.ok) {
-        throw new Error('Error al guardar el esqueleto');
-      }
-
-      // Solo cerramos el popup si shouldClose es true
-      if (shouldClose) {
-        setIsSkeletonModalOpen(false);
+        // Mostrar mensaje de éxito
+        console.log('✅ Esqueleto guardado:', formData.message);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('❌ Error:', error);
     }
   };
 
@@ -612,6 +607,7 @@ const EditPlanningPage: React.FC = () => {
       <AnimatePresence>
         {isRMModalOpen && (
           <PopupRM
+            isOpen={isRMModalOpen}
             onClose={() => setIsRMModalOpen(false)}
             planningId={id || ''}
           />
@@ -621,9 +617,15 @@ const EditPlanningPage: React.FC = () => {
         <PopupDeEsqueletoPlanning
           isOpen={isSkeletonModalOpen}
           onClose={() => setIsSkeletonModalOpen(false)}
-          numberOfWeeks={planning?.semanas || 52}
-          plan={planning?.plan || []}
-          onSubmit={(formData) => handleSubmitEsqueleto(formData, true)}
+          onSubmit={handleSubmitEsqueleto}
+          numberOfWeeks={planning?.plan?.length || 0}
+          planningId={id}
+          existingPeriods={planning?.esqueleto?.periodos?.map(periodo => ({
+            start: (periodo.inicioSemana - 1) * 7 + periodo.inicioDia,
+            end: (periodo.finSemana - 1) * 7 + periodo.finDia,
+            name: periodo.nombre,
+            exercises: periodo.ejercicios || []
+          }))}
         />
       )}
     </div>

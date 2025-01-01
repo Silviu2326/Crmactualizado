@@ -80,7 +80,7 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
         }
 
         // Realizar la petición GET al backend incluyendo el token en los encabezados
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/invoice', {
+        const response = await fetch('http://localhost:3000/api/invoice', {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
@@ -159,7 +159,7 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
   const handleDownloadFactura = async (facturaId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/invoice/${facturaId}/pdf`, {
+      const response = await fetch(`http://localhost:3000/api/invoice/${facturaId}/pdf`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -188,7 +188,7 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
     if (window.confirm('¿Estás seguro de que deseas eliminar esta factura?')) {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/invoice/${facturaId}`, {
+        const response = await fetch(`http://localhost:3000/api/invoice/${facturaId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -315,7 +315,7 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
         
         // Descargar todos los PDFs y añadirlos al ZIP
         for (const facturaId of selectedInvoices) {
-          const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/invoice/${facturaId}/pdf`, {
+          const response = await fetch(`http://localhost:3000/api/invoice/${facturaId}/pdf`, {
             headers: {
               'Authorization': `Bearer ${token}`,
             },
@@ -427,7 +427,7 @@ const FacturasPage: React.FC<FacturasPageProps> = ({
       const fetchPdf = async () => {
         try {
           const token = localStorage.getItem('token');
-          const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/invoice/${facturaId}/pdf`, {
+          const response = await fetch(`http://localhost:3000/api/invoice/${facturaId}/pdf`, {
             headers: {
               'Authorization': `Bearer ${token}`,
             },

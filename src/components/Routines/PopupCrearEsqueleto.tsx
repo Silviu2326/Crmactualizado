@@ -90,7 +90,7 @@ const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onSu
           throw new Error('No se encontró el token de autenticación');
         }
 
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/esqueleto', {
+        const response = await fetch('http://localhost:3000/api/esqueleto', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -197,7 +197,7 @@ const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onSu
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch(`https://fitoffice2-f70b52bef77e.herokuapp.com/api/esqueleto/${skeletonId}`, {
+      const response = await fetch(`http://localhost:3000/api/esqueleto/${skeletonId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -245,8 +245,8 @@ const PopupCrearEsqueleto: React.FC<PopupCrearEsqueletoProps> = ({ onClose, onSu
       }
 
       const url = editingSkeletonId 
-        ? `https://fitoffice2-f70b52bef77e.herokuapp.com/api/esqueleto/${editingSkeletonId}`
-        : 'https://fitoffice2-f70b52bef77e.herokuapp.com/api/esqueleto';
+        ? `http://localhost:3000/api/esqueleto/${editingSkeletonId}`
+        : 'http://localhost:3000/api/esqueleto';
 
       const method = editingSkeletonId ? 'PUT' : 'POST';
 

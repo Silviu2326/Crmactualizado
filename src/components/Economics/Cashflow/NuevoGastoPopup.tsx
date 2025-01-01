@@ -60,7 +60,7 @@ const NuevoGastoPopup: React.FC<NuevoGastoPopupProps> = ({ onClose, onSubmit }) 
     try {
       const token = localStorage.getItem('token');
       if (tipoAsociacion === 'cliente') {
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/clientes', {
+        const response = await fetch('http://localhost:3000/api/clientes', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -70,7 +70,7 @@ const NuevoGastoPopup: React.FC<NuevoGastoPopupProps> = ({ onClose, onSubmit }) 
         const data = await response.json();
         setClientes(data);
       } else if (tipoAsociacion === 'servicio') {
-        const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/servicios', {
+        const response = await fetch('http://localhost:3000/api/servicios', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -102,7 +102,7 @@ const NuevoGastoPopup: React.FC<NuevoGastoPopupProps> = ({ onClose, onSubmit }) 
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/gastos', {
+      const response = await fetch('http://localhost:3000/api/gastos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

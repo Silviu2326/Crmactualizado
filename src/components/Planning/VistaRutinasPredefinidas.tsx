@@ -76,7 +76,7 @@ const VistaRutinasPredefinidas: React.FC<VistaRutinasPredefinidasProps> = ({ pla
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await axios.get('https://fitoffice2-f70b52bef77e.herokuapp.com/api/routines/routines', {
+      const response = await axios.get('http://localhost:3000/api/routines/routines', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

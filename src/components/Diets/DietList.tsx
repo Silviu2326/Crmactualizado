@@ -1,6 +1,7 @@
 // DietList.tsx
 import React, { useState, useEffect } from 'react'; 
-import { Search, X, Plus, Filter, Download, Salad, Target, Clock, Users, FileText } from 'lucide-react';
+import { Search, X, Plus, Filter, Download, Salad, Target, Clock, Users, FileText,
+  Snowflake, Gift, TreeDeciduous, CandyCane, Cookie } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Button from '../Common/Button';
 import Table from '../Common/Table';
@@ -14,6 +15,7 @@ const DietList: React.FC = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFoods, setShowFoods] = useState(false);
+  const [showSnow, setShowSnow] = useState(true);
 
   const [isDietModalOpen, setIsDietModalOpen] = useState(false);
   const [isFoodModalOpen, setIsFoodModalOpen] = useState(false);
@@ -58,30 +60,77 @@ const DietList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const christmasStyles = {
+    container: `p-6 min-h-screen relative ${
+      theme === 'dark'
+        ? 'bg-gradient-to-br from-gray-900 via-green-900/20 to-red-900/20'
+        : 'bg-gradient-to-br from-red-50 via-green-50 to-red-50'
+    }`,
+    card: `${theme === 'dark' ? 'bg-gray-800/90' : 'bg-white/90'} rounded-lg shadow-lg backdrop-blur-sm`,
+    title: `text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`,
+    snowflake: 'absolute animate-fall pointer-events-none',
+  };
+
+  // Generar copos de nieve
+  const snowflakes = showSnow ? Array.from({ length: 30 }).map((_, i) => ({
+    style: {
+      position: 'absolute',
+      left: `${Math.random() * 100}%`,
+      top: `-20px`,
+      animationDuration: `${Math.random() * 3 + 2}s`,
+      animationDelay: `${Math.random() * 2}s`,
+      opacity: Math.random() * 0.5 + 0.5
+    }
+  })) : [];
+
+  useEffect(() => {
+    const styles = `
+      @keyframes fall {
+        0% {
+          transform: translateY(-10vh) rotate(0deg);
+        }
+        100% {
+          transform: translateY(100vh) rotate(360deg);
+        }
+      }
+      
+      .animate-fall {
+        animation: fall linear infinite;
+      }
+    `;
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = styles;
+    document.head.appendChild(styleSheet);
+
+    return () => {
+      document.head.removeChild(styleSheet);
+    };
+  }, []);
+
   const statsCards = [
     { 
-      icon: Salad,
+      icon: showFoods ? Cookie : TreeDeciduous,
       title: showFoods ? "Total Alimentos" : "Dietas Activas",
       value: showFoods ? "48" : "24",
       color: "bg-green-500"
     },
     {
-      icon: Target,
+      icon: showFoods ? CandyCane : Target,
       title: showFoods ? "Categorías" : "Objetivos Cumplidos",
       value: showFoods ? "12" : "85%",
-      color: "bg-blue-500"
+      color: "bg-red-500"
     },
     {
       icon: Clock,
       title: showFoods ? "Tiempo Promedio" : "Duración Media",
       value: showFoods ? "25min" : "45 días",
-      color: "bg-purple-500"
+      color: "bg-green-500"
     },
     {
       icon: Users,
       title: "Clientes Asignados",
       value: "156",
-      color: "bg-amber-500"
+      color: "bg-red-500"
     }
   ];
 
@@ -130,7 +179,7 @@ const DietList: React.FC = () => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/dietas', {
+      const response = await fetch('http://localhost:3000/api/dietas', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -184,7 +233,7 @@ const DietList: React.FC = () => {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      const response = await fetch('https://fitoffice2-f70b52bef77e.herokuapp.com/api/alimentos', {
+      const response = await fetch('http://localhost:3000/api/alimentos', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -268,21 +317,31 @@ const DietList: React.FC = () => {
   const filteredData = applyFilters(showFoods ? foodData : dietData);
 
   return (
-    <div className={`p-6 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
+    <div className={christmasStyles.container}>
+      {showSnow && snowflakes.map((snowflake, i) => (
+        <div key={i} className={christmasStyles.snowflake} style={snowflake.style}>
+          <Snowflake size={16} className={`${theme === 'dark' ? 'text-gray-300' : 'text-red-200'}`} />
+        </div>
+      ))}
+
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
+        className="mb-8 flex items-center gap-4"
       >
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent mb-2">
-          {showFoods ? 'Catálogo de Alimentos' : 'Planes Nutricionales'}
-        </h2>
-        <p className="text-gray-500 dark:text-gray-400">
-          {showFoods 
-            ? 'Gestiona y organiza tu biblioteca de alimentos y sus propiedades nutricionales'
-            : 'Crea y administra planes nutricionales personalizados para tus clientes'
-          }
-        </p>
+        <TreeDeciduous className="w-8 h-8 text-green-500 animate-bounce" />
+        <div>
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-red-500 to-green-500 bg-clip-text text-transparent mb-2">
+            {showFoods ? 'Catálogo de Alimentos' : 'Planes Nutricionales'}
+          </h2>
+          <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+            {showFoods 
+              ? 'Gestiona y organiza tu biblioteca de alimentos y sus propiedades nutricionales'
+              : 'Crea y administra planes nutricionales personalizados para tus clientes'
+            }
+          </p>
+        </div>
+        <Gift className="w-8 h-8 text-red-500 animate-bounce" />
       </motion.div>
 
       <motion.div 
@@ -296,15 +355,15 @@ const DietList: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className={`${theme === 'dark' ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg shadow-lg`}
+            className={`${christmasStyles.card} p-4 hover:shadow-xl transition-all duration-300 transform hover:scale-105`}
           >
             <div className="flex items-center space-x-4">
               <div className={`${card.color} p-3 rounded-lg`}>
-                <card.icon className="w-6 h-6 text-white" />
+                <card.icon className="w-6 h-6 text-white animate-pulse" />
               </div>
               <div>
-                <h3 className="text-sm text-gray-500 dark:text-gray-400">{card.title}</h3>
-                <p className="text-2xl font-bold">{card.value}</p>
+                <h3 className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{card.title}</h3>
+                <p className="text-2xl font-bold bg-gradient-to-r from-red-500 to-green-500 bg-clip-text text-transparent">{card.value}</p>
               </div>
             </div>
           </motion.div>
@@ -318,17 +377,27 @@ const DietList: React.FC = () => {
       >
         <div className="flex space-x-2">
           <Button variant="create" onClick={() => showFoods ? setIsFoodModalOpen(true) : setIsDietModalOpen(true)}>
-            <Plus className="w-5 h-5 mr-2" />
+            <Gift className="w-5 h-5 mr-2" />
             {showFoods ? 'Añadir Alimento' : 'Crear Dieta'}
           </Button>
           <Button variant="normal" onClick={() => setShowFoods(!showFoods)}>
-            <FileText className="w-5 h-5 mr-2" />
+            <Cookie className="w-5 h-5 mr-2" />
             {showFoods ? 'Ver Dietas' : 'Ver Alimentos'}
           </Button>
           <Button variant="normal">
             <Download className="w-5 h-5 mr-2" />
             Exportar
           </Button>
+          <button
+            onClick={() => setShowSnow(!showSnow)}
+            className={`p-2 rounded-full ${
+              theme === 'dark'
+                ? 'bg-gray-700 text-green-400 hover:bg-gray-600'
+                : 'bg-white text-red-500 hover:bg-red-50'
+            } transition-colors duration-200`}
+          >
+            <Snowflake size={20} />
+          </button>
         </div>
       </motion.div>
 
@@ -464,7 +533,9 @@ const DietList: React.FC = () => {
                   <div>
                     <label className="block text-sm font-medium mb-2">Categoría</label>
                     <select
-                      className={`w-full p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}
+                      className={`w-full p-2 rounded-lg ${
+                        theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+                      }`}
                       value={filters.categoria}
                       onChange={(e) => handleFilterChange('categoria', e.target.value)}
                     >
@@ -480,7 +551,9 @@ const DietList: React.FC = () => {
                   <div>
                     <label className="block text-sm font-medium mb-2">Objetivo</label>
                     <select
-                      className={`w-full p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}
+                      className={`w-full p-2 rounded-lg ${
+                        theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+                      }`}
                       value={filters.objetivo}
                       onChange={(e) => handleFilterChange('objetivo', e.target.value)}
                     >
@@ -498,14 +571,18 @@ const DietList: React.FC = () => {
                       <input
                         type="number"
                         placeholder="Min"
-                        className={`w-1/2 p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}
+                        className={`w-1/2 p-2 rounded-lg ${
+                          theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+                        }`}
                         value={filters.rangoKcal.min}
                         onChange={(e) => handleFilterChange('rangoKcal', { ...filters.rangoKcal, min: e.target.value })}
                       />
                       <input
                         type="number"
                         placeholder="Max"
-                        className={`w-1/2 p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}
+                        className={`w-1/2 p-2 rounded-lg ${
+                          theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+                        }`}
                         value={filters.rangoKcal.max}
                         onChange={(e) => handleFilterChange('rangoKcal', { ...filters.rangoKcal, max: e.target.value })}
                       />
@@ -516,7 +593,9 @@ const DietList: React.FC = () => {
                   <div>
                     <label className="block text-sm font-medium mb-2">Estado</label>
                     <select
-                      className={`w-full p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}
+                      className={`w-full p-2 rounded-lg ${
+                        theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+                      }`}
                       value={filters.estado}
                       onChange={(e) => handleFilterChange('estado', e.target.value)}
                     >

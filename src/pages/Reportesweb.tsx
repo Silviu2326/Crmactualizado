@@ -33,6 +33,8 @@ import {
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
   Schedule as ScheduleIcon,
+  Celebration as CelebrationIcon,
+  AcUnit as AcUnitIcon,
 } from '@mui/icons-material';
 import { reporteService, type Reporte } from '../services/reporteService';
 import { format } from 'date-fns';
@@ -77,6 +79,7 @@ const getEstadoColor = (estado: string) => {
 const Reportesweb = () => {
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
+  const [showSnow, setShowSnow] = useState(true);
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
   const [reportes, setReportes] = useState<Reporte[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -91,6 +94,76 @@ const Reportesweb = () => {
     resumenResolucion: '',
     usuarioNotificado: false,
   });
+
+  const christmasStyles = {
+    container: {
+      position: 'relative',
+      minHeight: '100vh',
+      background: isDarkMode
+        ? 'linear-gradient(135deg, rgb(20, 30, 40) 0%, rgb(30, 50, 60) 100%)'
+        : 'linear-gradient(135deg, #ffe4e4 0%, #e4ffe4 100%)',
+      p: 3,
+    },
+    title: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 2,
+      color: isDarkMode ? '#ffffff' : '#1a237e',
+      '& .MuiSvgIcon-root': {
+        animation: 'bounce 2s infinite',
+      },
+    },
+    card: {
+      background: isDarkMode
+        ? 'rgba(31, 41, 55, 0.9)'
+        : 'rgba(255, 255, 255, 0.9)',
+      backdropFilter: 'blur(10px)',
+    },
+    snowflake: {
+      position: 'absolute',
+      color: isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.7)',
+      animation: 'fall linear infinite',
+      pointerEvents: 'none',
+    },
+  };
+
+  const snowflakes = showSnow ? Array.from({ length: 30 }).map((_, i) => ({
+    style: {
+      left: `${Math.random() * 100}%`,
+      top: `-20px`,
+      animationDuration: `${Math.random() * 3 + 2}s`,
+      animationDelay: `${Math.random() * 2}s`,
+    }
+  })) : [];
+
+  useEffect(() => {
+    const styles = `
+      @keyframes fall {
+        0% {
+          transform: translateY(-10vh) rotate(0deg);
+        }
+        100% {
+          transform: translateY(100vh) rotate(360deg);
+        }
+      }
+      
+      @keyframes bounce {
+        0%, 100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+    `;
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = styles;
+    document.head.appendChild(styleSheet);
+
+    return () => {
+      document.head.removeChild(styleSheet);
+    };
+  }, []);
 
   const cargarReportes = async () => {
     try {
@@ -187,14 +260,50 @@ const Reportesweb = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={christmasStyles.container}>
+      {showSnow && snowflakes.map((snowflake, i) => (
+        <AcUnitIcon
+          key={i}
+          sx={{
+            ...christmasStyles.snowflake,
+            ...snowflake.style,
+            fontSize: Math.random() * 10 + 15,
+          }}
+        />
+      ))}
+
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: '#1a237e' }}>
-          Gestión de Reportes
-        </Typography>
-        <Box>
+        <Box sx={christmasStyles.title}>
+          <CelebrationIcon sx={{ color: isDarkMode ? '#ff4081' : '#e91e63' }} />
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+            Gestión de Reportes
+          </Typography>
+          <CelebrationIcon sx={{ color: isDarkMode ? '#4caf50' : '#2e7d32' }} />
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Tooltip title="Activar/Desactivar nieve">
+            <IconButton 
+              onClick={() => setShowSnow(!showSnow)}
+              sx={{
+                color: isDarkMode ? '#4caf50' : '#2e7d32',
+                '&:hover': {
+                  backgroundColor: isDarkMode ? 'rgba(76, 175, 80, 0.1)' : 'rgba(46, 125, 50, 0.1)',
+                },
+              }}
+            >
+              <AcUnitIcon />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Actualizar reportes">
-            <IconButton onClick={cargarReportes} sx={{ mr: 1 }}>
+            <IconButton 
+              onClick={cargarReportes}
+              sx={{
+                color: isDarkMode ? '#ff4081' : '#e91e63',
+                '&:hover': {
+                  backgroundColor: isDarkMode ? 'rgba(255, 64, 129, 0.1)' : 'rgba(233, 30, 99, 0.1)',
+                },
+              }}
+            >
               <RefreshIcon />
             </IconButton>
           </Tooltip>
@@ -203,9 +312,10 @@ const Reportesweb = () => {
             startIcon={<AddIcon />}
             onClick={abrirDialogo}
             sx={{
-              backgroundColor: '#1a237e',
+              background: 'linear-gradient(45deg, #ff4081 30%, #4caf50 90%)',
+              color: 'white',
               '&:hover': {
-                backgroundColor: '#0d47a1',
+                background: 'linear-gradient(45deg, #f50057 30%, #388e3c 90%)',
               },
             }}
           >
@@ -221,23 +331,25 @@ const Reportesweb = () => {
       )}
 
       <Fade in={!cargando}>
-        <Card elevation={3} sx={{
-          backgroundColor: isDarkMode ? 'rgb(31, 41, 55)' : 'white',
-        }}>
+        <Card elevation={3} sx={christmasStyles.card}>
           <CardContent>
             <TableContainer component={Paper} sx={{
-              backgroundColor: isDarkMode ? 'rgb(31, 41, 55)' : '#ffffff',
+              backgroundColor: 'transparent',
               '& .MuiTableCell-root': {
                 color: isDarkMode ? '#ffffff' : '#000000',
-                borderBottom: `1px solid ${isDarkMode ? 'rgb(55, 65, 81)' : '#e0e0e0'}`
+                borderBottom: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
               },
               '& .MuiTableHead-root .MuiTableCell-root': {
-                backgroundColor: isDarkMode ? 'rgb(17, 24, 39)' : '#f5f5f5',
-                fontWeight: 'bold'
+                background: isDarkMode
+                  ? 'linear-gradient(45deg, rgba(255, 64, 129, 0.1), rgba(76, 175, 80, 0.1))'
+                  : 'linear-gradient(45deg, rgba(233, 30, 99, 0.1), rgba(46, 125, 50, 0.1))',
+                fontWeight: 'bold',
               },
               '& .MuiTableRow-root:hover': {
-                backgroundColor: isDarkMode ? 'rgb(55, 65, 81)' : '#f5f5f5'
-              }
+                backgroundColor: isDarkMode
+                  ? 'rgba(255, 255, 255, 0.05)'
+                  : 'rgba(0, 0, 0, 0.02)',
+              },
             }}>
               <Table>
                 <TableHead>
@@ -291,7 +403,7 @@ const Reportesweb = () => {
                       hover
                       sx={{
                         '&:hover': {
-                          backgroundColor: isDarkMode ? 'rgba(55, 65, 81, 0.5)' : 'rgba(243, 244, 246, 0.5)',
+                          backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
                         },
                       }}
                     >

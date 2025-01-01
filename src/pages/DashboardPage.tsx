@@ -211,7 +211,7 @@ const DashboardPage: React.FC = () => {
   }));
 
   return (
-    <div className="p-6 relative bg-white dark:bg-gray-900">
+    <div className="p-6 relative bg-white">
       {/* Decoración navideña */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <style>
@@ -269,13 +269,13 @@ const DashboardPage: React.FC = () => {
         {/* Título con decoración navideña */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+            <h1 className="text-2xl font-bold text-gray-800">
               Dashboard
               <span className="ml-2 text-[#E61D2B]">
                 <TreePine className="inline-block w-6 h-6 animate-bounce" />
               </span>
             </h1>
-            <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+            <span className="text-sm text-gray-500 flex items-center gap-1">
               ¡Felices Fiestas!
               <Bell className="w-4 h-4 text-[#E61D2B] animate-bounce" />
             </span>
@@ -309,7 +309,7 @@ const DashboardPage: React.FC = () => {
             icon={<Book className="w-6 h-6 text-[#E61D2B]" />}
             trend={10}
             trendIcon={<TrendingUp className="w-4 h-4" />}
-            className="relative overflow-hidden bg-white dark:bg-gray-800"
+            className="relative overflow-hidden bg-white shadow-lg"
             headerDecorator={
               <div className="absolute top-2 right-2">
                 <Star className="w-4 h-4 text-yellow-300 animate-pulse" />
@@ -322,7 +322,7 @@ const DashboardPage: React.FC = () => {
             icon={<TrendingUp className="w-6 h-6 text-[#E61D2B]" />}
             trend={15}
             trendIcon={<TrendingUp className="w-4 h-4" />}
-            className="relative overflow-hidden bg-white dark:bg-gray-800"
+            className="relative overflow-hidden bg-white shadow-lg"
             headerDecorator={
               <div className="absolute top-2 right-2">
                 <Gift className="w-4 h-4 text-[#E61D2B] animate-bounce" />
@@ -335,7 +335,7 @@ const DashboardPage: React.FC = () => {
             icon={<AlertTriangle className="w-6 h-6 text-[#E61D2B]" />}
             trend={-5}
             trendIcon={<TrendingDown className="w-4 h-4" />}
-            className="relative overflow-hidden bg-white dark:bg-gray-800"
+            className="relative overflow-hidden bg-white shadow-lg"
             headerDecorator={
               <div className="absolute top-2 right-2">
                 <Snowflake className="w-4 h-4 text-[#E61D2B]/30 animate-spin" />
@@ -348,7 +348,7 @@ const DashboardPage: React.FC = () => {
             icon={<Calendar className="w-6 h-6 text-[#E61D2B]" />}
             trend={2}
             trendIcon={<TrendingUp className="w-4 h-4" />}
-            className="relative overflow-hidden bg-white dark:bg-gray-800"
+            className="relative overflow-hidden bg-white shadow-lg"
             headerDecorator={
               <div className="absolute top-2 right-2">
                 <Bell className="w-4 h-4 text-[#E61D2B] animate-bounce" />
@@ -359,7 +359,7 @@ const DashboardPage: React.FC = () => {
 
         {/* Gráficos */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-2 border-[#E61D2B]/20 relative overflow-hidden">
+          <div className="bg-white p-6 rounded-xl shadow-lg border-2 border-[#E61D2B]/20 relative overflow-hidden">
             <div className="absolute top-2 right-2">
               <Snowflake className="w-5 h-5 text-[#E61D2B]/30 animate-spin" />
             </div>
@@ -369,7 +369,7 @@ const DashboardPage: React.FC = () => {
             </h2>
             <IncomeChart data={ingresos} />
           </div>
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-2 border-[#E61D2B]/20 relative overflow-hidden">
+          <div className="bg-white p-6 rounded-xl shadow-lg border-2 border-[#E61D2B]/20 relative overflow-hidden">
             <div className="absolute top-2 right-2">
               <Gift className="w-5 h-5 text-[#E61D2B] animate-bounce" />
             </div>
@@ -382,7 +382,7 @@ const DashboardPage: React.FC = () => {
         </div>
 
         {/* Tablas */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-2 border-[#E61D2B]/20 relative">
+        <div className="bg-white p-6 rounded-xl shadow-lg border-2 border-[#E61D2B]/20 relative">
           <div className="absolute top-2 right-2 flex gap-2">
             <Star className="w-4 h-4 text-yellow-300 animate-pulse" />
             <Snowflake className="w-4 h-4 text-[#E61D2B]/30 animate-spin" />

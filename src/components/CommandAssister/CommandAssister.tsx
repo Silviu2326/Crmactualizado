@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Command, X, Wand2 } from 'lucide-react';
+import { Command, X, Wand2, Snowflake, Gift } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import CommandShortcuts from './CommandShortcuts';
 import CommandMessages from './CommandMessages';
@@ -146,9 +146,11 @@ const CommandAssister: React.FC<CommandAssisterProps> = ({
             theme === 'dark'
               ? 'bg-gray-800 hover:bg-gray-700'
               : 'bg-white hover:bg-gray-50'
-          } p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110`}
+          } p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 group relative`}
         >
-          <Command className="w-6 h-6" />
+          <Command className="w-6 h-6 group-hover:hidden" />
+          <Gift className="w-6 h-6 hidden group-hover:block text-red-500 animate-bounce" />
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
         </button>
       )}
       {isExpanded && (
@@ -176,16 +178,21 @@ const CommandAssister: React.FC<CommandAssisterProps> = ({
                 isOnEditPlanningPage ? '' : 'rounded-3xl'
               } shadow-2xl flex flex-col transition-all duration-500 ease-out transform border ${
                 isClosing ? 'animate-slideDown' : 'animate-slideUp'
-              } hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)] backdrop-filter backdrop-blur-sm ${
+              } hover:shadow-[0_8px_30px_rgb(220,38,38,0.2)] dark:hover:shadow-[0_8px_30px_rgba(220,38,38,0.3)] backdrop-filter backdrop-blur-sm ${
                 isOnEditPlanningPage ? 'w-full h-full' : 'w-96 h-[32rem]'
-              } overflow-hidden`}
+              } overflow-hidden festive-gradient`}
             >
+              {/* Snowflakes decoration */}
+              <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+                <Snowflake className="absolute top-2 left-2 w-4 h-4 text-blue-200 animate-spin-slow opacity-50" />
+                <Snowflake className="absolute top-4 right-4 w-3 h-3 text-blue-200 animate-spin-reverse-slow opacity-50" />
+                <Snowflake className="absolute bottom-4 left-6 w-3 h-3 text-blue-200 animate-spin-slow opacity-50" />
+              </div>
+              
               {/* Contenido del Command Assister */}
-              <div
-                className={`flex flex-col h-full`}
-              >
+              <div className={`flex flex-col h-full relative z-10`}>
                 <div className={`flex items-center justify-between p-4 border-b ${
-                  theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+                  theme === 'dark' ? 'border-gray-700 bg-gradient-to-r from-red-900/20 to-green-900/20' : 'border-gray-200 bg-gradient-to-r from-red-100/50 to-green-100/50'
                 }`}>
                   <div className="flex items-center space-x-2">
                     <CommandModeSelector currentMode={currentMode} setCurrentMode={setCurrentMode} />
@@ -194,11 +201,12 @@ const CommandAssister: React.FC<CommandAssisterProps> = ({
                     onClick={handleClose}
                     className={`p-2 rounded-lg transition-colors ${
                       theme === 'dark'
-                        ? 'hover:bg-gray-700 text-gray-400 hover:text-white'
-                        : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
-                    }`}
+                        ? 'hover:bg-red-900/30 text-gray-400 hover:text-white'
+                        : 'hover:bg-red-100 text-gray-500 hover:text-red-700'
+                    } group`}
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-5 h-5 group-hover:hidden" />
+                    <Gift className="w-5 h-5 hidden group-hover:block animate-bounce" />
                   </button>
                 </div>
                 {/* Ajustes para evitar scroll y ocupar todo el alto */}
@@ -214,6 +222,41 @@ const CommandAssister: React.FC<CommandAssisterProps> = ({
           </AnimatePresence>
         </div>
       )}
+      
+      <style jsx global>{`
+        .festive-gradient {
+          background-image: ${theme === 'dark' 
+            ? 'linear-gradient(to bottom right, rgba(220, 38, 38, 0.1), rgba(22, 163, 74, 0.1))'
+            : 'linear-gradient(to bottom right, rgba(254, 226, 226, 0.5), rgba(220, 252, 231, 0.5))'
+          };
+        }
+        
+        @keyframes spin-slow {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+        
+        @keyframes spin-reverse-slow {
+          from {
+            transform: rotate(360deg);
+          }
+          to {
+            transform: rotate(0deg);
+          }
+        }
+        
+        .animate-spin-slow {
+          animation: spin-slow 8s linear infinite;
+        }
+        
+        .animate-spin-reverse-slow {
+          animation: spin-reverse-slow 8s linear infinite;
+        }
+      `}</style>
     </>
   );
 };

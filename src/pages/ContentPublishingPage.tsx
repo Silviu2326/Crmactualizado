@@ -11,12 +11,48 @@ import {
 import Button from '../components/Common/Button';
 import AIChat from '../components/ContentPublishing/AIChat';
 import ToolCard from '../components/ContentPublishing/ToolCard';
+import ContentStrategy from '../components/ContentStrategy/ContentStrategy';
+import AudienceAnalyzer from '../components/AudienceAnalyzer/AudienceAnalyzer';
+import ExpressPlansGenerator from '../components/ExpressPlans/ExpressPlansGenerator';
+import InjuryDiagnosisAnalyzer from '../components/InjuryDiagnosis/InjuryDiagnosisAnalyzer';
+import LifestyleGuideAnalyzer from '../components/LifestyleGuide/LifestyleGuideAnalyzer';
+import PlateauStrategiesPlanner from '../components/PlateauStrategies/PlateauStrategiesPlanner';
+import SmartGoalsBuilder from '../components/SmartGoals/SmartGoalsBuilder';
+import SocialContentCreator from '../components/SocialContent/SocialContentCreator';
+import ChallengesCreator from '../components/Challenges/ChallengesCreator';
+import ProgressSimulator from '../components/ProgressSimulator/ProgressSimulator';
+import HomeEquipmentAdvisor from '../components/HomeEquipment/HomeEquipmentAdvisor';
+import OfficeBreaksDesigner from '../components/OfficeBreaks/OfficeBreaksDesigner';
+import PersonalMarketingGenerator from '../components/PersonalMarketing/PersonalMarketingGenerator';
+import TravelTrainingChat from '../components/TravelTraining/TravelTrainingChat';
+import GroupClassesManager from '../components/GroupClasses/GroupClassesManager';
+import MicroHabitsBuilder from '../components/MicroHabits/MicroHabitsBuilder';
 import { chatService } from '../services/chatService';
+
+interface Tool {
+  id: string;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+  gradient: string;
+  features: string[];
+}
 
 const ContentPublishingPage: React.FC = () => {
   const navigate = useNavigate();
-  const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
+  const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isContentStrategyOpen, setIsContentStrategyOpen] = useState(false);
+  const [isAudienceAnalyzerOpen, setIsAudienceAnalyzerOpen] = useState(false);
+  const [isExpressPlansOpen, setIsExpressPlansOpen] = useState(false);
+  const [isInjuryDiagnosisOpen, setIsInjuryDiagnosisOpen] = useState(false);
+  const [isLifestyleGuideOpen, setIsLifestyleGuideOpen] = useState(false);
+  const [isPlateauStrategiesOpen, setIsPlateauStrategiesOpen] = useState(false);
+  const [isSmartGoalsOpen, setIsSmartGoalsOpen] = useState(false);
+  const [isSocialContentOpen, setIsSocialContentOpen] = useState(false);
+  const [showChallenges, setShowChallenges] = useState(false);
+  const [showProgressSimulator, setShowProgressSimulator] = useState(false);
+  const [showHomeEquipment, setShowHomeEquipment] = useState(false);
   const { theme } = useTheme();
   const [showChat, setShowChat] = useState(false);
   const [selectedChat, setSelectedChat] = useState<number>(0);
@@ -77,40 +113,56 @@ const ContentPublishingPage: React.FC = () => {
     };
   }, []);
 
-  const mainTools = [
+  const mainTools: Tool[] = [
     { 
       id: 'posts', 
-      chatId: 1,
       name: 'Generador de publicaciones con IA', 
       icon: Sparkles,
       description: 'Genera posts virales para tus redes sociales con IA avanzada',
       gradient: 'from-purple-500 to-pink-500',
-      features: ['Optimización SEO', 'Análisis de tendencias', 'Personalización automática']
+      features: [
+        'Genera posts optimizados para cada red social',
+        'Incluye hashtags relevantes',
+        'Optimiza el engagement'
+      ]
+    },
+    {
+      id: 'content-strategy',
+      name: 'Content Strategy',
+      icon: Brain,
+      description: 'Desarrolla estrategias efectivas de contenido',
+      gradient: 'from-violet-500 to-purple-500',
+      features: [
+        'Planificación',
+        'Calendario editorial',
+        'Optimización'
+      ]
+    },
+    {
+      id: 'audience',
+      name: 'Analizador de Audiencia',
+      icon: Users,
+      description: 'Comprende y analiza tu audiencia para mejorar tu contenido',
+      gradient: 'from-blue-500 to-cyan-500',
+      features: [
+        'Análisis demográfico detallado',
+        'Intereses y comportamiento',
+        'Recomendaciones personalizadas'
+      ]
     },
     { 
       id: 'stories', 
-      chatId: 2,
       name: 'Generador de HISTORIAS CON IA', 
       icon: ImageIcon,
       description: 'Diseña historias cautivadoras que conecten con tu audiencia',
       gradient: 'from-blue-500 to-cyan-500',
       features: ['Plantillas dinámicas', 'Efectos visuales', 'Programación automática']
-    },
-    { 
-      id: 'content-strategy', 
-      chatId: 3,
-      name: 'Content Strategy', 
-      icon: Brain,
-      description: 'Desarrolla estrategias efectivas de contenido',
-      gradient: 'from-violet-500 to-purple-500',
-      features: ['Planificación', 'Calendario editorial', 'Optimización']
     }
   ];
 
-  const fitnessTools = [
+  const fitnessTools: Tool[] = [
     {
       id: 'express-plans',
-      chatId: 4,
       name: 'Generador de Planes Exprés',
       icon: Zap,
       description: 'Crea planes de entrenamiento rápidos y efectivos',
@@ -119,7 +171,6 @@ const ContentPublishingPage: React.FC = () => {
     },
     {
       id: 'injury-diagnosis',
-      chatId: 5,
       name: 'Diagnóstico de Lesiones y Adaptaciones',
       icon: Target,
       description: 'Analiza y adapta entrenamientos según lesiones',
@@ -128,7 +179,6 @@ const ContentPublishingPage: React.FC = () => {
     },
     {
       id: 'lifestyle-guide',
-      chatId: 6,
       name: 'Guía de Estilo de Vida y Hábitos Diarios',
       icon: TreeDeciduous,
       description: 'Optimiza tus hábitos diarios para mejor rendimiento',
@@ -137,10 +187,9 @@ const ContentPublishingPage: React.FC = () => {
     }
   ];
 
-  const performanceTools = [
+  const performanceTools: Tool[] = [
     {
       id: 'plateau-strategies',
-      chatId: 7,
       name: 'Planificador de Estrategias para Superar Estancamientos',
       icon: Rocket,
       description: 'Supera mesetas en tu rendimiento',
@@ -149,7 +198,6 @@ const ContentPublishingPage: React.FC = () => {
     },
     {
       id: 'smart-goals',
-      chatId: 8,
       name: 'Constructor de Metas SMART',
       icon: Target,
       description: 'Define objetivos específicos y alcanzables',
@@ -158,7 +206,6 @@ const ContentPublishingPage: React.FC = () => {
     },
     {
       id: 'social-content',
-      chatId: 9,
       name: 'Creador de Contenido en Redes Sociales',
       icon: Instagram,
       description: 'Genera contenido atractivo para redes sociales',
@@ -167,10 +214,9 @@ const ContentPublishingPage: React.FC = () => {
     }
   ];
 
-  const engagementTools = [
+  const engagementTools: Tool[] = [
     {
       id: 'challenges',
-      chatId: 10,
       name: 'Creador de Retos y Competencias',
       icon: Gift,
       description: 'Diseña retos motivadores para tus clientes',
@@ -179,7 +225,6 @@ const ContentPublishingPage: React.FC = () => {
     },
     {
       id: 'progress-simulator',
-      chatId: 11,
       name: 'Simulador de Escenarios de Avance',
       icon: TrendingUp,
       description: 'Visualiza diferentes escenarios de progreso',
@@ -188,7 +233,6 @@ const ContentPublishingPage: React.FC = () => {
     },
     {
       id: 'home-equipment',
-      chatId: 12,
       name: 'Orientador de Equipamiento Casero',
       icon: Home,
       description: 'Optimiza tu entrenamiento en casa',
@@ -197,10 +241,9 @@ const ContentPublishingPage: React.FC = () => {
     }
   ];
 
-  const specializedTools = [
+  const specializedTools: Tool[] = [
     {
       id: 'office-breaks',
-      chatId: 13,
       name: 'Diseño de Pausas Activas en la Oficina',
       icon: Briefcase,
       description: 'Ejercicios y rutinas para el trabajo',
@@ -209,7 +252,6 @@ const ContentPublishingPage: React.FC = () => {
     },
     {
       id: 'personal-marketing',
-      chatId: 14,
       name: 'Generador de Estrategias de Marketing Personal',
       icon: Users,
       description: 'Mejora tu presencia profesional',
@@ -218,7 +260,6 @@ const ContentPublishingPage: React.FC = () => {
     },
     {
       id: 'travel-training',
-      chatId: 15,
       name: 'Chat de Entrenamiento para Viajeros',
       icon: Globe,
       description: 'Mantén tu rutina mientras viajas',
@@ -227,10 +268,9 @@ const ContentPublishingPage: React.FC = () => {
     }
   ];
 
-  const groupTools = [
+  const groupTools: Tool[] = [
     {
       id: 'group-classes',
-      chatId: 16,
       name: 'Gestor de Clases Grupales o Bootcamps',
       icon: Users,
       description: 'Organiza y gestiona sesiones grupales',
@@ -239,7 +279,6 @@ const ContentPublishingPage: React.FC = () => {
     },
     {
       id: 'micro-habits',
-      chatId: 17,
       name: 'Constructor de Micro-Hábitos Saludables',
       icon: Star,
       description: 'Desarrolla hábitos sostenibles',
@@ -248,7 +287,6 @@ const ContentPublishingPage: React.FC = () => {
     },
     {
       id: 'audience-analyzer',
-      chatId: 18,
       name: 'Audience Analyzer',
       icon: BarChart,
       description: 'Analiza y comprende tu audiencia',
@@ -258,46 +296,36 @@ const ContentPublishingPage: React.FC = () => {
   ];
 
   const handleToolClick = (tool: Tool) => {
-    console.log('ContentPublishingPage - handleToolClick llamado con tool:', tool);
-    console.log('ContentPublishingPage - chatId del tool:', tool.chatId);
-    
-    if (tool.id === 'posts') {
-      navigate('/ai-post-creator');
-      return;
-    }
+    setSelectedTool(tool.id);
+  };
 
-    if (tool.id === 'stories') {
-      navigate('/ai-story-creator');
-      return;
-    }
-    
-    setSelectedTool(tool);
-    setIsModalOpen(true);
+  const handleCloseTools = () => {
+    setSelectedTool(null);
   };
 
   const handleCloseModal = () => {
-    console.log('ContentPublishingPage - Cerrando modal');
     setIsModalOpen(false);
     setSelectedTool(null);
   };
 
   const handleSendMessage = async (message: string) => {
-    console.log('ContentPublishingPage - handleSendMessage llamado con mensaje:', message);
-    console.log('ContentPublishingPage - selectedTool actual:', selectedTool);
-    
     if (!selectedTool) {
       console.error('ContentPublishingPage - No hay herramienta seleccionada');
       return;
     }
 
     try {
-      const response = await chatService.sendMessage(selectedTool.chatId, message);
+      const response = await chatService.sendMessage(selectedTool, message);
       console.log('ContentPublishingPage - Respuesta del servidor:', response);
       return response;
     } catch (error) {
       console.error('ContentPublishingPage - Error al enviar mensaje:', error);
       throw error;
     }
+  };
+
+  const handleContentStrategyClick = () => {
+    setIsContentStrategyOpen(true);
   };
 
   return (
@@ -524,9 +552,77 @@ const ContentPublishingPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Herramienta de Estrategia de Contenido */}
+        <div className="mb-16">
+          <motion.h2 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-3xl font-bold mb-8 flex items-center"
+          >
+            <Target className="w-8 h-8 mr-3 text-blue-500 animate-pulse" />
+            <span className={`${christmasStyles.titleGradient} bg-clip-text text-transparent`}>
+              Estrategia de Contenido
+            </span>
+          </motion.h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <motion.div
+              className={christmasStyles.toolCard}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <div
+                className={`p-4 rounded-lg cursor-pointer transition-all ${
+                  theme === 'dark' 
+                    ? 'bg-gray-800 hover:bg-gray-700'
+                    : 'bg-white hover:bg-gray-50'
+                } shadow-md hover:shadow-lg`}
+                onClick={handleContentStrategyClick}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className={`p-2 rounded-full ${
+                    theme === 'dark' ? 'bg-blue-900' : 'bg-blue-100'
+                  }`}>
+                    <Target className={`w-6 h-6 ${
+                      theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                    }`} />
+                  </div>
+                  <div>
+                    <h3 className="font-medium">Audience Analyzer</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Analiza tu audiencia y planifica tu contenido
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Componentes de herramientas */}
+        <OfficeBreaksDesigner 
+          isVisible={selectedTool === 'office-breaks'} 
+          onClose={handleCloseTools} 
+        />
+        <PersonalMarketingGenerator 
+          isVisible={selectedTool === 'personal-marketing'} 
+          onClose={handleCloseTools} 
+        />
+        <TravelTrainingChat 
+          isVisible={selectedTool === 'travel-training'} 
+          onClose={handleCloseTools} 
+        />
+        <GroupClassesManager 
+          isVisible={selectedTool === 'group-classes'} 
+          onClose={handleCloseTools} 
+        />
+        <MicroHabitsBuilder 
+          isVisible={selectedTool === 'micro-habits'} 
+          onClose={handleCloseTools} 
+        />
+
         {/* Chat Modal */}
         <AnimatePresence>
-          {isModalOpen && (
+          {isModalOpen && selectedTool && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -542,13 +638,203 @@ const ContentPublishingPage: React.FC = () => {
                 </button>
                 <AIChat
                   onSendMessage={handleSendMessage}
-                  chatDescription={chatService.getChatDescription(selectedTool?.chatId)}
                   theme={theme}
                 />
               </div>
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Content Strategy Modal */}
+        <AnimatePresence>
+          {isContentStrategyOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+            >
+              <div className={`relative w-full max-w-4xl h-[80vh] rounded-2xl shadow-xl overflow-hidden ${
+                theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+              }`}>
+                <ContentStrategy 
+                  onClose={() => setIsContentStrategyOpen(false)} 
+                  isVisible={isContentStrategyOpen}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Audience Analyzer Modal */}
+        <AnimatePresence>
+          {isAudienceAnalyzerOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+            >
+              <div className={`relative w-full max-w-4xl h-[80vh] rounded-2xl shadow-xl overflow-hidden ${
+                theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+              }`}>
+                <AudienceAnalyzer onClose={() => setIsAudienceAnalyzerOpen(false)} />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Express Plans Modal */}
+        <AnimatePresence>
+          {isExpressPlansOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+            >
+              <div className={`relative w-full max-w-4xl h-[80vh] rounded-2xl shadow-xl overflow-hidden ${
+                theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+              }`}>
+                <ExpressPlansGenerator 
+                  onClose={() => setIsExpressPlansOpen(false)} 
+                  isVisible={isExpressPlansOpen}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Injury Diagnosis Modal */}
+        <AnimatePresence>
+          {isInjuryDiagnosisOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+            >
+              <div className={`relative w-full max-w-6xl h-[90vh] rounded-2xl shadow-xl overflow-hidden ${
+                theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+              }`}>
+                <InjuryDiagnosisAnalyzer 
+                  onClose={() => setIsInjuryDiagnosisOpen(false)} 
+                  isVisible={isInjuryDiagnosisOpen}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Lifestyle Guide Modal */}
+        <AnimatePresence>
+          {isLifestyleGuideOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+            >
+              <div className={`relative w-full max-w-6xl h-[90vh] rounded-2xl shadow-xl overflow-hidden ${
+                theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+              }`}>
+                <LifestyleGuideAnalyzer 
+                  onClose={() => setIsLifestyleGuideOpen(false)} 
+                  isVisible={isLifestyleGuideOpen}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Plateau Strategies Modal */}
+        <AnimatePresence>
+          {isPlateauStrategiesOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+            >
+              <div className={`relative w-full max-w-6xl h-[90vh] rounded-2xl shadow-xl overflow-hidden ${
+                theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+              }`}>
+                <PlateauStrategiesPlanner 
+                  onClose={() => setIsPlateauStrategiesOpen(false)} 
+                  isVisible={isPlateauStrategiesOpen}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Smart Goals Modal */}
+        <AnimatePresence>
+          {isSmartGoalsOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+            >
+              <div className={`relative w-full max-w-6xl h-[90vh] rounded-2xl shadow-xl overflow-hidden ${
+                theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+              }`}>
+                <SmartGoalsBuilder 
+                  onClose={() => setIsSmartGoalsOpen(false)} 
+                  isVisible={isSmartGoalsOpen}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Social Content Modal */}
+        <AnimatePresence>
+          {isSocialContentOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+            >
+              <div className={`relative w-full max-w-6xl h-[90vh] rounded-2xl shadow-xl overflow-hidden ${
+                theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+              }`}>
+                <SocialContentCreator 
+                  onClose={() => setIsSocialContentOpen(false)} 
+                  isVisible={isSocialContentOpen}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <ChallengesCreator
+          isVisible={showChallenges}
+          onClose={() => setShowChallenges(false)}
+        />
+
+        <ProgressSimulator
+          isVisible={showProgressSimulator}
+          onClose={() => setShowProgressSimulator(false)}
+        />
+
+        <HomeEquipmentAdvisor
+          isVisible={showHomeEquipment}
+          onClose={() => setShowHomeEquipment(false)}
+        />
+
+        {showChat && (
+          <AIChat
+            isOpen={showChat}
+            onClose={() => {
+              setShowChat(false);
+              setIsModalOpen(false);
+            }}
+            tool={selectedTool}
+          />
+        )}
       </div>
     </div>
   );

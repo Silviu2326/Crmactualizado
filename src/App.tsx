@@ -67,20 +67,20 @@ function AppContent() {
     >
       {/* Header se oculta si shouldHideLayout es true */}
       {!shouldHideLayout && <Header />}
-      <div className={`flex flex-1 ${shouldHideLayout ? '' : ''}`}>
+      <div className={`flex flex-1 ${shouldHideLayout ? '' : ''} relative`}>
         {/* Sidebar se oculta si shouldHideLayout es true */}
         {!shouldHideLayout && <Sidebar />}
-        {/* Ajustar el contenido principal */}
+        
+        {/* Contenido principal */}
         {shouldHideLayout ? (
           <>
-            {/* CommandAssister ocupando 1/3 del ancho */}
+            {/* Layout especial para EditPlanningPage */}
             <div className="w-1/3 h-full">
               <CommandAssister
                 isExpanded={isCommandAssisterOpen}
                 setIsExpanded={setIsCommandAssisterOpen}
               />
             </div>
-            {/* Contenido principal ocupando 2/3 del ancho */}
             <main className="w-2/3 h-full p-6 overflow-y-auto">
               <Routes>
                 <Route
@@ -95,173 +95,175 @@ function AppContent() {
             </main>
           </>
         ) : (
-          <main className="flex-1 p-6">
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  <PrivateRoute>
-                    <DashboardPage />
-                  </PrivateRoute>
-                }
+          <>
+            <main className="flex-1 p-6">
+              <Routes>
+                <Route
+                  path="/"
+                  element={
+                    <PrivateRoute>
+                      <DashboardPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/clients"
+                  element={
+                    <PrivateRoute>
+                      <ClientsPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/routines"
+                  element={
+                    <PrivateRoute>
+                      <RoutinesPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/diets"
+                  element={
+                    <PrivateRoute>
+                      <DietsPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/classes"
+                  element={
+                    <PrivateRoute>
+                      <ClassesPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/economics"
+                  element={
+                    <PrivateRoute>
+                      <EconomicsPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/marketing/campaigns"
+                  element={
+                    <PrivateRoute>
+                      <MarketingCampaignsPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/marketing/analytics"
+                  element={
+                    <PrivateRoute>
+                      <MarketingAnalyticsPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/content"
+                  element={
+                    <PrivateRoute>
+                      <ContentPublishingPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/publications"
+                  element={
+                    <PrivateRoute>
+                      <Publications />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <PrivateRoute>
+                      <ProfilePage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <PrivateRoute>
+                      <AjustesPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/services"
+                  element={
+                    <PrivateRoute>
+                      <ServiciosPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/edit-planning/:id"
+                  element={
+                    <PrivateRoute>
+                      <EditPlanningPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/plantilla/:id"
+                  element={
+                    <PrivateRoute>
+                      <PlantillaPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/edit-diet/:id"
+                  element={
+                    <PrivateRoute>
+                      <PageEdicionDieta />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/ai-post-creator"
+                  element={
+                    <PrivateRoute>
+                      <AIPostCreator />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/ai-story-creator"
+                  element={
+                    <PrivateRoute>
+                      <AIStoryCreator />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/reportesweb"
+                  element={
+                    <PrivateRoute>
+                      <Reportesweb />
+                    </PrivateRoute>
+                  }
+                />
+              </Routes>
+            </main>
+            
+            {/* CommandAssister en la esquina inferior derecha para otras páginas */}
+            <div className={`fixed bottom-4 right-4 z-50 ${isCommandAssisterOpen ? 'w-96' : 'w-auto'}`}>
+              <CommandAssister
+                isExpanded={isCommandAssisterOpen}
+                setIsExpanded={setIsCommandAssisterOpen}
               />
-              <Route
-                path="/clients"
-                element={
-                  <PrivateRoute>
-                    <ClientsPage />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/routines"
-                element={
-                  <PrivateRoute>
-                    <RoutinesPage />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/diets"
-                element={
-                  <PrivateRoute>
-                    <DietsPage />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/classes"
-                element={
-                  <PrivateRoute>
-                    <ClassesPage />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/economics"
-                element={
-                  <PrivateRoute>
-                    <EconomicsPage />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/marketing/campaigns"
-                element={
-                  <PrivateRoute>
-                    <MarketingCampaignsPage />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/marketing/analytics"
-                element={
-                  <PrivateRoute>
-                    <MarketingAnalyticsPage />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/content"
-                element={
-                  <PrivateRoute>
-                    <ContentPublishingPage />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/publications"
-                element={
-                  <PrivateRoute>
-                    <Publications />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <PrivateRoute>
-                    <ProfilePage />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <PrivateRoute>
-                    <AjustesPage />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/services"
-                element={
-                  <PrivateRoute>
-                    <ServiciosPage />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/edit-planning/:id"
-                element={
-                  <PrivateRoute>
-                    <EditPlanningPage />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/plantilla/:id"
-                element={
-                  <PrivateRoute>
-                    <PlantillaPage />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/edit-diet/:id"
-                element={
-                  <PrivateRoute>
-                    <PageEdicionDieta />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/ai-post-creator"
-                element={
-                  <PrivateRoute>
-                    <AIPostCreator />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/ai-story-creator"
-                element={
-                  <PrivateRoute>
-                    <AIStoryCreator />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/reportesweb"
-                element={
-                  <PrivateRoute>
-                    <Reportesweb />
-                  </PrivateRoute>
-                }
-              />
-            </Routes>
-          </main>
+            </div>
+          </>
         )}
       </div>
-      {/* Footer se oculta si shouldHideLayout es true */}
       {!shouldHideLayout && <Footer />}
-      {/* CommandAssister */}
-      {!isCommandAssisterOpen && (
-        <CommandAssister
-          isExpanded={isCommandAssisterOpen}
-          setIsExpanded={setIsCommandAssisterOpen}
-        />
-      )}
     </div>
   );
 }

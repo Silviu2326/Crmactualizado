@@ -1,7 +1,20 @@
 // DietList.tsx
 import React, { useState, useEffect } from 'react'; 
-import { Search, X, Plus, Filter, Download, Salad, Target, Clock, Users, FileText,
-  Snowflake, Gift, TreeDeciduous, CandyCane, Cookie } from 'lucide-react';
+import { 
+  Search, 
+  X, 
+  Plus, 
+  Filter, 
+  Download, 
+  Salad, 
+  Target, 
+  Clock, 
+  Users, 
+  FileText,
+  Apple,
+  Utensils,
+  ChefHat
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Button from '../Common/Button';
 import Table from '../Common/Table';
@@ -15,8 +28,6 @@ const DietList: React.FC = () => {
   const { theme } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [showFoods, setShowFoods] = useState(false);
-  const [showSnow, setShowSnow] = useState(true);
-
   const [isDietModalOpen, setIsDietModalOpen] = useState(false);
   const [isFoodModalOpen, setIsFoodModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -38,7 +49,6 @@ const DietList: React.FC = () => {
   const applyFilters = (data: any[]) => {
     return data.filter(item => {
       if (showFoods) {
-        // Filtros para alimentos
         const matchesCategoria = !filters.categoria || item.categoria === filters.categoria;
         const matchesKcal = !filters.rangoKcal.min && !filters.rangoKcal.max || 
           ((!filters.rangoKcal.min || item.calorias >= Number(filters.rangoKcal.min)) &&
@@ -46,7 +56,6 @@ const DietList: React.FC = () => {
         
         return matchesCategoria && matchesKcal;
       } else {
-        // Filtros para dietas
         const matchesObjetivo = !filters.objetivo || item.objetivo === filters.objetivo;
         const matchesEstado = !filters.estado || item.estado === filters.estado;
         
@@ -60,77 +69,40 @@ const DietList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const christmasStyles = {
+  const styles = {
     container: `p-6 min-h-screen relative ${
       theme === 'dark'
-        ? 'bg-gradient-to-br from-gray-900 via-green-900/20 to-red-900/20'
-        : 'bg-gradient-to-br from-red-50 via-green-50 to-red-50'
+        ? 'bg-gradient-to-br from-gray-900 to-gray-800'
+        : 'bg-gradient-to-br from-blue-50 to-indigo-50'
     }`,
     card: `${theme === 'dark' ? 'bg-gray-800/90' : 'bg-white/90'} rounded-lg shadow-lg backdrop-blur-sm`,
     title: `text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`,
-    snowflake: 'absolute animate-fall pointer-events-none',
   };
-
-  // Generar copos de nieve
-  const snowflakes = showSnow ? Array.from({ length: 30 }).map((_, i) => ({
-    style: {
-      position: 'absolute',
-      left: `${Math.random() * 100}%`,
-      top: `-20px`,
-      animationDuration: `${Math.random() * 3 + 2}s`,
-      animationDelay: `${Math.random() * 2}s`,
-      opacity: Math.random() * 0.5 + 0.5
-    }
-  })) : [];
-
-  useEffect(() => {
-    const styles = `
-      @keyframes fall {
-        0% {
-          transform: translateY(-10vh) rotate(0deg);
-        }
-        100% {
-          transform: translateY(100vh) rotate(360deg);
-        }
-      }
-      
-      .animate-fall {
-        animation: fall linear infinite;
-      }
-    `;
-    const styleSheet = document.createElement("style");
-    styleSheet.innerText = styles;
-    document.head.appendChild(styleSheet);
-
-    return () => {
-      document.head.removeChild(styleSheet);
-    };
-  }, []);
 
   const statsCards = [
     { 
-      icon: showFoods ? Cookie : TreeDeciduous,
+      icon: showFoods ? Apple : ChefHat,
       title: showFoods ? "Total Alimentos" : "Dietas Activas",
       value: showFoods ? "48" : "24",
-      color: "bg-green-500"
+      color: "bg-blue-500"
     },
     {
-      icon: showFoods ? CandyCane : Target,
+      icon: showFoods ? Utensils : Target,
       title: showFoods ? "Categorías" : "Objetivos Cumplidos",
       value: showFoods ? "12" : "85%",
-      color: "bg-red-500"
+      color: "bg-indigo-500"
     },
     {
       icon: Clock,
       title: showFoods ? "Tiempo Promedio" : "Duración Media",
       value: showFoods ? "25min" : "45 días",
-      color: "bg-green-500"
+      color: "bg-blue-500"
     },
     {
       icon: Users,
       title: "Clientes Asignados",
       value: "156",
-      color: "bg-red-500"
+      color: "bg-indigo-500"
     }
   ];
 
@@ -317,21 +289,15 @@ const DietList: React.FC = () => {
   const filteredData = applyFilters(showFoods ? foodData : dietData);
 
   return (
-    <div className={christmasStyles.container}>
-      {showSnow && snowflakes.map((snowflake, i) => (
-        <div key={i} className={christmasStyles.snowflake} style={snowflake.style}>
-          <Snowflake size={16} className={`${theme === 'dark' ? 'text-gray-300' : 'text-red-200'}`} />
-        </div>
-      ))}
-
+    <div className={styles.container}>
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-8 flex items-center gap-4"
       >
-        <TreeDeciduous className="w-8 h-8 text-green-500 animate-bounce" />
+        <Salad className="w-8 h-8 text-blue-500" />
         <div>
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-red-500 to-green-500 bg-clip-text text-transparent mb-2">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             {showFoods ? 'Catálogo de Alimentos' : 'Planes Nutricionales'}
           </h2>
           <p className={`${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -341,7 +307,6 @@ const DietList: React.FC = () => {
             }
           </p>
         </div>
-        <Gift className="w-8 h-8 text-red-500 animate-bounce" />
       </motion.div>
 
       <motion.div 
@@ -355,15 +320,15 @@ const DietList: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className={`${christmasStyles.card} p-4 hover:shadow-xl transition-all duration-300 transform hover:scale-105`}
+            className={`${styles.card} p-4 hover:shadow-xl transition-all duration-300 transform hover:scale-105`}
           >
             <div className="flex items-center space-x-4">
               <div className={`${card.color} p-3 rounded-lg`}>
-                <card.icon className="w-6 h-6 text-white animate-pulse" />
+                <card.icon className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h3 className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{card.title}</h3>
-                <p className="text-2xl font-bold bg-gradient-to-r from-red-500 to-green-500 bg-clip-text text-transparent">{card.value}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{card.value}</p>
               </div>
             </div>
           </motion.div>
@@ -377,27 +342,17 @@ const DietList: React.FC = () => {
       >
         <div className="flex space-x-2">
           <Button variant="create" onClick={() => showFoods ? setIsFoodModalOpen(true) : setIsDietModalOpen(true)}>
-            <Gift className="w-5 h-5 mr-2" />
+            <Plus className="w-5 h-5 mr-2" />
             {showFoods ? 'Añadir Alimento' : 'Crear Dieta'}
           </Button>
           <Button variant="normal" onClick={() => setShowFoods(!showFoods)}>
-            <Cookie className="w-5 h-5 mr-2" />
+            <Utensils className="w-5 h-5 mr-2" />
             {showFoods ? 'Ver Dietas' : 'Ver Alimentos'}
           </Button>
           <Button variant="normal">
             <Download className="w-5 h-5 mr-2" />
             Exportar
           </Button>
-          <button
-            onClick={() => setShowSnow(!showSnow)}
-            className={`p-2 rounded-full ${
-              theme === 'dark'
-                ? 'bg-gray-700 text-green-400 hover:bg-gray-600'
-                : 'bg-white text-red-500 hover:bg-red-50'
-            } transition-colors duration-200`}
-          >
-            <Snowflake size={20} />
-          </button>
         </div>
       </motion.div>
 
@@ -412,7 +367,7 @@ const DietList: React.FC = () => {
             placeholder={`Buscar ${showFoods ? 'alimentos' : 'planes'}...`}
             className={`w-full px-4 py-3 rounded-lg ${
               theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-800'
-            } focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300`}
+            } focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -421,7 +376,7 @@ const DietList: React.FC = () => {
         <Button 
           variant="filter" 
           onClick={() => setIsFilterModalOpen(true)}
-          className={`${filters.objetivo || filters.estado || filters.categoria || filters.rangoKcal.min || filters.rangoKcal.max ? 'bg-green-500 text-white' : ''}`}
+          className={`${filters.objetivo || filters.estado || filters.categoria || filters.rangoKcal.min || filters.rangoKcal.max ? 'bg-blue-500 text-white' : ''}`}
         >
           <Filter className="w-5 h-5 mr-2" />
           Filtros {Object.values(filters).flat().filter(Boolean).length > 0 && `(${Object.values(filters).flat().filter(Boolean).length})`}

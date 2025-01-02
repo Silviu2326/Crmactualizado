@@ -11,11 +11,10 @@ import {
   TrendingDown,
   AlertTriangle,
   Calendar,
-  Snowflake,
-  Gift,
-  Star,
-  TreePine,
-  Bell
+  Users,
+  Activity,
+  BarChart,
+  LineChart
 } from 'lucide-react';
 import Table from '../components/Common/Table';
 import IncomeChart from '../components/Economics/IncomeChart';
@@ -212,91 +211,33 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="p-6 relative bg-white">
-      {/* Decoración navideña */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <style>
-          {`
-            @keyframes snowfall {
-              0% { transform: translateY(-10px) rotate(0deg); }
-              100% { transform: translateY(100vh) rotate(360deg); }
-            }
-            @keyframes twinkle {
-              0%, 100% { opacity: 0.3; transform: scale(1); }
-              50% { opacity: 0.8; transform: scale(1.2); }
-            }
-            .animate-snow {
-              animation: snowfall linear infinite;
-            }
-            .animate-twinkle {
-              animation: twinkle ease-in-out infinite;
-            }
-          `}
-        </style>
-        {/* Copos de nieve animados */}
-        {[...Array(15)].map((_, i) => (
-          <div
-            key={`snow-${i}`}
-            className="absolute text-[#E61D2B]/10 animate-snow"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `-20px`,
-              animation: `snowfall ${Math.random() * 3 + 2}s linear infinite`,
-              animationDelay: `${Math.random() * 3}s`
-            }}
-          >
-            <Snowflake size={20} />
-          </div>
-        ))}
-        {/* Estrellas brillantes */}
-        {[...Array(8)].map((_, i) => (
-          <div
-            key={`star-${i}`}
-            className="absolute text-yellow-300/30 animate-twinkle"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 30}%`,
-              animation: `twinkle ${Math.random() * 2 + 1}s ease-in-out infinite`,
-              animationDelay: `${Math.random() * 2}s`
-            }}
-          >
-            <Star size={16} />
-          </div>
-        ))}
-      </div>
-
       {/* Contenido del Dashboard */}
       <div className="space-y-6 relative z-10">
-        {/* Título con decoración navideña */}
+        {/* Título */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-800">
               Dashboard
-              <span className="ml-2 text-[#E61D2B]">
-                <TreePine className="inline-block w-6 h-6 animate-bounce" />
-              </span>
             </h1>
             <span className="text-sm text-gray-500 flex items-center gap-1">
-              ¡Felices Fiestas!
-              <Bell className="w-4 h-4 text-[#E61D2B] animate-bounce" />
+              Panel de Control
             </span>
           </div>
           <div className="flex gap-2">
-            {/* Botones existentes con estilo navideño */}
+            {/* Botones */}
             <button
               onClick={() => setIsGenerateStoryModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#E61D2B] text-white rounded-lg hover:bg-[#E61D2B]/90 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <PenTool className="w-4 h-4" />
               <span>Generar Historia</span>
-              <Gift className="w-4 h-4 animate-bounce" />
             </button>
             <button
               onClick={() => setIsGeneratePostModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#E61D2B] text-white rounded-lg hover:bg-[#E61D2B]/90 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <FileText className="w-4 h-4" />
               <span>Generar Publicación</span>
-              <Gift className="w-4 h-4 animate-bounce" />
             </button>
           </div>
         </div>
@@ -306,90 +247,60 @@ const DashboardPage: React.FC = () => {
           <MetricCard
             title="Total Clientes"
             value={clientesData.length.toString()}
-            icon={<Book className="w-6 h-6 text-[#E61D2B]" />}
+            icon={<Users className="w-6 h-6 text-blue-600" />}
             trend={10}
             trendIcon={<TrendingUp className="w-4 h-4" />}
-            className="relative overflow-hidden bg-white shadow-lg"
-            headerDecorator={
-              <div className="absolute top-2 right-2">
-                <Star className="w-4 h-4 text-yellow-300 animate-pulse" />
-              </div>
-            }
+            className="bg-white shadow-lg"
           />
           <MetricCard
             title="Ingresos Mensuales"
             value="$25,000"
-            icon={<TrendingUp className="w-6 h-6 text-[#E61D2B]" />}
+            icon={<BarChart className="w-6 h-6 text-blue-600" />}
             trend={15}
             trendIcon={<TrendingUp className="w-4 h-4" />}
-            className="relative overflow-hidden bg-white shadow-lg"
-            headerDecorator={
-              <div className="absolute top-2 right-2">
-                <Gift className="w-4 h-4 text-[#E61D2B] animate-bounce" />
-              </div>
-            }
+            className="bg-white shadow-lg"
           />
           <MetricCard
             title="Alertas Pendientes"
             value={alerts.length.toString()}
-            icon={<AlertTriangle className="w-6 h-6 text-[#E61D2B]" />}
+            icon={<AlertTriangle className="w-6 h-6 text-blue-600" />}
             trend={-5}
             trendIcon={<TrendingDown className="w-4 h-4" />}
-            className="relative overflow-hidden bg-white shadow-lg"
-            headerDecorator={
-              <div className="absolute top-2 right-2">
-                <Snowflake className="w-4 h-4 text-[#E61D2B]/30 animate-spin" />
-              </div>
-            }
+            className="bg-white shadow-lg"
           />
           <MetricCard
             title="Próximas Actividades"
             value="8"
-            icon={<Calendar className="w-6 h-6 text-[#E61D2B]" />}
+            icon={<Calendar className="w-6 h-6 text-blue-600" />}
             trend={2}
             trendIcon={<TrendingUp className="w-4 h-4" />}
-            className="relative overflow-hidden bg-white shadow-lg"
-            headerDecorator={
-              <div className="absolute top-2 right-2">
-                <Bell className="w-4 h-4 text-[#E61D2B] animate-bounce" />
-              </div>
-            }
+            className="bg-white shadow-lg"
           />
         </div>
 
         {/* Gráficos */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-lg border-2 border-[#E61D2B]/20 relative overflow-hidden">
-            <div className="absolute top-2 right-2">
-              <Snowflake className="w-5 h-5 text-[#E61D2B]/30 animate-spin" />
-            </div>
+          <div className="bg-white p-6 rounded-xl shadow-lg">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               Ingresos
-              <Star className="w-4 h-4 text-yellow-300" />
+              <Activity className="w-4 h-4 text-blue-600" />
             </h2>
             <IncomeChart data={ingresos} />
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-lg border-2 border-[#E61D2B]/20 relative overflow-hidden">
-            <div className="absolute top-2 right-2">
-              <Gift className="w-5 h-5 text-[#E61D2B] animate-bounce" />
-            </div>
+          <div className="bg-white p-6 rounded-xl shadow-lg">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               Cash Flow
-              <TrendingUp className="w-4 h-4 text-[#E61D2B]" />
+              <LineChart className="w-4 h-4 text-blue-600" />
             </h2>
             <CashFlowChart viewType={viewType} currentDate={currentDate} ingresos={ingresos} gastos={gastos} />
           </div>
         </div>
 
         {/* Tablas */}
-        <div className="bg-white p-6 rounded-xl shadow-lg border-2 border-[#E61D2B]/20 relative">
-          <div className="absolute top-2 right-2 flex gap-2">
-            <Star className="w-4 h-4 text-yellow-300 animate-pulse" />
-            <Snowflake className="w-4 h-4 text-[#E61D2B]/30 animate-spin" />
-          </div>
+        <div className="bg-white p-6 rounded-xl shadow-lg">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             Clientes Recientes
-            <Book className="w-4 h-4 text-[#E61D2B]" />
+            <Users className="w-4 h-4 text-blue-600" />
           </h2>
           <Table
             headers={['Nombre', 'Email', 'Última Clase', 'Estado']}

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Search, Plus, Calendar, List, Grid, Instagram, Youtube, Music, Link, 
-  Snowflake, Gift, TreeDeciduous, Star, Bell } from 'lucide-react';
+  BarChart2, Bell } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import NewPublicationModal from '../components/modals/NewPublicationModal';
 import YouTubeModal from '../components/modals/YouTubeModal';
@@ -18,60 +18,22 @@ const Publications: React.FC = () => {
   const [view, setView] = useState('grid');
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showSnow, setShowSnow] = useState(true);
   const [isNewPublicationModalOpen, setIsNewPublicationModalOpen] = useState(false);
   const [isYouTubeModalOpen, setIsYouTubeModalOpen] = useState(false);
   const [isInstagramModalOpen, setIsInstagramModalOpen] = useState(false);
   const [isTikTokModalOpen, setIsTikTokModalOpen] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  // Estilos navideños
-  const christmasStyles = {
+  // Estilos profesionales
+  const styles = {
     container: `p-8 min-h-screen relative ${
       theme === 'dark'
-        ? 'bg-gradient-to-br from-gray-900 via-green-900/20 to-red-900/20'
-        : 'bg-gradient-to-br from-red-50 via-green-50 to-red-50'
+        ? 'bg-gradient-to-br from-gray-900 via-blue-900/20 to-gray-900'
+        : 'bg-gradient-to-br from-blue-50 via-indigo-50/20 to-blue-50'
     }`,
     card: `${theme === 'dark' ? 'bg-gray-800/90' : 'bg-white/90'} rounded-xl shadow-lg p-6 mb-8 backdrop-blur-sm`,
     title: `text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`,
-    snowflake: 'absolute animate-fall pointer-events-none',
   };
-
-  // Generar copos de nieve
-  const snowflakes = showSnow ? Array.from({ length: 30 }).map((_, i) => ({
-    style: {
-      position: 'absolute',
-      left: `${Math.random() * 100}%`,
-      top: `-20px`,
-      animationDuration: `${Math.random() * 3 + 2}s`,
-      animationDelay: `${Math.random() * 2}s`,
-      opacity: Math.random() * 0.5 + 0.5
-    }
-  })) : [];
-
-  useEffect(() => {
-    const styles = `
-      @keyframes fall {
-        0% {
-          transform: translateY(-10vh) rotate(0deg);
-        }
-        100% {
-          transform: translateY(100vh) rotate(360deg);
-        }
-      }
-      
-      .animate-fall {
-        animation: fall linear infinite;
-      }
-    `;
-    const styleSheet = document.createElement("style");
-    styleSheet.innerText = styles;
-    document.head.appendChild(styleSheet);
-
-    return () => {
-      document.head.removeChild(styleSheet);
-    };
-  }, []);
 
   const handleYouTubeAuth = async () => {
     try {
@@ -139,21 +101,14 @@ const Publications: React.FC = () => {
   };
 
   return (
-    <div className={christmasStyles.container}>
-      {showSnow && snowflakes.map((snowflake, i) => (
-        <div key={i} className={christmasStyles.snowflake} style={snowflake.style}>
-          <Snowflake size={16} className={`${theme === 'dark' ? 'text-gray-300' : 'text-red-200'}`} />
-        </div>
-      ))}
-
+    <div className={styles.container}>
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-4">
-            <TreeDeciduous className="w-8 h-8 text-green-500 animate-bounce" />
-            <h1 className={christmasStyles.title}>
+            <BarChart2 className="w-8 h-8 text-blue-500" />
+            <h1 className={styles.title}>
               GESTIÓN DE PUBLICACIONES
             </h1>
-            <Gift className="w-8 h-8 text-red-500 animate-bounce" />
           </div>
           <div className="flex flex-wrap gap-2">
             <button
@@ -174,32 +129,22 @@ const Publications: React.FC = () => {
               <span className="hidden sm:inline">Conectar Instagram</span>
               <Link size={16} className="ml-1" />
             </button>
-            <button
-              onClick={() => setShowSnow(!showSnow)}
-              className={`p-2 rounded-full ${
-                theme === 'dark'
-                  ? 'bg-gray-700 text-green-400 hover:bg-gray-600'
-                  : 'bg-white text-red-500 hover:bg-red-50'
-              } transition-colors duration-200`}
-            >
-              <Snowflake size={20} />
-            </button>
           </div>
         </div>
         
-        <div className={christmasStyles.card}>
+        <div className={styles.card}>
           <div className="flex flex-col space-y-6">
             <div className="flex items-center space-x-2 overflow-x-auto pb-2">
               <button
                 className={`px-4 py-2 rounded-full transition-all duration-200 ${
                   filter === 'all' 
-                    ? 'bg-gradient-to-r from-red-500 to-green-500 hover:from-red-600 hover:to-green-600 text-white' 
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white' 
                     : `${theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}` 
                 }`}
                 onClick={() => setFilter('all')}
               >
                 <div className="flex items-center gap-2">
-                  <Star size={16} />
+                  <Bell size={16} />
                   <span>Todas</span>
                 </div>
               </button>
@@ -256,14 +201,14 @@ const Publications: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <button
                 onClick={() => setIsNewPublicationModalOpen(true)}
-                className="flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-red-500 to-green-500 hover:from-red-600 hover:to-green-600 text-white rounded-xl transition-all shadow-md hover:shadow-lg"
+                className="flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-xl transition-all shadow-md hover:shadow-lg"
               >
-                <Gift size={20} />
+                <Plus size={20} />
                 <span>Nueva Publicación</span>
               </button>
               <button
                 onClick={() => setIsYouTubeModalOpen(true)}
-                className="flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg group"
+                className="flex items-center justify-center space-x-2 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all shadow-md hover:shadow-lg group"
               >
                 <Youtube size={20} className="group-hover:animate-bounce" />
                 <span>Subir a YouTube</span>

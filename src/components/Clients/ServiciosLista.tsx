@@ -1,12 +1,11 @@
 // ServiciosLista.tsx
 import React, { useState, useEffect } from 'react'; 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, UserCircle, Ticket, Calendar, Plus } from 'lucide-react';
+import { Users, UserCircle, Ticket, Calendar, Plus, BookOpen, Target, Activity, Clock } from 'lucide-react';
 import TablaClasesGrupales from './TablaClasesGrupales';
 import TablaAsesoriaSubscripcion from './TablaAsesoriaSubscripcion';
 import TablaCitas from './TablaCitas';
 import { useTheme } from '../../contexts/ThemeContext';
-import { CelebrationOutlined, AcUnit, CardGiftcard, LocalActivity } from '@mui/icons-material';
 
 // Importar los popups
 import NuevoClaseGrupalPopup from './NuevoClaseGrupalPopup';
@@ -14,23 +13,23 @@ import NuevaAsesoriaPopup from './NuevaAsesoriaPopup';
 import NuevaSuscripcionPopup from './NuevaSuscripcionPopup';
 import NuevoPackCitasPopup from './NuevoPackCitasPopup';
 
-// Estilos navideños
-const christmasStyles = {
+// Estilos base
+const styles = {
   container: {
     position: 'relative' as const,
     minHeight: '100vh',
-    background: 'linear-gradient(135deg, rgba(255,245,245,0.9) 0%, rgba(242,255,242,0.9) 100%)',
+    background: 'linear-gradient(135deg, rgba(245,245,245,0.9) 0%, rgba(242,242,255,0.9) 100%)',
   },
   darkContainer: {
-    background: 'linear-gradient(135deg, rgba(40,0,0,0.95) 0%, rgba(0,40,0,0.95) 100%)',
+    background: 'linear-gradient(135deg, rgba(30,30,40,0.95) 0%, rgba(20,20,30,0.95) 100%)',
   },
   categoryCard: (isActive: boolean, isDarkMode: boolean) => ({
     background: isActive
       ? isDarkMode
-        ? 'linear-gradient(45deg, #2c0303, #032c03)'
-        : 'linear-gradient(45deg, #ffe6e6, #e6ffe6)'
+        ? 'linear-gradient(45deg, #2c3440, #1a2030)'
+        : 'linear-gradient(45deg, #ffffff, #f0f4f8)'
       : 'transparent',
-    border: `2px solid ${isActive ? '#ff0000' : isDarkMode ? '#ffffff20' : '#00000020'}`,
+    border: `2px solid ${isActive ? '#4a90e2' : isDarkMode ? '#ffffff20' : '#00000020'}`,
     borderRadius: '12px',
     padding: '15px',
     cursor: 'pointer',
@@ -43,39 +42,32 @@ const christmasStyles = {
       boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
     },
   }),
-  snowflake: {
-    position: 'fixed' as const,
-    color: '#ffffff',
-    textShadow: '0 0 5px #ffffff',
-    animation: 'fall linear infinite',
-    zIndex: 1,
-  },
 };
 
 const categoriasServicios = [
   {
     id: 'suscripciones',
-    titulo: '🎁 Suscripción',
+    titulo: 'Suscripción',
     tipo: 'Suscripción',
-    icono: <CardGiftcard style={{ color: '#ff4444' }} />,
+    icono: <BookOpen style={{ color: '#4a90e2' }} />,
   },
   {
     id: 'asesorias',
-    titulo: '🎄 Asesoría Individual',
+    titulo: 'Asesoría Individual',
     tipo: 'Asesoría Individual',
-    icono: <CelebrationOutlined style={{ color: '#44ff44' }} />,
+    icono: <Target style={{ color: '#4a90e2' }} />,
   },
   {
     id: 'clases-grupales',
-    titulo: '⛄ Clase Grupal',
+    titulo: 'Clase Grupal',
     tipo: 'ClaseGrupal',
-    icono: <Users style={{ color: '#4444ff' }} />,
+    icono: <Users style={{ color: '#4a90e2' }} />,
   },
   {
     id: 'citas',
-    titulo: '🔔 Pack de Citas',
+    titulo: 'Pack de Citas',
     tipo: 'Pack de Citas',
-    icono: <LocalActivity style={{ color: '#ffaa44' }} />,
+    icono: <Clock style={{ color: '#4a90e2' }} />,
   },
 ];
 
@@ -91,8 +83,6 @@ const ServiciosLista = () => {
   const [isNuevaAsesoriaOpen, setIsNuevaAsesoriaOpen] = useState(false);
   const [isNuevaSuscripcionOpen, setIsNuevaSuscripcionOpen] = useState(false);
   const [isNuevoPackCitasOpen, setIsNuevoPackCitasOpen] = useState(false);
-
-  const [showSnow, setShowSnow] = useState(true);
 
   const getActionButtonText = () => {
     switch (categoriaActiva) {
@@ -246,44 +236,11 @@ const ServiciosLista = () => {
 
   const categoriaSeleccionada = categoriasServicios.find(c => c.id === categoriaActiva);
 
-  // Componente Copo de Nieve
-  const Snowflake = ({ style }: { style: React.CSSProperties }) => (
-    <motion.div
-      initial={{ y: -20, x: Math.random() * window.innerWidth }}
-      animate={{ y: window.innerHeight + 20 }}
-      transition={{
-        duration: Math.random() * 3 + 2,
-        repeat: Infinity,
-        ease: "linear"
-      }}
-      style={{
-        ...christmasStyles.snowflake,
-        ...style,
-      }}
-    >
-      ❄
-    </motion.div>
-  );
-
-  // Generar copos de nieve
-  const snowflakes = showSnow ? Array.from({ length: 30 }).map((_, i) => (
-    <Snowflake
-      key={i}
-      style={{
-        left: `${Math.random() * 100}%`,
-        animationDuration: `${Math.random() * 3 + 2}s`,
-        fontSize: `${Math.random() * 15 + 10}px`,
-        opacity: Math.random() * 0.7 + 0.3,
-      }}
-    />
-  )) : null;
-
   return (
     <div style={{
-      ...christmasStyles.container,
-      ...(isDarkMode && christmasStyles.darkContainer)
+      ...styles.container,
+      ...(isDarkMode && styles.darkContainer)
     }}>
-      {snowflakes}
       <div style={{ position: 'relative', zIndex: 2 }}>
         <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ 
@@ -293,19 +250,8 @@ const ServiciosLista = () => {
             alignItems: 'center',
             gap: '10px'
           }}>
-            <AcUnit style={{ color: '#44aaff' }} />
+            <Activity style={{ color: '#4a90e2' }} />
             Servicios Disponibles
-            <button
-              onClick={() => setShowSnow(!showSnow)}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '20px'
-              }}
-            >
-              {showSnow ? '❄️' : '☀️'}
-            </button>
           </h2>
         </div>
         <div className="flex flex-wrap gap-4 justify-center mb-12">
@@ -316,12 +262,12 @@ const ServiciosLista = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
               onClick={() => setCategoriaActiva(categoria.id)}
-              style={christmasStyles.categoryCard(categoriaActiva === categoria.id, isDarkMode)}
+              style={styles.categoryCard(categoriaActiva === categoria.id, isDarkMode)}
             >
               <span
                 style={{
                   color: categoriaActiva === categoria.id
-                    ? '#ffffff'
+                    ? '#4a90e2'
                     : isDarkMode
                     ? '#ffffff80'
                     : '#00000080'
@@ -337,8 +283,8 @@ const ServiciosLista = () => {
         <motion.div
           layout
           style={{
-            ...christmasStyles.container,
-            ...(isDarkMode && christmasStyles.darkContainer),
+            ...styles.container,
+            ...(isDarkMode && styles.darkContainer),
             padding: '20px',
             borderRadius: '20px',
             boxShadow: '0 4px 8px rgba(0,0,0,0.1)',

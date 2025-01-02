@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Snowflake, Gift } from 'lucide-react';
+import { AlertTriangle, Users, CheckCircle } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import PanelCliente from './PanelCliente';
@@ -53,7 +53,6 @@ const ClientList: React.FC = () => {
   const [openPanels, setOpenPanels] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'simple'>('table');
-  const [showSnow, setShowSnow] = useState(true);
   const [filters, setFilters] = useState<Filters>({
     estado: '',
     tag: '',
@@ -66,26 +65,11 @@ const ClientList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showCreateClient, setShowCreateClient] = useState<boolean>(false);
 
-  // Estilos navideños
-  const christmasStyles = {
-    container: `${theme === 'dark' ? 'bg-gray-900' : 'bg-red-50'} min-h-screen p-4 relative`,
-    header: `${theme === 'dark' ? 'text-green-400' : 'text-red-600'} text-2xl font-bold mb-4 flex items-center`,
-    snowflake: 'text-white absolute animate-fall',
+  // Estilos base
+  const styles = {
+    container: `${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'} min-h-screen p-4`,
+    header: `${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'} text-2xl font-bold mb-4 flex items-center`,
   };
-
-  // Componente Copo de Nieve
-  const SnowflakeComponent = ({ style }: { style: React.CSSProperties }) => (
-    <div className={christmasStyles.snowflake} style={style}>
-      <Snowflake size={16} className={`${theme === 'dark' ? 'text-gray-300' : 'text-red-200'}`} />
-    </div>
-  );
-
-  // Generar copos de nieve
-  const snowflakes = showSnow ? Array.from({ length: 20 }).map((_, i) => ({
-    left: `${Math.random() * 100}%`,
-    animationDuration: `${Math.random() * 3 + 2}s`,
-    animationDelay: `${Math.random() * 2}s`,
-  })) : [];
 
   useEffect(() => {
     console.log(' Iniciando la carga de clientes...');
@@ -208,7 +192,7 @@ const ClientList: React.FC = () => {
       case 'nombre':
         return (
           <div className="flex items-center">
-            {value === 'Activo' && <Gift size={16} className="mr-2 text-green-500" />}
+            {value === 'Activo' && <CheckCircle size={16} className="mr-2 text-green-500" />}
             {`${client.nombre} ${client.apellido}`}
           </div>
         );
@@ -223,7 +207,6 @@ const ClientList: React.FC = () => {
             value === 'Pendiente' ? 'bg-red-500 text-white' :
             'bg-gray-500 text-white'
           } flex items-center justify-center`}>
-            {value === 'Activo' && <Snowflake size={12} className="mr-1" />}
             {value}
           </span>
         );
@@ -272,13 +255,9 @@ const ClientList: React.FC = () => {
   ];
 
   return (
-    <div className={christmasStyles.container}>
-      {showSnow && snowflakes.map((style, i) => (
-        <SnowflakeComponent key={i} style={style} />
-      ))}
-      
-      <div className={christmasStyles.header}>
-        <Gift className="mr-2" /> Lista de Clientes
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <Users className="mr-2" /> Lista de Clientes
       </div>
 
       <ClientListHeader
@@ -443,25 +422,5 @@ const ClientList: React.FC = () => {
     </div>
   );
 };
-
-// Añadir estilos globales para la animación de caída de nieve
-const styles = `
-  @keyframes fall {
-    0% {
-      transform: translateY(-10vh) rotate(0deg);
-    }
-    100% {
-      transform: translateY(100vh) rotate(360deg);
-    }
-  }
-  
-  .animate-fall {
-    animation: fall linear infinite;
-  }
-`;
-
-const styleSheet = document.createElement("style");
-styleSheet.innerText = styles;
-document.head.appendChild(styleSheet);
 
 export default ClientList;

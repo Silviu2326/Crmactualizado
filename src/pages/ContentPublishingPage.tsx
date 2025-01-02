@@ -297,10 +297,38 @@ const ContentPublishingPage: React.FC = () => {
 
   const handleToolClick = (tool: Tool) => {
     setSelectedTool(tool.id);
+    if (tool.id === 'challenges') {
+      setShowChallenges(true);
+    } else if (tool.id === 'progress-simulator') {
+      setShowProgressSimulator(true);
+    } else if (tool.id === 'home-equipment') {
+      setShowHomeEquipment(true);
+    } else if (tool.id === 'plateau-strategies') {
+      setIsPlateauStrategiesOpen(true);
+    } else if (tool.id === 'smart-goals') {
+      setIsSmartGoalsOpen(true);
+    } else if (tool.id === 'social-content') {
+      setIsSocialContentOpen(true);
+    } else if (tool.id === 'express-plans') {
+      setIsExpressPlansOpen(true);
+    } else if (tool.id === 'injury-diagnosis') {
+      setIsInjuryDiagnosisOpen(true);
+    } else if (tool.id === 'lifestyle-guide') {
+      setIsLifestyleGuideOpen(true);
+    }
   };
 
   const handleCloseTools = () => {
     setSelectedTool(null);
+    setShowChallenges(false);
+    setShowProgressSimulator(false);
+    setShowHomeEquipment(false);
+    setIsPlateauStrategiesOpen(false);
+    setIsSmartGoalsOpen(false);
+    setIsSocialContentOpen(false);
+    setIsExpressPlansOpen(false);
+    setIsInjuryDiagnosisOpen(false);
+    setIsLifestyleGuideOpen(false);
   };
 
   const handleCloseModal = () => {
@@ -619,6 +647,42 @@ const ContentPublishingPage: React.FC = () => {
           isVisible={selectedTool === 'micro-habits'} 
           onClose={handleCloseTools} 
         />
+        <ChallengesCreator 
+          isVisible={showChallenges} 
+          onClose={handleCloseTools} 
+        />
+        <ProgressSimulator 
+          isVisible={showProgressSimulator} 
+          onClose={handleCloseTools} 
+        />
+        <HomeEquipmentAdvisor 
+          isVisible={showHomeEquipment} 
+          onClose={handleCloseTools} 
+        />
+        <PlateauStrategiesPlanner 
+          isVisible={isPlateauStrategiesOpen} 
+          onClose={() => setIsPlateauStrategiesOpen(false)} 
+        />
+        <SmartGoalsBuilder 
+          isVisible={isSmartGoalsOpen} 
+          onClose={() => setIsSmartGoalsOpen(false)} 
+        />
+        <SocialContentCreator 
+          isVisible={isSocialContentOpen} 
+          onClose={() => setIsSocialContentOpen(false)} 
+        />
+        <ExpressPlansGenerator 
+          isVisible={isExpressPlansOpen} 
+          onClose={() => setIsExpressPlansOpen(false)} 
+        />
+        <InjuryDiagnosisAnalyzer 
+          isVisible={isInjuryDiagnosisOpen} 
+          onClose={() => setIsInjuryDiagnosisOpen(false)} 
+        />
+        <LifestyleGuideAnalyzer 
+          isVisible={isLifestyleGuideOpen} 
+          onClose={() => setIsLifestyleGuideOpen(false)} 
+        />
 
         {/* Chat Modal */}
         <AnimatePresence>
@@ -809,21 +873,6 @@ const ContentPublishingPage: React.FC = () => {
             </motion.div>
           )}
         </AnimatePresence>
-
-        <ChallengesCreator
-          isVisible={showChallenges}
-          onClose={() => setShowChallenges(false)}
-        />
-
-        <ProgressSimulator
-          isVisible={showProgressSimulator}
-          onClose={() => setShowProgressSimulator(false)}
-        />
-
-        <HomeEquipmentAdvisor
-          isVisible={showHomeEquipment}
-          onClose={() => setShowHomeEquipment(false)}
-        />
 
         {showChat && (
           <AIChat

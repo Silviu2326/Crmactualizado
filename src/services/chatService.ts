@@ -123,5 +123,32 @@ export const chatService = {
       });
       throw new Error(error.response?.data?.message || 'Error al enviar el mensaje');
     }
+  },
+
+  getChatDescription: (chatId: number | undefined) => {
+    if (!chatId) return '';
+    
+    const descriptions: { [key: number]: string } = {
+      1: 'Genera posts virales para tus redes sociales con IA avanzada',
+      2: 'Diseña historias cautivadoras que conecten con tu audiencia',
+      3: 'Desarrolla estrategias efectivas de contenido',
+      4: 'Crea planes de entrenamiento rápidos y efectivos',
+      5: 'Analiza y adapta entrenamientos según lesiones',
+      6: 'Optimiza tus hábitos diarios para mejor rendimiento',
+      7: 'Supera mesetas en tu rendimiento',
+      8: 'Define objetivos específicos y alcanzables',
+      9: 'Genera contenido atractivo para redes sociales',
+      10: 'Diseña retos motivadores para tus clientes',
+      11: 'Visualiza diferentes escenarios de progreso',
+      12: 'Optimiza tu entrenamiento en casa',
+      13: 'Ejercicios y rutinas para el trabajo',
+      14: 'Mejora tu presencia profesional',
+      15: 'Mantén tu rutina mientras viajas',
+      16: 'Organiza y gestiona sesiones grupales',
+      17: 'Desarrolla hábitos sostenibles',
+      18: 'Analiza y comprende tu audiencia'
+    };
+    
+    return descriptions[chatId] || 'Inicia una conversación con esta herramienta';
   }
 };
